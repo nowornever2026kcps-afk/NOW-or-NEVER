@@ -1,6 +1,7 @@
 /* =========================================================
    NOW OR NEVER — STORM WYRM
-   Lightweight procedural dragon cosmetic
+   Tiny image-based dragon cosmetic
+   Lightning + aura + particles preserved
    ========================================================= */
 
 (function(){
@@ -10,71 +11,159 @@
   const DRAGON_ID = "cosmetic_dragon_storm";
 
   let activeHosts = new Set();
+
   let rafId = null;
+
   let lastTime = 0;
+
   let lightningTimer = 0;
+
   let nextLightning = 2600;
+
+
+  /* =========================================================
+     DEVICE / MOTION HELPERS
+     ========================================================= */
 
   const isMobile = () =>
     window.matchMedia("(max-width:700px)").matches;
 
   const reducedMotion = () =>
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+
+  /* =========================================================
+     RANDOM
+     ========================================================= */
 
   function random(min,max){
+
     return Math.random() * (max-min) + min;
+
   }
 
+
+  /* =========================================================
+     CANVAS
+     
+     The canvas is now used ONLY for lightning.
+     The Dragon itself is the PNG image.
+     ========================================================= */
+
   function createCanvas(host){
+
     const canvas=document.createElement("canvas");
 
     canvas.className="dragon-canvas";
-    canvas.setAttribute("aria-hidden","true");
+
+    canvas.setAttribute(
+      "aria-hidden",
+      "true"
+    );
 
     host.appendChild(canvas);
 
+    /*
+     * The Dragon is already attached to the page
+     * before this function is called.
+     *
+     * Therefore the canvas can get its real size.
+     */
+
     resizeCanvas(canvas);
 
-    window.addEventListener("resize",()=>{
-      resizeCanvas(canvas);
-    },{
-      passive:true
-    });
+    window.addEventListener(
+      "resize",
+      ()=>{
+        resizeCanvas(canvas);
+      },
+      {
+        passive:true
+      }
+    );
 
     return canvas;
+
   }
+
+
+  /* =========================================================
+     RESIZE CANVAS
+     ========================================================= */
 
   function resizeCanvas(canvas){
 
-    const rect=canvas.getBoundingClientRect();
+    if(!canvas) return;
+
+    const rect=
+      canvas.getBoundingClientRect();
 
     const dpr=Math.min(
       window.devicePixelRatio || 1,
       isMobile() ? 1.25 : 1.75
     );
 
-    canvas.width=Math.max(1,Math.floor(rect.width*dpr));
-    canvas.height=Math.max(1,Math.floor(rect.height*dpr));
+    canvas.width=
+      Math.max(
+        1,
+        Math.floor(rect.width*dpr)
+      );
 
-    const ctx=canvas.getContext("2d");
+    canvas.height=
+      Math.max(
+        1,
+        Math.floor(rect.height*dpr)
+      );
+
+    const ctx=
+      canvas.getContext("2d");
 
     if(ctx){
-      ctx.setTransform(dpr,0,0,dpr,0,0);
+
+      ctx.setTransform(
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0
+      );
+
     }
+
   }
+
+
+  /* =========================================================
+     PARTICLES
+     ========================================================= */
 
   function createParticles(host){
 
-    const count=isMobile() ? 8 : 16;
+    const count=
+      isMobile()
+        ? 8
+        : 16;
 
-    for(let i=0;i<count;i++){
+    for(
+      let i=0;
+      i<count;
+      i++
+    ){
 
-      const particle=document.createElement("span");
+      const particle=
+        document.createElement("span");
 
-      particle.className="dragon-particle";
+      particle.className=
+        "dragon-particle";
 
-      particle.style.left=random(20,80)+"%";
-      particle.style.top=random(35,70)+"%";
+      particle.style.left=
+        random(20,80)+"%";
+
+      particle.style.top=
+        random(35,70)+"%";
 
       particle.style.setProperty(
         "--particle-x",
@@ -96,311 +185,148 @@
         random(-4,0)+"s"
       );
 
-      host.appendChild(particle);
+      host.appendChild(
+        particle
+      );
+
     }
+
   }
 
-  function drawDragon(ctx,w,h,t){
 
-    const cx=w*.5;
-    const cy=h*.52;
+  /* =========================================================
+     LIGHTNING
+     
+     This is preserved from the original system.
+     ========================================================= */
 
-    /*
-      The dragon is intentionally stylized rather than
-      attempting to reproduce a detailed bitmap.
-
-      This gives us a live silhouette that is extremely
-      lightweight on mobile.
-    */
-
-    const bob=Math.sin(t*.0018)*3;
-    const wing=Math.sin(t*.003)*.12;
-
-    ctx.save();
-
-    ctx.translate(cx,cy+bob);
-
-    ctx.shadowBlur=13;
-    ctx.shadowColor="rgba(75,190,255,.85)";
-
-    /*
-      Body
-    */
-
-    ctx.beginPath();
-
-    ctx.ellipse(
-      0,
-      5,
-      23,
-      13,
-      -.08,
-      0,
-      Math.PI*2
-    );
-
-    ctx.fillStyle="rgba(65,110,205,.92)";
-    ctx.fill();
-
-    /*
-      Head
-    */
-
-    ctx.beginPath();
-
-    ctx.ellipse(
-      -20,
-      -8,
-      12,
-      9,
-      -.15,
-      0,
-      Math.PI*2
-    );
-
-    ctx.fillStyle="rgba(85,155,235,.98)";
-    ctx.fill();
-
-    /*
-      Snout
-    */
-
-    ctx.beginPath();
-
-    ctx.moveTo(-29,-9);
-    ctx.lineTo(-39,-5);
-    ctx.lineTo(-28,-1);
-    ctx.closePath();
-
-    ctx.fillStyle="rgba(110,180,245,.98)";
-    ctx.fill();
-
-    /*
-      Horns
-    */
-
-    ctx.beginPath();
-
-    ctx.moveTo(-25,-14);
-    ctx.lineTo(-31,-24);
-    ctx.lineTo(-21,-17);
-
-    ctx.moveTo(-18,-15);
-    ctx.lineTo(-18,-25);
-    ctx.lineTo(-13,-16);
-
-    ctx.strokeStyle="rgba(205,240,255,.95)";
-    ctx.lineWidth=2;
-    ctx.stroke();
-
-    /*
-      Wings
-    */
-
-    ctx.save();
-
-    ctx.translate(8,-5);
-    ctx.rotate(wing);
-
-    ctx.beginPath();
-
-    ctx.moveTo(0,0);
-    ctx.quadraticCurveTo(
-      20,-30,
-      50,-26
-    );
-
-    ctx.quadraticCurveTo(
-      35,-7,
-      16,10
-    );
-
-    ctx.closePath();
-
-    ctx.fillStyle="rgba(55,100,205,.72)";
-    ctx.strokeStyle="rgba(120,220,255,.82)";
-    ctx.lineWidth=1.5;
-
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.restore();
-
-    /*
-      Second wing
-    */
-
-    ctx.save();
-
-    ctx.scale(-1,1);
-    ctx.translate(8,-5);
-    ctx.rotate(-wing);
-
-    ctx.beginPath();
-
-    ctx.moveTo(0,0);
-    ctx.quadraticCurveTo(
-      20,-30,
-      50,-26
-    );
-
-    ctx.quadraticCurveTo(
-      35,-7,
-      16,10
-    );
-
-    ctx.closePath();
-
-    ctx.fillStyle="rgba(55,100,205,.72)";
-    ctx.strokeStyle="rgba(120,220,255,.82)";
-    ctx.lineWidth=1.5;
-
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.restore();
-
-    /*
-      Tail
-    */
-
-    ctx.beginPath();
-
-    ctx.moveTo(18,8);
-
-    ctx.quadraticCurveTo(
-      38,
-      17,
-      50,
-      3
-    );
-
-    ctx.quadraticCurveTo(
-      43,
-      20,
-      25,
-      18
-    );
-
-    ctx.strokeStyle="rgba(75,155,235,.95)";
-    ctx.lineWidth=7;
-    ctx.lineCap="round";
-    ctx.stroke();
-
-    /*
-      Eye
-    */
-
-    ctx.beginPath();
-
-    ctx.arc(
-      -23,
-      -10,
-      2,
-      0,
-      Math.PI*2
-    );
-
-    ctx.fillStyle="#dfffff";
-    ctx.shadowBlur=10;
-    ctx.shadowColor="#6eeaff";
-    ctx.fill();
-
-    /*
-      Chest glow
-    */
-
-    const pulse=
-      .5+
-      Math.sin(t*.004)*.25;
-
-    ctx.beginPath();
-
-    ctx.arc(
-      -1,
-      4,
-      4+3*pulse,
-      0,
-      Math.PI*2
-    );
-
-    ctx.fillStyle=
-      `rgba(160,245,255,${.45+.35*pulse})`;
-
-    ctx.fill();
-
-    ctx.restore();
-  }
-
-  function drawLightning(ctx,w,h,t){
+  function drawLightning(
+    ctx,
+    w,
+    h,
+    t
+  ){
 
     const x=w*.5;
+
     const y=h*.48;
 
     ctx.save();
 
-    ctx.globalCompositeOperation="lighter";
+    ctx.globalCompositeOperation=
+      "lighter";
 
     ctx.shadowBlur=9;
-    ctx.shadowColor="rgba(110,210,255,.95)";
+
+    ctx.shadowColor=
+      "rgba(110,210,255,.95)";
 
     ctx.beginPath();
 
-    let px=x+random(-8,8);
-    let py=y-10;
+    let px=
+      x+random(-8,8);
 
-    ctx.moveTo(px,py);
+    let py=
+      y-10;
 
-    const segments=isMobile() ? 5 : 8;
+    ctx.moveTo(
+      px,
+      py
+    );
 
-    for(let i=0;i<segments;i++){
+    const segments=
+      isMobile()
+        ? 5
+        : 8;
+
+    for(
+      let i=0;
+      i<segments;
+      i++
+    ){
 
       px+=random(-18,18);
+
       py+=h*.055;
 
-      ctx.lineTo(px,py);
+      ctx.lineTo(
+        px,
+        py
+      );
+
     }
 
     ctx.strokeStyle=
       "rgba(190,245,255,.95)";
 
-    ctx.lineWidth=isMobile()?1.2:1.7;
+    ctx.lineWidth=
+      isMobile()
+        ? 1.2
+        : 1.7;
 
     ctx.stroke();
 
     ctx.restore();
+
   }
+
+
+  /* =========================================================
+     FLASH EFFECT
+     ========================================================= */
 
   function flash(host){
 
-    const flash=document.createElement("div");
+    const flash=
+      document.createElement("div");
 
-    flash.className="dragon-flash";
+    flash.className=
+      "dragon-flash";
 
-    host.appendChild(flash);
+    host.appendChild(
+      flash
+    );
 
-    requestAnimationFrame(()=>{
-      flash.classList.add("active");
-    });
+    requestAnimationFrame(
+      ()=>{
+        flash.classList.add(
+          "active"
+        );
+      }
+    );
 
-    setTimeout(()=>{
-      flash.remove();
-    },450);
+    setTimeout(
+      ()=>{
+        flash.remove();
+      },
+      450
+    );
+
   }
+
+
+  /* =========================================================
+     LIGHTNING BURST
+     ========================================================= */
 
   function lightningBurst(host){
 
     if(reducedMotion()) return;
 
-    const canvas=host.querySelector(".dragon-canvas");
+    const canvas=
+      host.querySelector(
+        ".dragon-canvas"
+      );
 
     if(!canvas) return;
 
-    const ctx=canvas.getContext("2d");
+    const ctx=
+      canvas.getContext("2d");
 
     if(!ctx) return;
 
-    const rect=canvas.getBoundingClientRect();
+    const rect=
+      canvas.getBoundingClientRect();
 
     drawLightning(
       ctx,
@@ -410,299 +336,524 @@
     );
 
     flash(host);
+
   }
+
+
+  /* =========================================================
+     CREATE DRAGON
+     
+     IMPORTANT:
+     The PNG Dragon is attached first.
+     The canvas is created AFTER the Dragon is attached,
+     so the canvas gets the correct dimensions.
+     ========================================================= */
 
   function createDragon(host){
 
-  if(!host || host.dataset.dragonActive==="true"){
-    return;
-  }
+    if(
+      !host ||
+      host.dataset.dragonActive==="true"
+    ){
 
-  host.dataset.dragonActive="true";
+      return;
 
-  host.classList.add("leader-dragon-host");
+    }
 
-  const dragon=document.createElement("div");
+    host.dataset.dragonActive="true";
 
-  dragon.className="dragon-cosmetic";
-  dragon.dataset.dragon="storm-wyrm";
+    host.classList.add(
+      "leader-dragon-host"
+    );
 
-  const aura=document.createElement("div");
-  aura.className="dragon-aura";
 
-  const core=document.createElement("div");
-  core.className="dragon-core";
+    /* -------------------------------------------------------
+       MAIN DRAGON CONTAINER
+       ------------------------------------------------------- */
 
-  dragon.appendChild(aura);
-  dragon.appendChild(core);
+    const dragon=
+      document.createElement("div");
 
-  /* =====================================================
-     TINY STORM WYRM IMAGE
-     ===================================================== */
+    dragon.className=
+      "dragon-cosmetic";
 
-  const dragonImage=document.createElement("img");
+    dragon.dataset.dragon=
+      "storm-wyrm";
 
-  dragonImage.className="dragon-image";
-  dragonImage.src="assets/storm-wyrm.png";
-  dragonImage.alt="Storm Wyrm";
-  dragonImage.draggable=false;
 
-  dragon.appendChild(dragonImage);
+    /* -------------------------------------------------------
+       AURA
+       ------------------------------------------------------- */
 
-  /* =====================================================
-     IMPORTANT:
-     Add dragon to DOM BEFORE creating/measuring canvas.
-     Canvas is still used for lightning effects.
-     ===================================================== */
+    const aura=
+      document.createElement("div");
 
-  host.appendChild(dragon);
+    aura.className=
+      "dragon-aura";
 
-  const canvas=createCanvas(dragon);
 
-  createParticles(dragon);
+    /* -------------------------------------------------------
+       CORE
+       ------------------------------------------------------- */
 
-  const label=document.createElement("div");
+    const core=
+      document.createElement("div");
 
-  label.className="dragon-label";
-  label.textContent="STORM WYRM";
+    core.className=
+      "dragon-core";
 
-  dragon.appendChild(label);
 
-  activeHosts.add({
-    host,
-    dragon,
-    canvas
-  });
+    dragon.appendChild(
+      aura
+    );
 
-  if(!reducedMotion()){
-    startLoop();
-  }
+    dragon.appendChild(
+      core
+    );
 
-  return dragon;
-}
 
-/* =====================================================
-   Storm Wyrm image
-   The image replaces the procedural 2D dragon.
-   All aura, particles and lightning remain unchanged.
-   ===================================================== */
+    /* -------------------------------------------------------
+       TINY STORM WYRM IMAGE
+       
+       IMPORTANT:
+       Put the image at:
 
-const dragonImage=document.createElement("img");
+       assets/storm-wyrm.png
 
-dragonImage.className="dragon-image";
-dragonImage.src="assets/storm-wyrm.png";
-dragonImage.alt="Storm Wyrm";
-dragonImage.draggable=false;
+       The image must have a transparent background.
+       ------------------------------------------------------- */
 
-dragon.appendChild(dragonImage);
+    const dragonImage=
+      document.createElement("img");
 
-/* Canvas is still required for the lightning effects. */
-const canvas=createCanvas(dragon);
+    dragonImage.className=
+      "dragon-image";
 
-createParticles(dragon);
-   
-   const label=document.createElement("div");
-   label.className="dragon-label";
-   label.textContent="STORM WYRM";
-   
-   dragon.appendChild(label);
-   
-   /* Attach to the DOM BEFORE measuring the canvas. */
-   host.appendChild(dragon);
+    dragonImage.src=
+      "assets/storm-wyrm.png";
 
-const canvas=createCanvas(dragon);
+    dragonImage.alt=
+      "Storm Wyrm";
 
-    activeHosts.add({
+    dragonImage.draggable=false;
+
+
+    /*
+     * Inline styling makes the image work even if
+     * dragon.css does not contain .dragon-image yet.
+     */
+
+    dragonImage.style.position=
+      "absolute";
+
+    dragonImage.style.left=
+      "50%";
+
+    dragonImage.style.top=
+      "50%";
+
+    dragonImage.style.width=
+      isMobile()
+        ? "46px"
+        : "58px";
+
+    dragonImage.style.height=
+      isMobile()
+        ? "46px"
+        : "58px";
+
+    dragonImage.style.objectFit=
+      "contain";
+
+    dragonImage.style.transform=
+      "translate(-50%,-50%)";
+
+    dragonImage.style.zIndex=
+      "4";
+
+    dragonImage.style.pointerEvents=
+      "none";
+
+    dragonImage.style.userSelect=
+      "none";
+
+    dragonImage.style.filter=
+      "drop-shadow(0 0 4px rgba(90,210,255,.95)) drop-shadow(0 0 10px rgba(80,110,255,.65))";
+
+
+    /*
+     * Tiny floating animation.
+     */
+
+    dragonImage.style.animation=
+      "stormWyrmFloat 2.4s ease-in-out infinite";
+
+
+    /*
+     * Helpful error logging if the PNG path is wrong.
+     */
+
+    dragonImage.addEventListener(
+      "error",
+      ()=>{
+        console.error(
+          "[Storm Wyrm] Image failed to load:",
+          dragonImage.src
+        );
+      }
+    );
+
+
+    dragonImage.addEventListener(
+      "load",
+      ()=>{
+        console.log(
+          "[Storm Wyrm] Image loaded:",
+          dragonImage.naturalWidth,
+          "x",
+          dragonImage.naturalHeight
+        );
+      }
+    );
+
+
+    dragon.appendChild(
+      dragonImage
+    );
+
+
+    /* -------------------------------------------------------
+       PARTICLES
+       ------------------------------------------------------- */
+
+    createParticles(
+      dragon
+    );
+
+
+    /* -------------------------------------------------------
+       LABEL
+       ------------------------------------------------------- */
+
+    const label=
+      document.createElement("div");
+
+    label.className=
+      "dragon-label";
+
+    label.textContent=
+      "STORM WYRM";
+
+    dragon.appendChild(
+      label
+    );
+
+
+    /* -------------------------------------------------------
+       IMPORTANT:
+       ATTACH DRAGON TO PAGE FIRST
+       ------------------------------------------------------- */
+
+    host.appendChild(
+      dragon
+    );
+
+
+    /* -------------------------------------------------------
+       LIGHTNING CANVAS
+       
+       Canvas is created AFTER the Dragon is attached.
+       This fixes the previous 1x1 canvas problem.
+       ------------------------------------------------------- */
+
+    const canvas=
+      createCanvas(
+        dragon
+      );
+
+
+    /* -------------------------------------------------------
+       TRACK ACTIVE DRAGON
+       ------------------------------------------------------- */
+
+    const entry={
       host,
       dragon,
       canvas
-    });
+    };
+
+    activeHosts.add(
+      entry
+    );
+
+
+    /* -------------------------------------------------------
+       START ANIMATION
+       ------------------------------------------------------- */
 
     if(!reducedMotion()){
+
       startLoop();
+
     }
 
+
     return dragon;
+
   }
+
+
+  /* =========================================================
+     REMOVE DRAGON
+     ========================================================= */
 
   function removeDragon(host){
 
     if(!host) return;
 
-    const dragon=host.querySelector(
-      '[data-dragon="storm-wyrm"]'
-    );
+
+    const dragon=
+      host.querySelector(
+        '[data-dragon="storm-wyrm"]'
+      );
+
 
     if(!dragon){
-      host.dataset.dragonActive="false";
+
+      host.dataset.dragonActive=
+        "false";
+
       return;
+
     }
 
-    dragon.classList.add("is-exiting");
 
-    setTimeout(()=>{
-      dragon.remove();
-      host.dataset.dragonActive="false";
-    },500);
+    dragon.classList.add(
+      "is-exiting"
+    );
+
+
+    setTimeout(
+      ()=>{
+
+        /*
+         * Remove the corresponding active entry.
+         */
+
+        activeHosts.forEach(
+          entry=>{
+
+            if(
+              entry.host===host
+            ){
+
+              activeHosts.delete(
+                entry
+              );
+
+            }
+
+          }
+        );
+
+
+        dragon.remove();
+
+        host.dataset.dragonActive=
+          "false";
+
+      },
+      500
+    );
+
   }
 
- function startLoop(){
 
-  if(rafId) return;
+  /* =========================================================
+     MAIN ANIMATION LOOP
+     
+     IMPORTANT:
+     There is NO drawDragon() call here.
+     
+     The Dragon is the PNG image.
+     The canvas is used ONLY for lightning.
+     ========================================================= */
 
-  lastTime=performance.now();
+  function startLoop(){
 
-  const loop=(now)=>{
+    if(rafId) return;
 
-    rafId=requestAnimationFrame(loop);
 
-    if(activeHosts.size===0){
+    lastTime=
+      performance.now();
 
-      cancelAnimationFrame(rafId);
-      rafId=null;
 
-      return;
-    }
+    const loop=(now)=>{
 
-    const dt=now-lastTime;
+      rafId=
+        requestAnimationFrame(
+          loop
+        );
 
-    lastTime=now;
 
-    lightningTimer+=dt;
+      if(
+        activeHosts.size===0
+      ){
 
-    if(lightningTimer>=nextLightning){
+        cancelAnimationFrame(
+          rafId
+        );
 
-      lightningTimer=0;
+        rafId=null;
 
-      nextLightning=random(
-        isMobile()?4200:2600,
-        isMobile()?7000:5200
+        return;
+
+      }
+
+
+      const dt=
+        now-lastTime;
+
+      lastTime=
+        now;
+
+
+      /* -----------------------------------------------------
+         LIGHTNING TIMER
+         ----------------------------------------------------- */
+
+      lightningTimer+=dt;
+
+
+      if(
+        lightningTimer>=
+        nextLightning
+      ){
+
+        lightningTimer=0;
+
+
+        nextLightning=
+          random(
+            isMobile()
+              ? 4200
+              : 2600,
+
+            isMobile()
+              ? 7000
+              : 5200
+          );
+
+
+        activeHosts.forEach(
+          entry=>{
+
+            lightningBurst(
+              entry.host
+            );
+
+          }
+        );
+
+      }
+
+
+      /* -----------------------------------------------------
+         CLEAR LIGHTNING CANVAS
+         
+         We intentionally DO NOT call drawDragon().
+         ----------------------------------------------------- */
+
+      activeHosts.forEach(
+        entry=>{
+
+          const canvas=
+            entry.canvas;
+
+          if(!canvas) return;
+
+
+          const rect=
+            canvas.getBoundingClientRect();
+
+
+          const ctx=
+            canvas.getContext(
+              "2d"
+            );
+
+
+          if(!ctx) return;
+
+
+          ctx.clearRect(
+            0,
+            0,
+            rect.width,
+            rect.height
+          );
+
+        }
       );
 
-      activeHosts.forEach(entry=>{
+    };
 
-        lightningBurst(entry.host);
 
-      });
-
-    }
-
-    /*
-      The Dragon is now an IMG element.
-
-      Do NOT call drawDragon() anymore.
-
-      The canvas remains available exclusively
-      for lightning effects.
-    */
-
-    activeHosts.forEach(entry=>{
-
-      const canvas=entry.canvas;
-
-      if(!canvas) return;
-
-      const rect=canvas.getBoundingClientRect();
-
-      const ctx=canvas.getContext("2d");
-
-      if(!ctx) return;
-
-      ctx.clearRect(
-        0,
-        0,
-        rect.width,
-        rect.height
+    rafId=
+      requestAnimationFrame(
+        loop
       );
 
-    });
+  }
 
-  };
 
-  rafId=requestAnimationFrame(loop);
-}
+  /* =========================================================
+     DESTROY ALL
+     ========================================================= */
+
   function destroyAll(){
 
-    activeHosts.forEach(entry=>{
-      removeDragon(entry.host);
-    });
+    activeHosts.forEach(
+      entry=>{
+
+        removeDragon(
+          entry.host
+        );
+
+      }
+    );
 
     activeHosts.clear();
+
   }
 
-  /*
-    Public API
-  */
+
+  /* =========================================================
+     PUBLIC API
+     ========================================================= */
 
   window.NowOrNeverDragon={
 
-    id:DRAGON_ID,
+    id:
+      DRAGON_ID,
 
-    mount:createDragon,
+    mount:
+      createDragon,
 
-    remove:removeDragon,
+    remove:
+      removeDragon,
 
-    clear:destroyAll,
+    clear:
+      destroyAll,
 
     isDragon(id){
-      return id===DRAGON_ID;
+
+      return id===
+        DRAGON_ID;
+
     }
 
   };
-/* =========================================================
-   Storm Wyrm image
-   ========================================================= */
 
-.dragon-image {
-  position: absolute;
-  left: 50%;
-  top: 50%;
 
-  width: 58px;
-  height: 58px;
-
-  object-fit: contain;
-
-  transform:
-    translate(-50%, -50%)
-    translateY(0);
-
-  z-index: 4;
-
-  pointer-events: none;
-  user-select: none;
-
-  filter:
-    drop-shadow(0 0 4px rgba(90,210,255,.95))
-    drop-shadow(0 0 10px rgba(80,110,255,.65));
-
-  animation: stormWyrmFloat 2.4s ease-in-out infinite;
-}
-
-@keyframes stormWyrmFloat {
-
-  0%,100% {
-    transform:
-      translate(-50%, -50%)
-      translateY(2px)
-      rotate(-2deg);
-  }
-
-  50% {
-    transform:
-      translate(-50%, -50%)
-      translateY(-4px)
-      rotate(2deg);
-  }
-
-}
-
-@media (max-width:700px) {
-
-  .dragon-image {
-    width: 46px;
-    height: 46px;
-  }
-
-}
 })();
