@@ -433,21 +433,21 @@
     const core=document.createElement("div");
     core.className="dragon-core";
 
-    dragon.appendChild(aura);
-    dragon.appendChild(core);
+   dragon.appendChild(aura);
+   dragon.appendChild(core);
+   
+   createParticles(dragon);
+   
+   const label=document.createElement("div");
+   label.className="dragon-label";
+   label.textContent="STORM WYRM";
+   
+   dragon.appendChild(label);
+   
+   /* Attach to the DOM BEFORE measuring the canvas. */
+   host.appendChild(dragon);
 
-    const canvas=createCanvas(dragon);
-
-    createParticles(dragon);
-
-    const label=document.createElement("div");
-
-    label.className="dragon-label";
-    label.textContent="STORM WYRM";
-
-    dragon.appendChild(label);
-
-    host.appendChild(dragon);
+const canvas=createCanvas(dragon);
 
     activeHosts.add({
       host,
