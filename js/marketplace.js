@@ -62,22 +62,44 @@ const SHOP_ITEMS=[
  {id:"emoji_brain",category:"emoji",name:"Brain Spark",desc:"Animated 🧠 study badge.",price:275,kind:"effect",preview:"🧠"},
  {id:"emoji_star",category:"emoji",name:"Star Burst",desc:"Animated ⭐ achievement badge.",price:500,kind:"effect",preview:"⭐"},
  {id:"emoji_lightning",category:"emoji",name:"Lightning",desc:"Animated ⚡ energy badge.",price:550,kind:"effect",preview:"⚡"}
+ {id:"cosmetic_dragon_storm",category:"cosmetics",name:"Storm Wyrm",desc:"A living electric dragon surrounded by lightning.",price:1500,kind:"dragon",
+    preview:"🐉",
+    rarity:"legendary"
+  }
 ];
 
 function shopPreview(i){
- if(i.kind==="title") return `<div class="shop-title-preview">${i.preview}</div>`;
- if(i.kind==="textstyle"){
-   const cls=getTextStyleClass(i);
-   return `<div class="shop-title-preview ${cls}">${i.preview}</div>`;
- }
- if(i.kind==="effect") return `<div class="shop-badge-preview live-emoji">${i.preview}</div>`;
- return `<div class="shop-badge-preview">${i.preview}</div>`;
+
+  if(i.kind==="dragon"){
+    return `
+      <div class="shop-badge-preview dragon-shop-preview">
+        <span class="dragon-shop-icon">🐉</span>
+        <span class="dragon-shop-bolt">⚡</span>
+      </div>
+    `;
+  }
+
+  if(i.kind==="title"){
+    return `<div class="shop-title-preview">${i.preview}</div>`;
+  }
+
+  if(i.kind==="textstyle"){
+    const cls=getTextStyleClass(i);
+    return `<div class="shop-title-preview ${cls}">${i.preview}</div>`;
+  }
+
+  if(i.kind==="effect"){
+    return `<div class="shop-badge-preview live-emoji">${i.preview}</div>`;
+  }
+
+  return `<div class="shop-badge-preview">${i.preview}</div>`;
 }
 function shopSlot(i){
- if(i.kind==="title")return "title";
- if(i.kind==="textstyle")return "text_style";
- if(i.kind==="effect")return "effect";
- return "accessory";
+  if(i.kind==="title")return "title";
+  if(i.kind==="textstyle")return "text_style";
+  if(i.kind==="effect")return "effect";
+  if(i.kind==="dragon")return "dragon";
+  return "accessory";
 }
 function selectShopCategory(c){
  selectedShopCategory=c;
