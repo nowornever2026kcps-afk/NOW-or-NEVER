@@ -1,46 +1,91 @@
-// UI motion and animation controller
-/* =========================================================
-   NOW OR NEVER — MOTION CONTROLLER
-   Adds animation without changing application logic.
-   ========================================================= */
+// =========================================================
+// NOW OR NEVER — UI MOTION CONTROLLER
+// Mobile-safe / low-overhead version.
+//
+// IMPORTANT:
+// This version intentionally does NOT use a global
+// MutationObserver. The previous observer watched the
+// entire document and could repeatedly trigger animation
+// work whenever Shop, Leaderboard, Tasks, Tests, etc.
+// changed the DOM.
+// =========================================================
 
-(function initMotionSystem(){
+(() => {
+  "use strict";
 
-  function addRipple(button,event){
-    if(!button || button.disabled) return;
+  let refreshFrame = 0;
+  let lastRefresh = 0;
 
-    const rect=button.getBoundingClientRect();
-    const ripple=document.createElement("span");
+  const reducedMotion =
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    ripple.className="motion-ripple";
+  const mobile =
+    window.matchMedia &&
+    window.matchMedia("(max-width: 700px)").matches;
 
-    ripple.style.left=(event.clientX-rect.left)+"px";
-    ripple.style.top=(event.clientY-rect.top)+"px";
+
+  // =======================================================
+  // BUTTON RIPPLE
+  // =======================================================
+
+  function addRipple(button, event) {
+    if (!button || button.disabled || reducedMotion) {
+      return;
+    }
+
+    const rect = button.getBoundingClientRect();
+
+    const ripple = document.createElement("span");
+
+    ripple.className = "motion-ripple";
+
+    ripple.style.left =
+      `${event.clientX - rect.left}px`;
+
+    ripple.style.top =
+      `${event.clientY - rect.top}px`;
 
     button.appendChild(ripple);
 
-    setTimeout(()=>ripple.remove(),520);
+    window.setTimeout(() => {
+      ripple.remove();
+    }, 520);
   }
 
-  document.addEventListener("pointerdown",event=>{
-    const button=event.target.closest("button");
-    if(button) addRipple(button,event);
-  });
 
-  function revealCards(root=document){
-    const cards=root.querySelectorAll(
-      ".card:not(.motion-visible)"
-    );
+  // =======================================================
+  // CARD REVEAL
+  // =======================================================
 
-    cards.forEach((card,index)=>{
-      card.style.animationDelay=
-        Math.min(index*35,210)+"ms";
-      card.classList.add("motion-visible");
+  function revealCards(root = document) {
+
+    const cards =
+      root.querySelectorAll(
+        ".card:not(.motion-visible)"
+      );
+
+    cards.forEach((card, index) => {
+
+      card.style.animationDelay =
+        `${Math.min(index * 35, 210)}ms`;
+
+      card.classList.add(
+        "motion-visible"
+      );
+
     });
   }
 
-  function popUpdatedNumbers(root=document){
-    const selectors=[
+
+  // =======================================================
+  // NUMBER POP
+  // =======================================================
+
+  function popUpdatedNumbers(root = document) {
+
+    const selectors = [
+
       "#personalTotalPoints",
       "#personalTotalHours",
       "#personalAvgDay",
@@ -49,132 +94,399 @@
       "#achievementCount",
       "#achievementPoints",
       "#myProfilePoints"
+
     ];
 
-    selectors.forEach(selector=>{
-      root.querySelectorAll(selector).forEach(el=>{
-        el.classList.remove("number-pop");
+
+    selectors.forEach(selector => {
+
+      root.querySelectorAll(selector).forEach(el => {
+
+        el.classList.remove(
+          "number-pop"
+        );
+
+        // Force the browser to restart
+        // the small number animation.
         void el.offsetWidth;
-        el.classList.add("number-pop");
+
+        el.classList.add(
+          "number-pop"
+        );
+
       });
+
     });
   }
 
-  function markCompletedTasks(root=document){
-    root.querySelectorAll(".task-row").forEach(row=>{
-      const checkbox=row.querySelector(".task-check");
-      if(checkbox && checkbox.checked){
-        row.classList.add("task-completed");
-      }else{
-        row.classList.remove("task-completed");
+
+  // =======================================================
+  // TASK COMPLETION STATE
+  // =======================================================
+
+  function markCompletedTasks(root = document) {
+
+    root.querySelectorAll(
+      ".task-row"
+    ).forEach(row => {
+
+      const checkbox =
+        row.querySelector(
+          ".task-check"
+        );
+
+      if (
+        checkbox &&
+        checkbox.checked
+      ) {
+
+        row.classList.add(
+          "task-completed"
+        );
+
+      } else {
+
+        row.classList.remove(
+          "task-completed"
+        );
+
       }
+
     });
   }
 
-  function animateBoard(root=document){
-    root.querySelectorAll(".leader").forEach((row,index)=>{
-      row.style.animationDelay=
-        Math.min(index*35,280)+"ms";
+
+  // =======================================================
+  // LEADERBOARD ANIMATION
+  // =======================================================
+
+  function animateBoard(root = document) {
+
+    root.querySelectorAll(
+      ".leader"
+    ).forEach((row, index) => {
+
+      row.style.animationDelay =
+        `${Math.min(index * 35, 280)}ms`;
+
     });
 
-    root.querySelectorAll(".progress span").forEach(bar=>{
-      bar.style.transformOrigin="left center";
+
+    root.querySelectorAll(
+      ".progress span"
+    ).forEach(bar => {
+
+      bar.style.transformOrigin =
+        "left center";
+
     });
+
   }
 
-  function animateTests(root=document){
-    root.querySelectorAll(".test-list-row").forEach((row,index)=>{
-      row.style.animationDelay=
-        Math.min(index*35,210)+"ms";
+
+  // =======================================================
+  // TEST ANIMATION
+  // =======================================================
+
+  function animateTests(root = document) {
+
+    root.querySelectorAll(
+      ".test-list-row"
+    ).forEach((row, index) => {
+
+      row.style.animationDelay =
+        `${Math.min(index * 35, 210)}ms`;
+
     });
+
   }
 
-  function animateView(view){
-    if(!view) return;
 
-    view.classList.remove("motion-view-refresh");
-    void view.offsetWidth;
-    view.classList.add("motion-view-refresh");
+  // =======================================================
+  // VIEW ANIMATION
+  // =======================================================
+
+  function animateView(view) {
+
+    if (!view) {
+      return;
+    }
+
+
+    view.classList.remove(
+      "motion-view-refresh"
+    );
+
+
+    if (!reducedMotion) {
+
+      // Force restart of the view animation.
+      void view.offsetWidth;
+
+      view.classList.add(
+        "motion-view-refresh"
+      );
+
+    }
+
 
     revealCards(view);
-    popUpdatedNumbers(view);
+
     markCompletedTasks(view);
-    animateBoard(view);
-    animateTests(view);
+
+
+    // Desktop can handle the additional
+    // leaderboard/test animation scans.
+    //
+    // Mobile intentionally skips these extra
+    // animation passes to reduce CPU/GPU work.
+
+    if (
+      !mobile &&
+      !reducedMotion
+    ) {
+
+      popUpdatedNumbers(view);
+
+      animateBoard(view);
+
+      animateTests(view);
+
+    }
+
   }
 
-  document.querySelectorAll(".nav button").forEach(button=>{
-    button.addEventListener("click",()=>{
-      setTimeout(()=>{
-        const id=button.dataset.view;
-        animateView(document.getElementById(id));
-      },20);
-    });
-  });
 
-  const observer=new MutationObserver(mutations=>{
-    let shouldAnimate=false;
+  // =======================================================
+  // REFRESH
+  // =======================================================
 
-    for(const mutation of mutations){
-      if(
-        mutation.type==="childList" &&
-        mutation.addedNodes.length
-      ){
-        shouldAnimate=true;
-        break;
+  function performRefresh() {
+
+    refreshFrame = 0;
+
+    const now =
+      performance.now();
+
+
+    // Prevent repeated refresh calls
+    // from happening too close together.
+
+    if (
+      now - lastRefresh < 100
+    ) {
+
+      return;
+
+    }
+
+
+    lastRefresh = now;
+
+
+    revealCards();
+
+    markCompletedTasks();
+
+
+    // These are deliberately skipped
+    // on mobile.
+
+    if (
+      !mobile &&
+      !reducedMotion
+    ) {
+
+      animateBoard();
+
+      animateTests();
+
+    }
+
+  }
+
+
+  // =======================================================
+  // SCHEDULE REFRESH
+  // =======================================================
+
+  function scheduleRefresh() {
+
+    if (refreshFrame) {
+      return;
+    }
+
+
+    refreshFrame =
+      window.requestAnimationFrame(
+        performRefresh
+      );
+
+  }
+
+
+  // =======================================================
+  // POINTER RIPPLE
+  //
+  // Event-driven only.
+  // No document scanning.
+  // =======================================================
+
+  document.addEventListener(
+    "pointerdown",
+    event => {
+
+      const button =
+        event.target.closest(
+          "button"
+        );
+
+
+      if (button) {
+
+        addRipple(
+          button,
+          event
+        );
+
       }
-    }
 
-    if(!shouldAnimate) return;
-
-    requestAnimationFrame(()=>{
-      revealCards();
-      markCompletedTasks();
-      animateBoard();
-      animateTests();
-    });
-  });
-
-  observer.observe(document.body,{
-    childList:true,
-    subtree:true
-  });
-
-  document.addEventListener("change",event=>{
-    const checkbox=event.target.closest(".task-check");
-
-    if(!checkbox) return;
-
-    const row=checkbox.closest(".task-row");
-
-    if(!row) return;
-
-    if(checkbox.checked){
-      row.classList.add("task-completed");
-    }else{
-      row.classList.remove("task-completed");
-    }
-  });
-
-  window.NowOrNeverMotion={
-    refresh(){
-      revealCards();
-      popUpdatedNumbers();
-      markCompletedTasks();
-      animateBoard();
-      animateTests();
     },
-    animateView
+    {
+      passive: true
+    }
+  );
+
+
+  // =======================================================
+  // NAVIGATION ANIMATION
+  //
+  // app.js remains responsible for navigation.
+  // This only reacts after app.js changes the view.
+  // =======================================================
+
+  document.addEventListener(
+    "click",
+    event => {
+
+      const button =
+        event.target.closest(
+          ".nav button"
+        );
+
+
+      if (!button) {
+        return;
+      }
+
+
+      window.setTimeout(() => {
+
+        const id =
+          button.dataset.view;
+
+
+        if (id) {
+
+          animateView(
+            document.getElementById(
+              id
+            )
+          );
+
+        }
+
+      }, 40);
+
+    },
+    {
+      passive: true
+    }
+  );
+
+
+  // =======================================================
+  // TASK CHECKBOX
+  //
+  // Event-driven instead of using MutationObserver.
+  // =======================================================
+
+  document.addEventListener(
+    "change",
+    event => {
+
+      const checkbox =
+        event.target.closest(
+          ".task-check"
+        );
+
+
+      if (!checkbox) {
+        return;
+      }
+
+
+      const row =
+        checkbox.closest(
+          ".task-row"
+        );
+
+
+      if (!row) {
+        return;
+      }
+
+
+      row.classList.toggle(
+        "task-completed",
+        checkbox.checked
+      );
+
+    },
+    {
+      passive: true
+    }
+  );
+
+
+  // =======================================================
+  // PUBLIC API
+  //
+  // Kept for compatibility with the existing application.
+  // =======================================================
+
+  window.NowOrNeverMotion = {
+
+    refresh:
+      scheduleRefresh,
+
+    animateView:
+      animateView
+
   };
 
-  if(document.readyState==="loading"){
+
+  // =======================================================
+  // INITIAL REFRESH
+  // =======================================================
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+
     document.addEventListener(
       "DOMContentLoaded",
-      ()=>window.NowOrNeverMotion.refresh(),
-      {once:true}
+      scheduleRefresh,
+      {
+        once: true
+      }
     );
-  }else{
-    window.NowOrNeverMotion.refresh();
+
+  } else {
+
+    scheduleRefresh();
+
   }
 
 })();
