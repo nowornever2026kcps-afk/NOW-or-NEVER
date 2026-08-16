@@ -431,12 +431,30 @@
     aura.className="dragon-aura";
 
     const core=document.createElement("div");
-    core.className="dragon-core";
+core.className="dragon-core";
 
-   dragon.appendChild(aura);
-   dragon.appendChild(core);
-   
-   createParticles(dragon);
+dragon.appendChild(aura);
+dragon.appendChild(core);
+
+/* =====================================================
+   Storm Wyrm image
+   The image replaces the procedural 2D dragon.
+   All aura, particles and lightning remain unchanged.
+   ===================================================== */
+
+const dragonImage=document.createElement("img");
+
+dragonImage.className="dragon-image";
+dragonImage.src="assets/storm-wyrm.png";
+dragonImage.alt="Storm Wyrm";
+dragonImage.draggable=false;
+
+dragon.appendChild(dragonImage);
+
+/* Canvas is still required for the lightning effects. */
+const canvas=createCanvas(dragon);
+
+createParticles(dragon);
    
    const label=document.createElement("div");
    label.className="dragon-label";
@@ -530,18 +548,11 @@ const canvas=createCanvas(dragon);
         if(!ctx) return;
 
         ctx.clearRect(
-          0,
-          0,
-          rect.width,
-          rect.height
-        );
-
-        drawDragon(
-          ctx,
-          rect.width,
-          rect.height,
-          now
-        );
+              0,
+              0,
+              rect.width,
+              rect.height
+            );
       });
     };
 
@@ -576,5 +587,60 @@ const canvas=createCanvas(dragon);
     }
 
   };
+/* =========================================================
+   Storm Wyrm image
+   ========================================================= */
 
+.dragon-image {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  width: 58px;
+  height: 58px;
+
+  object-fit: contain;
+
+  transform:
+    translate(-50%, -50%)
+    translateY(0);
+
+  z-index: 4;
+
+  pointer-events: none;
+  user-select: none;
+
+  filter:
+    drop-shadow(0 0 4px rgba(90,210,255,.95))
+    drop-shadow(0 0 10px rgba(80,110,255,.65));
+
+  animation: stormWyrmFloat 2.4s ease-in-out infinite;
+}
+
+@keyframes stormWyrmFloat {
+
+  0%,100% {
+    transform:
+      translate(-50%, -50%)
+      translateY(2px)
+      rotate(-2deg);
+  }
+
+  50% {
+    transform:
+      translate(-50%, -50%)
+      translateY(-4px)
+      rotate(2deg);
+  }
+
+}
+
+@media (max-width:700px) {
+
+  .dragon-image {
+    width: 46px;
+    height: 46px;
+  }
+
+}
 })();
