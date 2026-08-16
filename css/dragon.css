@@ -315,3 +315,54 @@
     transform: none;
   }
 }
+.dragon-image {
+  position:absolute;
+
+  left:50%;
+  top:50%;
+
+  width:58px;
+  height:58px;
+
+  object-fit:contain;
+
+  transform:translate(-50%,-50%);
+
+  z-index:4;
+
+  pointer-events:none;
+  user-select:none;
+
+  filter:
+    drop-shadow(0 0 4px rgba(90,210,255,.95))
+    drop-shadow(0 0 10px rgba(80,110,255,.65));
+
+  animation:stormWyrmFloat 2.4s ease-in-out infinite;
+}
+
+@keyframes stormWyrmFloat {
+
+  0%,100% {
+    transform:
+      translate(-50%,-50%)
+      translateY(2px)
+      rotate(-2deg);
+  }
+
+  50% {
+    transform:
+      translate(-50%,-50%)
+      translateY(-4px)
+      rotate(2deg);
+  }
+
+}
+
+@media (max-width:700px){
+
+  .dragon-image {
+    width:46px;
+    height:46px;
+  }
+
+}
