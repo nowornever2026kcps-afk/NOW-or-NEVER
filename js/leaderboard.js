@@ -118,8 +118,13 @@ async function renderBoard(){
         ? `<div class="leader-cosmetics">${visualAccessories.join("")}</div>`
         : "";
 
-      const hasAny=Boolean(title||textStyle||accessory||effect);
-
+      const hasAny=Boolean(
+                 title ||
+                 textStyle ||
+                 accessory ||
+                 effect ||
+                 dragon
+);
       return {
         titleHtml,
         crownHtml,
@@ -186,17 +191,7 @@ async function renderBoard(){
     $("boardList").innerHTML=`<div class="empty">Could not load leaderboard.</div>`;
   }
 }
-      if(window.NowOrNeverDragon){
-
-  document
-    .querySelectorAll("[data-dragon-host='true']")
-    .forEach(host => {
-
-      window.NowOrNeverDragon.mount(host);
-
-    });
-
-}
+    
 
 /* ============================================
    GROUP STATS
@@ -217,7 +212,17 @@ async function renderGroupStats(
       .select(
         "tasks_completed"
       );
+if(window.NowOrNeverDragon){
 
+  document
+    .querySelectorAll("[data-dragon-host='true']")
+    .forEach(host => {
+
+      window.NowOrNeverDragon.mount(host);
+
+    });
+
+}
 
   const totalTasks =
     error
