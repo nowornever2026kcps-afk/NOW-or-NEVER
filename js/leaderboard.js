@@ -87,6 +87,13 @@ async function renderBoard(){
       const textStyle=cosmeticBySlot(student.id,"text_style");
       const accessory=cosmeticBySlot(student.id,"accessory");
       const effect=cosmeticBySlot(student.id,"effect");
+      const dragon = cosmeticBySlot(student.id,"dragon");
+
+      const dragonHtml =
+           dragon &&
+           dragon.id === "cosmetic_dragon_storm"
+             ? `<div class="leader-dragon-host" data-dragon-host="true"></div>`
+             : "";
 
       const visualAccessories=[];
       if(accessory && !isCrown(accessory)){
@@ -118,6 +125,7 @@ async function renderBoard(){
         crownHtml,
         effectHtml,
         accessoryHtml,
+        dragonHtml,
         hasAny,
         textStyleClass:styleClass(textStyle)
       };
@@ -138,6 +146,7 @@ async function renderBoard(){
         <div class="leader ${isMe?"me":""} ${cosmetics.hasAny?"has-cosmetics":""}">
           ${cosmetics.crownHtml}
           ${cosmetics.effectHtml}
+          ${cosmetics.dragonHtml}
           <div class="rank">${medal}</div>
           <div class="avatar">
             ${escapeHtml(initials(student.display_name))}
@@ -177,7 +186,17 @@ async function renderBoard(){
     $("boardList").innerHTML=`<div class="empty">Could not load leaderboard.</div>`;
   }
 }
+      if(window.NowOrNeverDragon){
 
+  document
+    .querySelectorAll("[data-dragon-host='true']")
+    .forEach(host => {
+
+      window.NowOrNeverDragon.mount(host);
+
+    });
+
+}
 
 /* ============================================
    GROUP STATS
