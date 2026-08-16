@@ -61,7 +61,7 @@ const SHOP_ITEMS=[
  {id:"emoji_fire",category:"emoji",name:"Fire Mode",desc:"Animated 🔥 focus badge.",price:400,kind:"effect",preview:"🔥"},
  {id:"emoji_brain",category:"emoji",name:"Brain Spark",desc:"Animated 🧠 study badge.",price:275,kind:"effect",preview:"🧠"},
  {id:"emoji_star",category:"emoji",name:"Star Burst",desc:"Animated ⭐ achievement badge.",price:500,kind:"effect",preview:"⭐"},
- {id:"emoji_lightning",category:"emoji",name:"Lightning",desc:"Animated ⚡ energy badge.",price:550,kind:"effect",preview:"⚡"}
+ {id:"emoji_lightning",category:"emoji",name:"Lightning",desc:"Animated ⚡ energy badge.",price:550,kind:"effect",preview:"⚡"},
  {id:"cosmetic_dragon_storm",category:"cosmetics",name:"Storm Wyrm",desc:"A living electric dragon surrounded by lightning.",price:1500,kind:"dragon",
     preview:"🐉",
     rarity:"legendary"
