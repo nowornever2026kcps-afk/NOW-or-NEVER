@@ -1323,40 +1323,106 @@ supabaseClient.auth.onAuthStateChange(
 );
 
 (async function bootSavedSession(){
-  try{
-    const {data,error} =
-      await supabaseClient.auth.getSession();
 
-    if(error){
-      console.error("SESSION RESTORE:",error);
-      if(!authReady){
-        document.body.classList.remove("starting");
-        authReady = true;
-        hideSessionSplash();
-        showAuthScreen();
-      }
+  let finished = false;
+
+  function releaseToLogin(){
+
+    if(finished || authReady){
       return;
     }
 
-    if(!authReady){
+    finished = true;
+
+    currentUser = null;
+    currentProfile = null;
+
+    document.body.classList.remove("starting");
+
+    authReady = true;
+
+    hideSessionSplash();
+
+    showAuthScreen();
+
+  }
+
+
+  // Safety timeout.
+  // If Supabase takes too long to restore the session,
+  // never leave the user permanently stuck on the welcome screen.
+
+  const startupTimeout = setTimeout(() => {
+
+    console.warn(
+      "Supabase session check timed out. Opening login."
+    );
+
+    releaseToLogin();
+
+  }, 5000);
+
+
+  try{
+
+    const {data,error} =
+      await supabaseClient.auth.getSession();
+
+
+    clearTimeout(startupTimeout);
+
+
+    if(finished){
+      return;
+    }
+
+
+    if(error){
+
+      console.error(
+        "SESSION RESTORE:",
+        error
+      );
+
+      releaseToLogin();
+
+      return;
+
+    }
+
+
+    // Existing logged-in user
+    if(data && data.session){
+
       await applyAuthSession(
-        data?.session || null,
+        data.session,
         true
       );
+
+      finished = true;
+
+      return;
+
     }
+
+
+    // New / logged-out user
+    releaseToLogin();
+
 
   }catch(error){
 
-    console.error("SESSION BOOT:",error);
+    clearTimeout(startupTimeout);
 
-    if(!authReady){
-      document.body.classList.remove("starting");
-      authReady = true;
-      hideSessionSplash();
-      showAuthScreen();
-    }
+    console.error(
+      "SESSION BOOT:",
+      error
+    );
+
+    releaseToLogin();
 
   }
+
 })();
 
 
