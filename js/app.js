@@ -658,29 +658,7 @@ $("todayText").textContent =
     }
   );
 
-window.addEventListener("load", () => {
 
-  if (!window.NowOrNeverDragon) {
-    console.warn("Storm Wyrm: dragon.js not loaded");
-    return;
-  }
-
-  const testHost = document.createElement("div");
-
-  testHost.style.position = "fixed";
-  testHost.style.left = "50%";
-  testHost.style.top = "50%";
-  testHost.style.width = "180px";
-  testHost.style.height = "150px";
-  testHost.style.transform = "translate(-50%, -50%)";
-  testHost.style.zIndex = "99999";
-  testHost.style.pointerEvents = "none";
-
-  document.body.appendChild(testHost);
-
-  window.NowOrNeverDragon.mount(testHost);
-
-});
 // Authentication startup is intentionally deferred until the
 // auth listener below is registered. This prevents the login page
 // from flashing before Supabase restores a saved session.
