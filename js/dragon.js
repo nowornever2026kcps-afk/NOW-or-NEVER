@@ -414,27 +414,72 @@
 
   function createDragon(host){
 
-    if(!host || host.dataset.dragonActive==="true"){
-      return;
-    }
+  if(!host || host.dataset.dragonActive==="true"){
+    return;
+  }
 
-    host.dataset.dragonActive="true";
+  host.dataset.dragonActive="true";
 
-    host.classList.add("leader-dragon-host");
+  host.classList.add("leader-dragon-host");
 
-    const dragon=document.createElement("div");
+  const dragon=document.createElement("div");
 
-    dragon.className="dragon-cosmetic";
-    dragon.dataset.dragon="storm-wyrm";
+  dragon.className="dragon-cosmetic";
+  dragon.dataset.dragon="storm-wyrm";
 
-    const aura=document.createElement("div");
-    aura.className="dragon-aura";
+  const aura=document.createElement("div");
+  aura.className="dragon-aura";
 
-    const core=document.createElement("div");
-core.className="dragon-core";
+  const core=document.createElement("div");
+  core.className="dragon-core";
 
-dragon.appendChild(aura);
-dragon.appendChild(core);
+  dragon.appendChild(aura);
+  dragon.appendChild(core);
+
+  /* =====================================================
+     TINY STORM WYRM IMAGE
+     ===================================================== */
+
+  const dragonImage=document.createElement("img");
+
+  dragonImage.className="dragon-image";
+  dragonImage.src="assets/storm-wyrm.png";
+  dragonImage.alt="Storm Wyrm";
+  dragonImage.draggable=false;
+
+  dragon.appendChild(dragonImage);
+
+  /* =====================================================
+     IMPORTANT:
+     Add dragon to DOM BEFORE creating/measuring canvas.
+     Canvas is still used for lightning effects.
+     ===================================================== */
+
+  host.appendChild(dragon);
+
+  const canvas=createCanvas(dragon);
+
+  createParticles(dragon);
+
+  const label=document.createElement("div");
+
+  label.className="dragon-label";
+  label.textContent="STORM WYRM";
+
+  dragon.appendChild(label);
+
+  activeHosts.add({
+    host,
+    dragon,
+    canvas
+  });
+
+  if(!reducedMotion()){
+    startLoop();
+  }
+
+  return dragon;
+}
 
 /* =====================================================
    Storm Wyrm image
@@ -501,64 +546,81 @@ const canvas=createCanvas(dragon);
     },500);
   }
 
-  function startLoop(){
+ function startLoop(){
 
-    if(rafId) return;
+  if(rafId) return;
 
-    lastTime=performance.now();
+  lastTime=performance.now();
 
-    const loop=(now)=>{
+  const loop=(now)=>{
 
-      rafId=requestAnimationFrame(loop);
+    rafId=requestAnimationFrame(loop);
 
-      if(activeHosts.size===0){
-        cancelAnimationFrame(rafId);
-        rafId=null;
-        return;
-      }
+    if(activeHosts.size===0){
 
-      const dt=now-lastTime;
+      cancelAnimationFrame(rafId);
+      rafId=null;
 
-      lastTime=now;
+      return;
+    }
 
-      lightningTimer+=dt;
+    const dt=now-lastTime;
 
-      if(lightningTimer>=nextLightning){
+    lastTime=now;
 
-        lightningTimer=0;
+    lightningTimer+=dt;
 
-        nextLightning=random(
-          isMobile()?4200:2600,
-          isMobile()?7000:5200
-        );
+    if(lightningTimer>=nextLightning){
 
-        activeHosts.forEach(entry=>{
-          lightningBurst(entry.host);
-        });
-      }
+      lightningTimer=0;
+
+      nextLightning=random(
+        isMobile()?4200:2600,
+        isMobile()?7000:5200
+      );
 
       activeHosts.forEach(entry=>{
 
-        const canvas=entry.canvas;
+        lightningBurst(entry.host);
 
-        const rect=canvas.getBoundingClientRect();
-
-        const ctx=canvas.getContext("2d");
-
-        if(!ctx) return;
-
-        ctx.clearRect(
-              0,
-              0,
-              rect.width,
-              rect.height
-            );
       });
-    };
 
-    rafId=requestAnimationFrame(loop);
-  }
+    }
 
+    /*
+      The Dragon is now an IMG element.
+
+      Do NOT call drawDragon() anymore.
+
+      The canvas remains available exclusively
+      for lightning effects.
+    */
+
+    activeHosts.forEach(entry=>{
+
+      const canvas=entry.canvas;
+
+      if(!canvas) return;
+
+      const rect=canvas.getBoundingClientRect();
+
+      const ctx=canvas.getContext("2d");
+
+      if(!ctx) return;
+
+      ctx.clearRect(
+        0,
+        0,
+        rect.width,
+        rect.height
+      );
+
+    });
+
+  };
+
+  rafId=requestAnimationFrame(loop);
+}
   function destroyAll(){
 
     activeHosts.forEach(entry=>{
