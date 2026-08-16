@@ -185,6 +185,17 @@ async function renderBoard(){
     const totalPoints=data.reduce((s,x)=>s+(Number(x.points)||0),0);
     const totalHours=data.reduce((s,x)=>s+(Number(x.effective_hours)||0),0);
     await renderGroupStats(data,totalPoints,totalHours);
+     if(window.NowOrNeverDragon){
+
+  document
+    .querySelectorAll("[data-dragon-host='true']")
+    .forEach(host => {
+
+      window.NowOrNeverDragon.mount(host);
+
+    });
+
+}
 
   }catch(err){
     console.error("LEADERBOARD:",err);
