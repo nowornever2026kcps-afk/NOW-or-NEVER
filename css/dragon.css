@@ -1,0 +1,317 @@
+/* =========================================================
+   NOW OR NEVER — STORM WYRM COSMETIC
+   Lightweight animated dragon effect
+   ========================================================= */
+
+.dragon-cosmetic {
+  position: absolute;
+  inset: -42px -55px -42px -55px;
+  pointer-events: none;
+  z-index: 8;
+  overflow: visible;
+  opacity: 0;
+  transform: scale(.82);
+  animation: dragonMaterialize .9s cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+.dragon-cosmetic.is-exiting {
+  animation: dragonDissolve .45s ease forwards;
+}
+
+.dragon-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.dragon-aura {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 72px;
+  height: 72px;
+  transform: translate(-50%,-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      rgba(110,225,255,.30) 0%,
+      rgba(95,110,255,.16) 35%,
+      rgba(75,70,255,.06) 60%,
+      transparent 72%
+    );
+  filter: blur(5px);
+  animation: dragonAura 2.4s ease-in-out infinite;
+}
+
+.dragon-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42px;
+  height: 30px;
+  transform: translate(-50%,-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(200,250,255,.95) 0%,
+      rgba(70,190,255,.45) 25%,
+      rgba(70,100,255,.18) 55%,
+      transparent 75%
+    );
+  filter: blur(2px);
+  animation: dragonCorePulse 1.6s ease-in-out infinite;
+}
+
+.dragon-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #b9f6ff;
+  box-shadow:
+    0 0 5px rgba(120,230,255,.95),
+    0 0 12px rgba(80,120,255,.75);
+  animation:
+    dragonParticleFloat
+    var(--particle-duration, 2.8s)
+    ease-in-out
+    infinite;
+  animation-delay: var(--particle-delay, 0s);
+}
+
+.dragon-particle:nth-child(2n) {
+  width: 2px;
+  height: 2px;
+}
+
+.dragon-particle:nth-child(3n) {
+  width: 4px;
+  height: 4px;
+}
+
+.dragon-flash {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 150px;
+  height: 150px;
+  transform: translate(-50%,-50%) scale(.5);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(220,250,255,.45),
+    rgba(80,150,255,.14) 30%,
+    transparent 68%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dragon-flash.active {
+  animation: dragonFlash .42s ease-out;
+}
+
+.dragon-lightning-burst {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dragon-lightning-burst.active {
+  animation: dragonBurst .32s ease-out;
+}
+
+.dragon-label {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(180,235,255,.8);
+  text-shadow:
+    0 0 5px rgba(70,190,255,.9),
+    0 0 12px rgba(90,90,255,.65);
+  opacity: .75;
+}
+
+/* =========================================================
+   Leaderboard dragon
+   ========================================================= */
+
+.leader-dragon-host {
+  position: absolute;
+  inset: -30px -42px -30px -42px;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.leader-dragon-host .dragon-cosmetic {
+  inset: 0;
+}
+
+.leader-dragon-host .dragon-label {
+  display: none;
+}
+
+/* =========================================================
+   Animations
+   ========================================================= */
+
+@keyframes dragonMaterialize {
+  0% {
+    opacity: 0;
+    transform: scale(.45) rotate(-4deg);
+    filter: blur(7px);
+  }
+
+  55% {
+    opacity: 1;
+    transform: scale(1.08) rotate(1deg);
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: none;
+  }
+}
+
+@keyframes dragonDissolve {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: none;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.15) rotate(5deg);
+    filter: blur(7px);
+  }
+}
+
+@keyframes dragonAura {
+  0%,100% {
+    transform: translate(-50%,-50%) scale(.82);
+    opacity: .55;
+  }
+
+  50% {
+    transform: translate(-50%,-50%) scale(1.15);
+    opacity: .95;
+  }
+}
+
+@keyframes dragonCorePulse {
+  0%,100% {
+    transform: translate(-50%,-50%) scale(.8);
+    opacity: .6;
+  }
+
+  50% {
+    transform: translate(-50%,-50%) scale(1.15);
+    opacity: 1;
+  }
+}
+
+@keyframes dragonParticleFloat {
+  0% {
+    transform:
+      translate3d(0,18px,0)
+      scale(.4);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: .95;
+  }
+
+  70% {
+    opacity: .75;
+  }
+
+  100% {
+    transform:
+      translate3d(
+        var(--particle-x, 0px),
+        var(--particle-y, -55px),
+        0
+      )
+      scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes dragonFlash {
+  0% {
+    opacity: .95;
+    transform: translate(-50%,-50%) scale(.35);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%,-50%) scale(1.45);
+  }
+}
+
+@keyframes dragonBurst {
+  0% {
+    opacity: .9;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+/* =========================================================
+   Mobile performance
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .dragon-cosmetic {
+    inset: -28px -34px -28px -34px;
+  }
+
+  .dragon-aura {
+    width: 58px;
+    height: 58px;
+    filter: blur(4px);
+  }
+
+  .dragon-label {
+    display: none;
+  }
+
+  .dragon-particle:nth-child(n+9) {
+    display: none;
+  }
+}
+
+/* =========================================================
+   Reduced motion
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .dragon-cosmetic,
+  .dragon-aura,
+  .dragon-core,
+  .dragon-particle {
+    animation: none !important;
+  }
+
+  .dragon-cosmetic {
+    opacity: 1;
+    transform: none;
+  }
+}
