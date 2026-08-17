@@ -1812,7 +1812,48 @@ body::after{width:230px;height:230px;right:-90px;top:62%;background:rgba(103,232
 @keyframes ambientA{0%{transform:translate(0,0)}50%{transform:translate(80px,70px) scale(1.15)}100%{transform:translate(20px,150px) scale(.9)}}
 @keyframes ambientB{0%{transform:translate(0,0)}50%{transform:translate(-90px,-70px) scale(1.18)}100%{transform:translate(-20px,-140px) scale(.92)}}
 #mainApp{position:relative}
-#mainApp::before{content:"";position:fixed;top:-30%;left:-20%;width:40%;height:160%;background:linear-gradient(90deg,transparent,rgba(139,92,246,.045),rgba(103,232,249,.07),transparent);filter:blur(18px);transform:rotate(14deg);pointer-events:none;z-index:-1;animation:lightSweep 12s linear infinite}
+#mainApp::before{
+  content:"";
+  position:fixed;
+  top:0;
+  left:-35vw;
+  width:30vw;
+  height:100vh;
+  background:linear-gradient(
+    90deg,
+    transparent,
+    rgba(139,92,246,.045),
+    rgba(103,232,249,.07),
+    transparent
+  );
+  filter:blur(18px);
+  pointer-events:none;
+  z-index:-1;
+  animation:lightSweepSafe 12s linear infinite;
+  contain:strict;
+}
+
+@keyframes lightSweepSafe{
+  0%{
+    transform:translate3d(0,0,0);
+    opacity:0;
+  }
+  12%{
+    opacity:1;
+  }
+  50%{
+    transform:translate3d(140vw,0,0);
+    opacity:.9;
+  }
+  85%{
+    transform:translate3d(190vw,0,0);
+    opacity:.55;
+  }
+  100%{
+    transform:translate3d(220vw,0,0);
+    opacity:0;
+  }
+}
 @keyframes lightSweep{0%{left:-45%;opacity:0}12%{opacity:1}50%{left:70%;opacity:.9}85%{opacity:.55}100%{left:125%;opacity:0}}
 .card,.command-center,.mini-metric,.shop-item,.shop-feature,.shop-balance,.personal-hero,.ring-card,.streak-box,.stat,.personal-stat{
   position:relative;overflow:hidden;
