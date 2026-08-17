@@ -1957,55 +1957,55 @@ body::after{width:230px;height:230px;right:-90px;top:62%;background:rgba(103,232
    Prevent decorative lighting from creating page overflow
    ========================================================= */
 
-html,
-body {
-  overflow-x: hidden;
-}
-
-/* Keep all decorative background layers inside the viewport */
-body::before,
-body::after,
-#mainApp::before,
-#mainApp::after,
-.ambient-lighting,
-.ambient-lighting::before,
-.ambient-lighting::after,
-.light-orb {
-  position: fixed !important;
-  pointer-events: none !important;
-  max-width: 100vw !important;
-  max-height: 100vh !important;
-}
-
-/* Ambient lighting itself must never contribute to document height */
-.ambient-lighting {
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  overflow: hidden !important;
-}
-
-/* Keep the moving purple lights viewport-bound */
-.ambient-lighting .light-orb {
-  max-width: 100vw !important;
-  max-height: 100vh !important;
-}
-
-/* Prevent the main light sweep from becoming a huge vertical layer */
-#mainApp::before {
-  top: 0 !important;
-  left: -35vw !important;
-  width: 30vw !important;
-  height: 100vh !important;
-  transform: none !important;
-}
-
-/* Keep pseudo-element decorations from affecting layout */
-body::before,
-body::after,
-#mainApp::before,
-#mainApp::after,
-.ambient-lighting::before,
-.ambient-lighting::after {
-  contain: strict;
-}
+    html,
+    body {
+      overflow-x: hidden;
+    }
+    
+    /* Keep all decorative background layers inside the viewport */
+    body::before,
+    body::after,
+    #mainApp::before,
+    #mainApp::after,
+    .ambient-lighting,
+    .ambient-lighting::before,
+    .ambient-lighting::after,
+    .light-orb {
+      position: fixed !important;
+      pointer-events: none !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+    }
+    
+    /* Ambient lighting itself must never contribute to document height */
+    .ambient-lighting {
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      overflow: hidden !important;
+    }
+    
+    /* Keep the moving purple lights viewport-bound */
+    .ambient-lighting .light-orb {
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+    }
+    
+    /* Prevent the main light sweep from becoming a huge vertical layer */
+    #mainApp::before {
+      top: 0 !important;
+      left: -35vw !important;
+      width: 30vw !important;
+      height: 100vh !important;
+      transform: none !important;
+    }
+    
+    /* Keep pseudo-element decorations from affecting layout */
+    body::before,
+    body::after,
+    #mainApp::before,
+    #mainApp::after,
+    .ambient-lighting::before,
+    .ambient-lighting::after {
+      contain: strict;
+    }
