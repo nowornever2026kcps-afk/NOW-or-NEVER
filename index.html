@@ -2278,35 +2278,187 @@ async function renderTasks(){
 }
 
 async function addTask(){
+
+  console.log(
+    "[NOW AI] addTask() started"
+  );
+
   if(!currentUser) return;
 
-  const input=$("newTaskInput");
+
+  const input =
+    $("newTaskInput");
 
   if(!input) return;
 
-  const text=input.value.trim();
+
+  const text =
+    input.value.trim();
 
   if(!text) return;
 
-  const {error}=await supabaseClient
-    .from("tasks")
-    .insert({
-      student_id:currentUser.id,
-      task_name:text,
-      completed:false,
-      task_date:localDate()
-    });
+
+  /* =====================================================
+     SAVE TASK
+     ===================================================== */
+
+  const {error} =
+    await supabaseClient
+      .from("tasks")
+      .insert({
+        student_id:
+          currentUser.id,
+
+        task_name:
+          text,
+
+        completed:
+          false,
+
+        task_date:
+          localDate()
+      });
+
 
   if(error){
-    console.error("TASK INSERT:",error);
-    showToast(error.message);
+
+    console.error(
+      "TASK INSERT:",
+      error
+    );
+
+    showToast(
+      error.message
+    );
+
     return;
   }
 
-  input.value="";
-  showToast("Task added ✓");
+
+  input.value = "";
+
+  showToast(
+    "Task added ✓"
+  );
+
 
   await renderTasks();
+
+
+  /* =====================================================
+     NOW AI — IMMEDIATE COMPANION
+     ===================================================== */
+
+  console.log(
+    "[NOW AI] Task saved:",
+    text
+  );
+
+
+  if(
+    typeof window.showAICompanion ===
+    "function"
+  ){
+
+    console.log(
+      "[NOW AI] Showing companion"
+    );
+
+    window.showAICompanion(
+      "Hmm... let me check how effective this task is. 🤔",
+      "thinking",
+      0
+    );
+
+  }else{
+
+    console.error(
+      "[NOW AI] showAICompanion() not found"
+    );
+
+    return;
+
+  }
+
+
+  /* =====================================================
+     NOW AI — ASK GROQ
+     ===================================================== */
+
+  if(
+    typeof window.analyzeTaskWithAI ===
+    "function"
+  ){
+
+    console.log(
+      "[NOW AI] Sending task to AI:",
+      text
+    );
+
+
+    try{
+
+      const analysis =
+        await window.analyzeTaskWithAI(
+          text
+        );
+
+
+      console.log(
+        "[NOW AI] AI returned:",
+        analysis
+      );
+
+
+      if(
+        analysis &&
+        typeof window.showAITaskAnalysis ===
+        "function"
+      ){
+
+        window.showAITaskAnalysis(
+          analysis
+        );
+
+      }else{
+
+        console.warn(
+          "[NOW AI] No analysis received"
+        );
+
+        window.showAICompanion(
+          "I've saved the task, but I couldn't analyze it right now. 👀",
+          "thinking",
+          6000
+        );
+
+      }
+
+
+    }catch(error){
+
+      console.error(
+        "[NOW AI] Task analysis error:",
+        error
+      );
+
+      window.showAICompanion(
+        "Your task is saved! I'll analyze it next time. 🤖",
+        "thinking",
+        6000
+      );
+
+    }
+
+
+  }else{
+
+    console.error(
+      "[NOW AI] analyzeTaskWithAI() not found"
+    );
+
+  }
+
 }
 
 async function toggleTask(id,completed){
