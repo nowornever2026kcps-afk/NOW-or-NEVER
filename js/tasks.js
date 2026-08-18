@@ -277,9 +277,50 @@ async function addTask(){
   }
 
   input.value="";
-  showToast("Task added ✓");
+showToast("Task added ✓");
 
-  await renderTasks();
+await renderTasks();
+
+/*
+ * AI companion analysis.
+ *
+ * This happens AFTER the task is safely saved.
+ * If AI fails, the task is still completely fine.
+ */
+if (
+  typeof analyzeTaskWithAI ===
+  "function"
+) {
+
+  /*
+   * Don't block the task system.
+   */
+  analyzeTaskWithAI(text)
+    .then(analysis => {
+
+      if (
+        analysis &&
+        typeof showAITaskAnalysis ===
+        "function"
+      ) {
+
+        showAITaskAnalysis(
+          analysis
+        );
+
+      }
+
+    })
+    .catch(error => {
+
+      console.warn(
+        "AI task analysis skipped:",
+        error
+      );
+
+    });
+
+}
 }
 
 async function toggleTask(id,completed){
