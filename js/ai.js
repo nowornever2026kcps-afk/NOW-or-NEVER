@@ -629,196 +629,264 @@
      SEND MESSAGE
      ======================================================= */
 
-  async function sendMessage() {
+ async function sendMessage() {
+
+  if (sending) return;
+
+
+  const user =
+    getCurrentUserSafe();
+
+
+  if (!user) {
 
     if (
-      sending
-    ) return;
-
-
-    const user =
-      getCurrentUserSafe();
-
-
-    if (!user) {
-
-      if (
-        typeof showToast ===
-        "function"
-      ) {
-
-        showToast(
-          "Please login first."
-        );
-
-      }
-
-      return;
-
-    }
-
-
-    const message =
-      String(
-        aiInput?.value ?? ""
-      ).trim();
-
-
-    if (!message) {
-
-      return;
-
-    }
-
-
-    if (
-      message.length >
-      MAX_MESSAGE_LENGTH
+      typeof showToast ===
+      "function"
     ) {
 
-      if (
-        typeof showToast ===
-        "function"
-      ) {
-
-        showToast(
-          "Message is too long."
-        );
-
-      }
-
-      return;
+      showToast(
+        "Please login first."
+      );
 
     }
 
+    return;
+  }
 
-    /* -----------------------------------------------------
-       UI
-       ----------------------------------------------------- */
 
-    addMessage(
-      "user",
+  const message =
+    String(
+      aiInput?.value ?? ""
+    ).trim();
+
+
+  if (!message) {
+    return;
+  }
+
+
+  if (
+    message.length >
+    MAX_MESSAGE_LENGTH
+  ) {
+
+    if (
+      typeof showToast ===
+      "function"
+    ) {
+
+      showToast(
+        "Message is too long."
+      );
+
+    }
+
+    return;
+  }
+
+
+  /* =====================================================
+     SHOW USER MESSAGE
+     ===================================================== */
+
+  addMessage(
+    "user",
+    message
+  );
+
+
+  aiInput.value = "";
+
+  autoResize();
+
+  hideWelcome();
+
+
+  const typingId =
+    addTyping();
+
+
+  setSending(true);
+
+
+  try {
+
+    console.log(
+      "[NOW AI CHAT] Sending:",
       message
     );
 
 
-    aiInput.value = "";
+    /* ===================================================
+       SEND TO SUPABASE EDGE FUNCTION
+       =================================================== */
 
-    autoResize();
-
-    hideWelcome();
-
-
-    const typingId =
-      addTyping();
-
-
-    setSending(
-      true
-    );
-
-
-    try {
-
-      /*
-       * Supabase automatically uses
-       * the current authenticated session
-       * when invoking the Edge Function.
-       */
-
-      const {
-        data,
-        error
-      } =
-        await supabaseClient.functions.invoke(
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .functions
+        .invoke(
           FUNCTION_NAME,
           {
             body: {
-              message
+
+              event:
+                "chat",
+
+              message:
+                message
+
             }
           }
         );
 
 
-      removeTyping(
-        typingId
-      );
+    removeTyping(
+      typingId
+    );
 
 
-      if (error) {
-
-        console.error(
-          "NOW AI FUNCTION ERROR:",
-          error
-        );
-
-        addMessage(
-          "ai",
-          "I couldn't connect to NOW AI right now. Please try again."
-        );
-
-        return;
-
-      }
+    console.log(
+      "[NOW AI CHAT] Response:",
+      data
+    );
 
 
-      if (
-        !data ||
-        !data.success ||
-        !data.answer
-      ) {
+    /* ===================================================
+       ERROR
+       =================================================== */
 
-        console.error(
-          "NOW AI INVALID RESPONSE:",
-          data
-        );
-
-        addMessage(
-          "ai",
-          data?.error ||
-          "NOW AI returned an unexpected response."
-        );
-
-        return;
-
-      }
-
-
-      addMessage(
-        "ai",
-        data.answer
-      );
-
-
-    } catch (error) {
-
-      removeTyping(
-        typingId
-      );
-
+    if (error) {
 
       console.error(
-        "NOW AI ERROR:",
+        "[NOW AI CHAT] FUNCTION ERROR:",
         error
       );
 
 
       addMessage(
         "ai",
-        "Something went wrong while contacting NOW AI. Please try again."
+        "I couldn't connect to NOW AI right now. Please try again."
       );
 
 
-    } finally {
+      return;
+    }
 
-      setSending(
-        false
+
+    /* ===================================================
+       VALIDATE RESPONSE
+       =================================================== */
+
+    if (
+      !data ||
+      !data.success ||
+      !data.analysis
+    ) {
+
+      console.error(
+        "[NOW AI CHAT] INVALID RESPONSE:",
+        data
       );
+
+
+      addMessage(
+        "ai",
+        data?.error ||
+        "NOW AI returned an unexpected response."
+      );
+
+
+      return;
+    }
+
+
+    /* ===================================================
+       EXTRACT AI RESPONSE
+       =================================================== */
+
+    const analysis =
+      data.analysis;
+
+
+    let reply =
+      String(
+        analysis.message ||
+        ""
+      ).trim();
+
+
+    if (
+      analysis.suggestion
+    ) {
+
+      const suggestion =
+        String(
+          analysis.suggestion
+        ).trim();
+
+
+      if (suggestion) {
+
+        reply +=
+          "\n\n💡 " +
+          suggestion;
+
+      }
 
     }
 
+
+    if (!reply) {
+
+      reply =
+        "I'm here! Tell me what you'd like help with. 🤖";
+
+    }
+
+
+    /* ===================================================
+       SHOW AI RESPONSE IN CHAT
+       =================================================== */
+
+    addMessage(
+      "ai",
+      reply
+    );
+
+
+  } catch (error) {
+
+
+    removeTyping(
+      typingId
+    );
+
+
+    console.error(
+      "[NOW AI CHAT] ERROR:",
+      error
+    );
+
+
+    addMessage(
+      "ai",
+      "Something went wrong while contacting NOW AI. Please try again."
+    );
+
+
+  } finally {
+
+    setSending(
+      false
+    );
+
   }
 
+}
 
   /* =======================================================
      MESSAGE UI
