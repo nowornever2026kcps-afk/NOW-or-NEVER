@@ -701,5 +701,294 @@
   .now-ai-bubble {
     max-width: 90%;
   }
+/* =========================================================
+   NOW AI — PET COMPANION BUBBLE
+   ========================================================= */
 
+#nowAiCompanion {
+  position: fixed;
+
+  right: 94px;
+  bottom: 30px;
+
+  width: min(310px, calc(100vw - 115px));
+
+  z-index: 99991;
+
+  display: flex;
+  align-items: flex-end;
+  gap: 9px;
+
+  pointer-events: none;
+
+  opacity: 0;
+
+  transform:
+    translateY(12px)
+    scale(.94);
+
+  transform-origin:
+    bottom right;
+
+  transition:
+    opacity .25s ease,
+    transform .25s ease;
+}
+
+#nowAiCompanion.show {
+  opacity: 1;
+
+  transform:
+    translateY(0)
+    scale(1);
+}
+
+
+/* Robot */
+
+.now-ai-companion-robot {
+  width: 46px;
+  height: 46px;
+
+  flex: 0 0 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 15px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #1d1d1d,
+      #303030
+    );
+
+  border:
+    1px solid
+    rgba(255,255,255,.12);
+
+  box-shadow:
+    0 8px 25px
+    rgba(0,0,0,.35),
+    0 0 20px
+    rgba(130,100,255,.12);
+
+  font-size: 24px;
+
+  animation:
+    nowAiPetFloat
+    2.8s
+    ease-in-out
+    infinite;
+}
+
+
+/* Speech bubble */
+
+.now-ai-companion-message {
+  position: relative;
+
+  min-width: 0;
+
+  padding:
+    11px 14px;
+
+  border-radius:
+    16px
+    16px
+    16px
+    5px;
+
+  background:
+    rgba(22,22,22,.97);
+
+  border:
+    1px solid
+    rgba(255,255,255,.11);
+
+  color:
+    rgba(255,255,255,.92);
+
+  font-size: 13px;
+
+  line-height: 1.45;
+
+  box-shadow:
+    0 12px 35px
+    rgba(0,0,0,.38),
+    0 0 0 1px
+    rgba(255,255,255,.025);
+
+  backdrop-filter:
+    blur(14px);
+
+  -webkit-backdrop-filter:
+    blur(14px);
+}
+
+
+/* Small triangle pointing toward robot */
+
+.now-ai-companion-message::after {
+  content: "";
+
+  position: absolute;
+
+  left: -6px;
+  bottom: 12px;
+
+  width: 11px;
+  height: 11px;
+
+  background:
+    rgba(22,22,22,.97);
+
+  border-left:
+    1px solid
+    rgba(255,255,255,.11);
+
+  border-bottom:
+    1px solid
+    rgba(255,255,255,.11);
+
+  transform:
+    rotate(45deg);
+}
+
+
+/* Thinking animation */
+
+#nowAiCompanion.thinking
+.now-ai-companion-robot {
+
+  animation:
+    nowAiPetThink
+    .8s
+    ease-in-out
+    infinite;
+}
+
+
+/* Happy animation */
+
+#nowAiCompanion.happy
+.now-ai-companion-robot {
+
+  animation:
+    nowAiPetHappy
+    .55s
+    ease-in-out
+    2;
+}
+
+
+/* Floating */
+
+@keyframes nowAiPetFloat {
+
+  0%, 100% {
+    transform:
+      translateY(0);
+  }
+
+  50% {
+    transform:
+      translateY(-4px);
+  }
+
+}
+
+
+/* Thinking */
+
+@keyframes nowAiPetThink {
+
+  0%, 100% {
+    transform:
+      rotate(0deg)
+      translateY(0);
+  }
+
+  50% {
+    transform:
+      rotate(-6deg)
+      translateY(-3px);
+  }
+
+}
+
+
+/* Happy */
+
+@keyframes nowAiPetHappy {
+
+  0% {
+    transform:
+      scale(1)
+      rotate(0deg);
+  }
+
+  35% {
+    transform:
+      scale(1.13)
+      rotate(-6deg);
+  }
+
+  70% {
+    transform:
+      scale(1.08)
+      rotate(6deg);
+  }
+
+  100% {
+    transform:
+      scale(1)
+      rotate(0deg);
+  }
+
+}
+
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+  #nowAiCompanion {
+
+    right: 82px;
+    bottom: 24px;
+
+    width:
+      min(
+        250px,
+        calc(100vw - 94px)
+      );
+
+  }
+
+  .now-ai-companion-robot {
+
+    width: 40px;
+    height: 40px;
+
+    flex-basis: 40px;
+
+    border-radius: 13px;
+
+    font-size: 21px;
+
+  }
+
+  .now-ai-companion-message {
+
+    font-size: 12px;
+
+    padding:
+      9px 11px;
+
+  }
+
+}
 }
