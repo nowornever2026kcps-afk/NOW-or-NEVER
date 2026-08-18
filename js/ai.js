@@ -1032,3 +1032,170 @@
 
 
 })();
+
+/* =========================================================
+   AI EVENT SYSTEM
+   Used by Tasks / Daily / Tests / Achievements
+   ========================================================= */
+
+async function nowAIEvent(event, data = {}) {
+
+  try {
+
+    const user = getCurrentUserSafe();
+
+    if (!user) {
+      return null;
+    }
+
+    const {
+      data: response,
+      error
+    } = await supabaseClient.functions.invoke(
+      FUNCTION_NAME,
+      {
+        body: {
+          event,
+          data
+        }
+      }
+    );
+
+    if (error) {
+
+      console.error(
+        "NOW AI EVENT ERROR:",
+        error
+      );
+
+      return null;
+    }
+
+    if (
+      !response ||
+      !response.success ||
+      !response.analysis
+    ) {
+
+      console.error(
+        "NOW AI EVENT INVALID RESPONSE:",
+        response
+      );
+
+      return null;
+    }
+
+    return response.analysis;
+
+  } catch (error) {
+
+    console.error(
+      "NOW AI EVENT FAILED:",
+      error
+    );
+
+    return null;
+  }
+
+}
+
+
+/* =========================================================
+   TASK ANALYSIS
+   ========================================================= */
+
+async function analyzeTaskWithAI(taskName) {
+
+  if (!taskName) {
+    return null;
+  }
+
+  return await nowAIEvent(
+    "task_added",
+    {
+      task: taskName
+    }
+  );
+
+}
+
+
+/* =========================================================
+   SHOW AI TASK RESULT
+   ========================================================= */
+
+function showAITaskAnalysis(analysis) {
+
+  if (!analysis) {
+    return;
+  }
+
+  const score =
+    Number(analysis.score ?? 0);
+
+  const message =
+    String(
+      analysis.message ?? ""
+    );
+
+  const suggestion =
+    String(
+      analysis.suggestion ?? ""
+    );
+
+  const rating =
+    String(
+      analysis.rating ?? ""
+    );
+
+  const mood =
+    String(
+      analysis.mood ?? "thinking"
+    );
+
+  const moodEmoji = {
+    happy: "😊",
+    excited: "⚡",
+    thinking: "🤔",
+    concerned: "😟"
+  }[mood] || "🤖";
+
+
+  /*
+   * Open the existing AI panel
+   */
+
+  if (
+    typeof openPanel ===
+    "function"
+  ) {
+
+    openPanel();
+
+  }
+
+
+  /*
+   * Add a normal AI message using
+   * the existing NOW AI UI.
+   */
+
+  if (
+    typeof addMessage ===
+    "function"
+  ) {
+
+    addMessage(
+      "ai",
+      `
+        <strong>${moodEmoji} Task effectiveness: ${score}%</strong>
+        <br>
+        ${escapeHtml(message)}
+        <br><br>
+        <strong>💡 ${escapeHtml(suggestion)}</strong>
+      `
+    );
+
+  }
+
+}
