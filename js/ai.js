@@ -699,6 +699,7 @@
           FUNCTION_NAME,
           {
             body: {
+              event: "chat",
               message
             }
           }
@@ -728,31 +729,46 @@
 
 
       if (
-        !data ||
-        !data.success ||
-        !data.answer
-      ) {
-
-        console.error(
-          "NOW AI INVALID RESPONSE:",
-          data
-        );
-
-        addMessage(
-          "ai",
-          data?.error ||
-          "NOW AI returned an unexpected response."
-        );
-
-        return;
-
-      }
-
-
-      addMessage(
-        "ai",
-        data.answer
-      );
+           !data ||
+           !data.success ||
+           !data.analysis
+         ) {
+         
+           console.error(
+             "NOW AI INVALID RESPONSE:",
+             data
+           );
+         
+           addMessage(
+             "ai",
+             data?.error ||
+             "NOW AI returned an unexpected response."
+           );
+         
+           return;
+         }
+         
+         const analysis = data.analysis;
+         
+         let reply = "";
+         
+         if (analysis.message) {
+           reply += analysis.message;
+         }
+         
+         if (
+           analysis.suggestion &&
+           analysis.suggestion.trim()
+         ) {
+           reply +=
+             "\n\n💡 " +
+             analysis.suggestion;
+         }
+         
+         addMessage(
+           "ai",
+           reply
+         );
 
 
     } catch (error) {
@@ -1197,5 +1213,196 @@ function showAITaskAnalysis(analysis) {
     );
 
   }
+/* =========================================================
+   NOW AI EVENT SYSTEM
+   ========================================================= */
 
+async function nowAIEvent(event, data = {}) {
+
+  try {
+
+    const user =
+      getCurrentUserSafe();
+
+    if (!user) {
+      return null;
+    }
+
+    const {
+      data: response,
+      error
+    } =
+      await supabaseClient.functions.invoke(
+        FUNCTION_NAME,
+        {
+          body: {
+            event,
+            data
+          }
+        }
+      );
+
+    if (error) {
+
+      console.error(
+        "NOW AI EVENT ERROR:",
+        error
+      );
+
+      return null;
+    }
+
+    if (
+      !response ||
+      !response.success ||
+      !response.analysis
+    ) {
+
+      console.error(
+        "NOW AI EVENT INVALID RESPONSE:",
+        response
+      );
+
+      return null;
+    }
+
+    return response.analysis;
+
+  } catch (error) {
+
+    console.error(
+      "NOW AI EVENT FAILED:",
+      error
+    );
+
+    return null;
+  }
+
+}
+
+
+/* =========================================================
+   ANALYZE TASK
+   ========================================================= */
+
+async function analyzeTaskWithAI(
+  taskName
+) {
+
+  if (!taskName) {
+    return null;
+  }
+
+  return await nowAIEvent(
+    "task_added",
+    {
+      task: taskName
+    }
+  );
+
+}
+
+
+/* =========================================================
+   SHOW TASK ANALYSIS
+   ========================================================= */
+
+function showAITaskAnalysis(
+  analysis
+) {
+
+  if (!analysis) {
+    return;
+  }
+
+  const score =
+    Number(
+      analysis.score ?? 0
+    );
+
+  const message =
+    String(
+      analysis.message ?? ""
+    );
+
+  const suggestion =
+    String(
+      analysis.suggestion ?? ""
+    );
+
+  const mood =
+    String(
+      analysis.mood ?? "thinking"
+    );
+
+  const moodEmoji = {
+
+    happy: "😊",
+
+    excited: "⚡",
+
+    thinking: "🤔",
+
+    concerned: "😟"
+
+  }[mood] || "🤖";
+
+
+  /*
+   * Open the existing AI panel.
+   */
+
+  openPanel();
+
+
+  /*
+   * Remove the welcome screen.
+   */
+
+  hideWelcome();
+
+
+  /*
+   * Build a clean plain-text message.
+   * addMessage() intentionally uses textContent.
+   */
+
+  let reply =
+    `${moodEmoji} Task effectiveness: ${score}%`;
+
+  if (message) {
+
+    reply +=
+      `\n\n${message}`;
+
+  }
+
+  if (suggestion) {
+
+    reply +=
+      `\n\n💡 ${suggestion}`;
+
+  }
+
+
+  addMessage(
+    "ai",
+    reply
+  );
+
+}
+
+
+/* =========================================================
+   EXPOSE TASK FUNCTIONS TO OTHER JS FILES
+   ========================================================= */
+
+window.nowAIEvent =
+  nowAIEvent;
+
+window.analyzeTaskWithAI =
+  analyzeTaskWithAI;
+
+window.showAITaskAnalysis =
+  showAITaskAnalysis;
 }
