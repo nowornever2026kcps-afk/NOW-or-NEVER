@@ -291,7 +291,18 @@ if (
   typeof analyzeTaskWithAI ===
   "function"
 ) {
+if (
+  typeof window.showAICompanion ===
+  "function"
+) {
 
+  window.showAICompanion(
+    "Hmm... let me check how effective this task is. 🤔",
+    "thinking",
+    0
+  );
+
+}
   /*
    * Don't block the task system.
    */
