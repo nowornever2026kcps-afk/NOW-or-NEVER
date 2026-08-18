@@ -276,10 +276,64 @@ async function addTask(){
     return;
   }
 
-  input.value="";
-showToast("Task added ✓");
+   input.value="";
+  showToast("Task added ✓");
 
-await renderTasks();
+  await renderTasks();
+
+
+  /* =====================================================
+     NOW AI — TASK COMPANION
+     ===================================================== */
+
+  if (
+    typeof window.showAICompanion ===
+    "function"
+  ) {
+
+    window.showAICompanion(
+      "Hmm... let me check how effective this task is. 🤔",
+      "thinking",
+      0
+    );
+
+  }
+
+
+  if (
+    typeof window.analyzeTaskWithAI ===
+    "function"
+  ) {
+
+    window
+      .analyzeTaskWithAI(text)
+      .then(analysis => {
+
+        if (
+          analysis &&
+          typeof window.showAITaskAnalysis ===
+          "function"
+        ) {
+
+          window.showAITaskAnalysis(
+            analysis
+          );
+
+        }
+
+      })
+      .catch(error => {
+
+        console.warn(
+          "NOW AI task analysis skipped:",
+          error
+        );
+
+      });
+
+  }
+
+}
 
 /*
  * AI companion analysis.
