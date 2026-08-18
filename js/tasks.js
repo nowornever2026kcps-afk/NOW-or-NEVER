@@ -251,14 +251,21 @@ async function renderTasks(){
 }
 
 async function addTask(){
-  if(!currentUser) return;
+
+  console.log("[NOW AI] addTask() started.");
+
+  if(!currentUser){
+    showToast("Please login first.");
+    return;
+  }
 
   const input=$("newTaskInput");
-
-  if(!input) return;
+  if(!input){
+    console.error("[NOW AI] newTaskInput was not found.");
+    return;
+  }
 
   const text=input.value.trim();
-
   if(!text) return;
 
   const {error}=await supabaseClient
@@ -276,116 +283,40 @@ async function addTask(){
     return;
   }
 
-   input.value="";
+  input.value="";
   showToast("Task added ✓");
-
   await renderTasks();
 
-
-  /* =====================================================
-     NOW AI — TASK COMPANION
-     ===================================================== */
-
-  if (
-    typeof window.showAICompanion ===
-    "function"
-  ) {
-
+  if(typeof window.showAICompanion === "function"){
+    console.log("[NOW AI] Showing task companion.");
     window.showAICompanion(
       "Hmm... let me check how effective this task is. 🤔",
       "thinking",
       0
     );
-
+  } else {
+    console.error("[NOW AI] showAICompanion() is unavailable.");
   }
 
-
-  if (
-    typeof window.analyzeTaskWithAI ===
-    "function"
-  ) {
-
-    window
-      .analyzeTaskWithAI(text)
-      .then(analysis => {
-
-        if (
-          analysis &&
-          typeof window.showAITaskAnalysis ===
-          "function"
-        ) {
-
-          window.showAITaskAnalysis(
-            analysis
-          );
-
-        }
-
-      })
-      .catch(error => {
-
-        console.warn(
-          "NOW AI task analysis skipped:",
-          error
+  if(typeof window.analyzeTaskWithAI === "function"){
+    console.log("[NOW AI] Sending task to AI:", text);
+    try {
+      const analysis=await window.analyzeTaskWithAI(text);
+      if(analysis && typeof window.showAITaskAnalysis === "function"){
+        window.showAITaskAnalysis(analysis);
+      } else if(typeof window.showAICompanion === "function"){
+        window.showAICompanion(
+          "I couldn't analyze that task right now, but I've saved it. 👀",
+          "thinking",
+          6000
         );
-
-      });
-
-  }
-
-}
-
-/*
- * AI companion analysis.
- *
- * This happens AFTER the task is safely saved.
- * If AI fails, the task is still completely fine.
- */
-if (
-  typeof analyzeTaskWithAI ===
-  "function"
-) {
-if (
-  typeof window.showAICompanion ===
-  "function"
-) {
-
-  window.showAICompanion(
-    "Hmm... let me check how effective this task is. 🤔",
-    "thinking",
-    0
-  );
-
-}
-  /*
-   * Don't block the task system.
-   */
-  analyzeTaskWithAI(text)
-    .then(analysis => {
-
-      if (
-        analysis &&
-        typeof showAITaskAnalysis ===
-        "function"
-      ) {
-
-        showAITaskAnalysis(
-          analysis
-        );
-
       }
-
-    })
-    .catch(error => {
-
-      console.warn(
-        "AI task analysis skipped:",
-        error
-      );
-
-    });
-
-}
+    } catch(error){
+      console.error("[NOW AI] Task companion error:",error);
+    }
+  } else {
+    console.error("[NOW AI] analyzeTaskWithAI() is unavailable.");
+  }
 }
 
 async function toggleTask(id,completed){
