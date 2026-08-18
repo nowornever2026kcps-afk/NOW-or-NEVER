@@ -255,8 +255,245 @@
     document.body.appendChild(
       aiPanel
     );
+   /* -----------------------------------------------------
+   PET COMPANION BUBBLE
+   ----------------------------------------------------- */
+   
+   const companion =
+     document.createElement("div");
+   
+   companion.id =
+     "nowAiCompanion";
+   
+   companion.innerHTML = `
+     <div class="now-ai-companion-robot">
+       🤖
+     </div>
+   
+     <div class="now-ai-companion-message">
+       Hey! I'm watching your progress. 👀
+     </div>
+   `;
+   
+   document.body.appendChild(
+     companion
+   );
+      /* =========================================================
+         PET COMPANION
+         ========================================================= */
+      
+      let companionTimer = null;
+      
+      
+      function showAICompanion(
+        message,
+        mood = "thinking",
+        duration = 6500
+      ) {
+      
+        const companion =
+          document.getElementById(
+            "nowAiCompanion"
+          );
+      
+        if (!companion) {
+          return;
+        }
+      
+      
+        const messageBox =
+          companion.querySelector(
+            ".now-ai-companion-message"
+          );
+      
+      
+        if (!messageBox) {
+          return;
+        }
+      
+      
+        /*
+         * Clear previous timer.
+         */
+      
+        if (companionTimer) {
+      
+          clearTimeout(
+            companionTimer
+          );
+      
+        }
+      
+      
+        /*
+         * Set message.
+         */
+      
+        messageBox.textContent =
+          String(message || "");
+      
+      
+        /*
+         * Reset mood classes.
+         */
+      
+        companion.classList.remove(
+          "thinking",
+          "happy",
+          "excited",
+          "concerned"
+        );
+      
+      
+        companion.classList.add(
+          mood
+        );
+      
+      
+        /*
+         * Show.
+         */
+      
+        companion.classList.add(
+          "show"
+        );
+      
+      
+        /*
+         * Automatically hide.
+         */
+      
+        if (duration > 0) {
+      
+          companionTimer =
+            setTimeout(() => {
+      
+              companion.classList.remove(
+                "show"
+              );
+      
+            }, duration);
+      
+        }
+      
+      }
+      
+      
+      /* =========================================================
+         TASK ANALYSIS COMPANION
+         ========================================================= */
+      
+      function showAITaskAnalysis(
+        analysis
+      ) {
+      
+        if (!analysis) {
+          return;
+        }
+      
+      
+        const score =
+          Number(
+            analysis.score ?? 0
+          );
+      
+      
+        const message =
+          String(
+            analysis.message ?? ""
+          );
+      
+      
+        const suggestion =
+          String(
+            analysis.suggestion ?? ""
+          );
+      
+      
+        const mood =
+          String(
+            analysis.mood ?? "thinking"
+          );
+      
+      
+        let reply = "";
+      
+      
+        /*
+         * Give the robot personality.
+         */
+      
+        if (
+          score >= 90
+        ) {
+      
+          reply =
+            `⚡ ${score}% — Excellent task!`;
+      
+        }
+      
+        else if (
+          score >= 75
+        ) {
+      
+          reply =
+            `😊 ${score}% — That's a good task!`;
+      
+        }
+      
+        else if (
+          score >= 55
+        ) {
+      
+          reply =
+            `🤔 ${score}% — It could be stronger.`;
+      
+        }
+      
+        else {
+      
+          reply =
+            `👀 ${score}% — Let's improve this task.`;
+      
+        }
+      
+      
+        if (message) {
+      
+          reply +=
+            ` ${message}`;
+      
+        }
+      
+      
+        if (suggestion) {
+      
+          reply +=
+            ` 💡 ${suggestion}`;
+      
+        }
+      
+      
+        showAICompanion(
+          reply,
+          mood === "happy"
+            ? "happy"
+            : mood,
+          8000
+        );
+      
+      }
 
 
+/* =========================================================
+   EXPOSE COMPANION FUNCTIONS
+   ========================================================= */
+
+window.showAICompanion =
+  showAICompanion;
+
+window.showAITaskAnalysis =
+  showAITaskAnalysis;
     /* -----------------------------------------------------
        REFERENCES
        ----------------------------------------------------- */
