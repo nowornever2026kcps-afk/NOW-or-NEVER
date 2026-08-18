@@ -1371,7 +1371,79 @@ async function analyzeTaskWithAI(taskName) {
   );
 
 }
+/* =========================================================
+   TASK AI ANALYSIS
+   ========================================================= */
 
+async function analyzeTaskWithAI(
+  taskName
+) {
+
+  if (!taskName) {
+    return null;
+  }
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.functions.invoke(
+        FUNCTION_NAME,
+        {
+          body: {
+            event: "task_added",
+
+            data: {
+              task: taskName
+            }
+          }
+        }
+      );
+
+
+    if (error) {
+
+      console.error(
+        "NOW AI TASK FUNCTION ERROR:",
+        error
+      );
+
+      return null;
+    }
+
+
+    if (
+      !data ||
+      !data.success ||
+      !data.analysis
+    ) {
+
+      console.error(
+        "NOW AI TASK INVALID RESPONSE:",
+        data
+      );
+
+      return null;
+    }
+
+
+    return data.analysis;
+
+  } catch (error) {
+
+    console.error(
+      "NOW AI TASK ERROR:",
+      error
+    );
+
+    return null;
+
+  }
+
+}
 
 /* =========================================================
    SHOW AI TASK RESULT
