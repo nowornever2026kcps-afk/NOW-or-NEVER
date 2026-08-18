@@ -1700,7 +1700,7 @@ function showAITaskAnalysis(
   );
 
 }
-
+}
 
 /* =========================================================
    EXPOSE TASK FUNCTIONS TO OTHER JS FILES
@@ -1714,4 +1714,3 @@ window.analyzeTaskWithAI =
 
 window.showAITaskAnalysis =
   showAITaskAnalysis;
-}
