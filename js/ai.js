@@ -37,6 +37,9 @@
   let initialized = false;
   let sending = false;
 
+  let companion = null;
+  let companionTimer = null;
+
 
   /* =======================================================
      HELPERS
@@ -255,245 +258,40 @@
     document.body.appendChild(
       aiPanel
     );
-   /* -----------------------------------------------------
-   PET COMPANION BUBBLE
-   ----------------------------------------------------- */
-   
-   const companion =
-     document.createElement("div");
-   
-   companion.id =
-     "nowAiCompanion";
-   
-   companion.innerHTML = `
-     <div class="now-ai-companion-robot">
-       🤖
-     </div>
-   
-     <div class="now-ai-companion-message">
-       Hey! I'm watching your progress. 👀
-     </div>
-   `;
-   
-   document.body.appendChild(
-     companion
-   );
-      /* =========================================================
-         PET COMPANION
-         ========================================================= */
-      
-      let companionTimer = null;
-      
-      
-      function showAICompanion(
-        message,
-        mood = "thinking",
-        duration = 6500
-      ) {
-      
-        const companion =
-          document.getElementById(
-            "nowAiCompanion"
-          );
-      
-        if (!companion) {
-          return;
-        }
-      
-      
-        const messageBox =
-          companion.querySelector(
-            ".now-ai-companion-message"
-          );
-      
-      
-        if (!messageBox) {
-          return;
-        }
-      
-      
-        /*
-         * Clear previous timer.
-         */
-      
-        if (companionTimer) {
-      
-          clearTimeout(
-            companionTimer
-          );
-      
-        }
-      
-      
-        /*
-         * Set message.
-         */
-      
-        messageBox.textContent =
-          String(message || "");
-      
-      
-        /*
-         * Reset mood classes.
-         */
-      
-        companion.classList.remove(
-          "thinking",
-          "happy",
-          "excited",
-          "concerned"
-        );
-      
-      
-        companion.classList.add(
-          mood
-        );
-      
-      
-        /*
-         * Show.
-         */
-      
-        companion.classList.add(
-          "show"
-        );
-      
-      
-        /*
-         * Automatically hide.
-         */
-      
-        if (duration > 0) {
-      
-          companionTimer =
-            setTimeout(() => {
-      
-              companion.classList.remove(
-                "show"
-              );
-      
-            }, duration);
-      
-        }
-      
-      }
-      
-      
-      /* =========================================================
-         TASK ANALYSIS COMPANION
-         ========================================================= */
-      
-      function showAITaskAnalysis(
-        analysis
-      ) {
-      
-        if (!analysis) {
-          return;
-        }
-      
-      
-        const score =
-          Number(
-            analysis.score ?? 0
-          );
-      
-      
-        const message =
-          String(
-            analysis.message ?? ""
-          );
-      
-      
-        const suggestion =
-          String(
-            analysis.suggestion ?? ""
-          );
-      
-      
-        const mood =
-          String(
-            analysis.mood ?? "thinking"
-          );
-      
-      
-        let reply = "";
-      
-      
-        /*
-         * Give the robot personality.
-         */
-      
-        if (
-          score >= 90
-        ) {
-      
-          reply =
-            `⚡ ${score}% — Excellent task!`;
-      
-        }
-      
-        else if (
-          score >= 75
-        ) {
-      
-          reply =
-            `😊 ${score}% — That's a good task!`;
-      
-        }
-      
-        else if (
-          score >= 55
-        ) {
-      
-          reply =
-            `🤔 ${score}% — It could be stronger.`;
-      
-        }
-      
-        else {
-      
-          reply =
-            `👀 ${score}% — Let's improve this task.`;
-      
-        }
-      
-      
-        if (message) {
-      
-          reply +=
-            ` ${message}`;
-      
-        }
-      
-      
-        if (suggestion) {
-      
-          reply +=
-            ` 💡 ${suggestion}`;
-      
-        }
-      
-      
-        showAICompanion(
-          reply,
-          mood === "happy"
-            ? "happy"
-            : mood,
-          8000
-        );
-      
-      }
 
 
-/* =========================================================
-   EXPOSE COMPANION FUNCTIONS
-   ========================================================= */
+    /* -----------------------------------------------------
+       PET COMPANION
+       ----------------------------------------------------- */
 
-window.showAICompanion =
-  showAICompanion;
+    companion =
+      document.getElementById(
+        "nowAiCompanion"
+      );
 
-window.showAITaskAnalysis =
-  showAITaskAnalysis;
+    if (!companion) {
+
+      companion =
+        document.createElement("div");
+
+      companion.id =
+        "nowAiCompanion";
+
+      companion.innerHTML = `
+        <div class="now-ai-companion-robot">
+          🤖
+        </div>
+        <div class="now-ai-companion-message">
+          Hey! I'm watching your progress. 👀
+        </div>
+      `;
+
+      document.body.appendChild(
+        companion
+      );
+    }
+
+
     /* -----------------------------------------------------
        REFERENCES
        ----------------------------------------------------- */
@@ -936,7 +734,6 @@ window.showAITaskAnalysis =
           FUNCTION_NAME,
           {
             body: {
-              event: "chat",
               message
             }
           }
@@ -966,46 +763,31 @@ window.showAITaskAnalysis =
 
 
       if (
-           !data ||
-           !data.success ||
-           !data.analysis
-         ) {
-         
-           console.error(
-             "NOW AI INVALID RESPONSE:",
-             data
-           );
-         
-           addMessage(
-             "ai",
-             data?.error ||
-             "NOW AI returned an unexpected response."
-           );
-         
-           return;
-         }
-         
-         const analysis = data.analysis;
-         
-         let reply = "";
-         
-         if (analysis.message) {
-           reply += analysis.message;
-         }
-         
-         if (
-           analysis.suggestion &&
-           analysis.suggestion.trim()
-         ) {
-           reply +=
-             "\n\n💡 " +
-             analysis.suggestion;
-         }
-         
-         addMessage(
-           "ai",
-           reply
-         );
+        !data ||
+        !data.success ||
+        !data.answer
+      ) {
+
+        console.error(
+          "NOW AI INVALID RESPONSE:",
+          data
+        );
+
+        addMessage(
+          "ai",
+          data?.error ||
+          "NOW AI returned an unexpected response."
+        );
+
+        return;
+
+      }
+
+
+      addMessage(
+        "ai",
+        data.answer
+      );
 
 
     } catch (error) {
@@ -1247,6 +1029,119 @@ window.showAITaskAnalysis =
 
 
   /* =======================================================
+     PET COMPANION
+     ======================================================= */
+
+  function showAICompanion(message, mood = "thinking", duration = 6500) {
+
+    if (!companion) {
+      companion = document.getElementById("nowAiCompanion");
+    }
+
+    if (!companion) {
+      console.warn("[NOW AI] Companion element not found.");
+      return;
+    }
+
+    const messageBox = companion.querySelector(".now-ai-companion-message");
+    if (!messageBox) return;
+
+    if (companionTimer) {
+      clearTimeout(companionTimer);
+      companionTimer = null;
+    }
+
+    messageBox.textContent = String(message || "");
+    companion.classList.remove("thinking", "happy", "concerned");
+    if (["thinking", "happy", "concerned"].includes(mood)) {
+      companion.classList.add(mood);
+    }
+    companion.classList.add("show");
+
+    if (duration > 0) {
+      companionTimer = setTimeout(() => {
+        companion?.classList.remove("show");
+        companionTimer = null;
+      }, duration);
+    }
+  }
+
+
+  async function analyzeTaskWithAI(taskName) {
+
+    const task = String(taskName || "").trim();
+    if (!task) return null;
+
+    console.log("[NOW AI] Analyzing task:", task);
+
+    try {
+      const { data, error } =
+        await supabaseClient.functions.invoke(
+          FUNCTION_NAME,
+          {
+            body: {
+              event: "task_added",
+              data: { task }
+            }
+          }
+        );
+
+      if (error) {
+        console.error("[NOW AI] Task analysis function error:", error);
+        return null;
+      }
+
+      console.log("[NOW AI] Task analysis response:", data);
+
+      if (!data || !data.success || !data.analysis) {
+        console.error("[NOW AI] Invalid task analysis response:", data);
+        return null;
+      }
+
+      return data.analysis;
+    } catch (error) {
+      console.error("[NOW AI] Task analysis failed:", error);
+      return null;
+    }
+  }
+
+
+  function showAITaskAnalysis(analysis) {
+
+    if (!analysis) return;
+
+    const score = Number(analysis.score);
+    const message = String(analysis.message || "").trim();
+    const suggestion = String(analysis.suggestion || "").trim();
+    const mood = String(analysis.mood || "").toLowerCase();
+
+    let prefix = "🤖 Here's what I think about that task:";
+
+    if (Number.isFinite(score)) {
+      if (score >= 90) prefix = `⚡ ${score}% — Excellent task!`;
+      else if (score >= 75) prefix = `😊 ${score}% — That's a good task!`;
+      else if (score >= 55) prefix = `🤔 ${score}% — It could be stronger.`;
+      else prefix = `👀 ${score}% — Let's improve this task.`;
+    }
+
+    let text = prefix;
+    if (message) text += ` ${message}`;
+    if (suggestion) text += ` 💡 ${suggestion}`;
+
+    showAICompanion(
+      text,
+      mood === "happy" ? "happy" : "thinking",
+      8500
+    );
+  }
+
+
+  window.showAICompanion = showAICompanion;
+  window.analyzeTaskWithAI = analyzeTaskWithAI;
+  window.showAITaskAnalysis = showAITaskAnalysis;
+
+
+  /* =======================================================
      START
      ======================================================= */
 
@@ -1285,432 +1180,3 @@ window.showAITaskAnalysis =
 
 
 })();
-
-/* =========================================================
-   AI EVENT SYSTEM
-   Used by Tasks / Daily / Tests / Achievements
-   ========================================================= */
-
-async function nowAIEvent(event, data = {}) {
-
-  try {
-
-    const user = getCurrentUserSafe();
-
-    if (!user) {
-      return null;
-    }
-
-    const {
-      data: response,
-      error
-    } = await supabaseClient.functions.invoke(
-      FUNCTION_NAME,
-      {
-        body: {
-          event,
-          data
-        }
-      }
-    );
-
-    if (error) {
-
-      console.error(
-        "NOW AI EVENT ERROR:",
-        error
-      );
-
-      return null;
-    }
-
-    if (
-      !response ||
-      !response.success ||
-      !response.analysis
-    ) {
-
-      console.error(
-        "NOW AI EVENT INVALID RESPONSE:",
-        response
-      );
-
-      return null;
-    }
-
-    return response.analysis;
-
-  } catch (error) {
-
-    console.error(
-      "NOW AI EVENT FAILED:",
-      error
-    );
-
-    return null;
-  }
-
-}
-
-
-/* =========================================================
-   TASK ANALYSIS
-   ========================================================= */
-
-async function analyzeTaskWithAI(taskName) {
-
-  if (!taskName) {
-    return null;
-  }
-
-  return await nowAIEvent(
-    "task_added",
-    {
-      task: taskName
-    }
-  );
-
-}
-/* =========================================================
-   TASK AI ANALYSIS
-   ========================================================= */
-
-async function analyzeTaskWithAI(
-  taskName
-) {
-
-  if (!taskName) {
-    return null;
-  }
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient.functions.invoke(
-        FUNCTION_NAME,
-        {
-          body: {
-            event: "task_added",
-
-            data: {
-              task: taskName
-            }
-          }
-        }
-      );
-
-
-    if (error) {
-
-      console.error(
-        "NOW AI TASK FUNCTION ERROR:",
-        error
-      );
-
-      return null;
-    }
-
-
-    if (
-      !data ||
-      !data.success ||
-      !data.analysis
-    ) {
-
-      console.error(
-        "NOW AI TASK INVALID RESPONSE:",
-        data
-      );
-
-      return null;
-    }
-
-
-    return data.analysis;
-
-  } catch (error) {
-
-    console.error(
-      "NOW AI TASK ERROR:",
-      error
-    );
-
-    return null;
-
-  }
-
-}
-
-/* =========================================================
-   SHOW AI TASK RESULT
-   ========================================================= */
-
-function showAITaskAnalysis(analysis) {
-
-  if (!analysis) {
-    return;
-  }
-
-  const score =
-    Number(analysis.score ?? 0);
-
-  const message =
-    String(
-      analysis.message ?? ""
-    );
-
-  const suggestion =
-    String(
-      analysis.suggestion ?? ""
-    );
-
-  const rating =
-    String(
-      analysis.rating ?? ""
-    );
-
-  const mood =
-    String(
-      analysis.mood ?? "thinking"
-    );
-
-  const moodEmoji = {
-    happy: "😊",
-    excited: "⚡",
-    thinking: "🤔",
-    concerned: "😟"
-  }[mood] || "🤖";
-
-
-  /*
-   * Open the existing AI panel
-   */
-
-  if (
-    typeof openPanel ===
-    "function"
-  ) {
-
-    openPanel();
-
-  }
-
-
-  /*
-   * Add a normal AI message using
-   * the existing NOW AI UI.
-   */
-
-  if (
-    typeof addMessage ===
-    "function"
-  ) {
-
-    addMessage(
-      "ai",
-      `
-        <strong>${moodEmoji} Task effectiveness: ${score}%</strong>
-        <br>
-        ${escapeHtml(message)}
-        <br><br>
-        <strong>💡 ${escapeHtml(suggestion)}</strong>
-      `
-    );
-
-  }
-/* =========================================================
-   NOW AI EVENT SYSTEM
-   ========================================================= */
-
-async function nowAIEvent(event, data = {}) {
-
-  try {
-
-    const user =
-      getCurrentUserSafe();
-
-    if (!user) {
-      return null;
-    }
-
-    const {
-      data: response,
-      error
-    } =
-      await supabaseClient.functions.invoke(
-        FUNCTION_NAME,
-        {
-          body: {
-            event,
-            data
-          }
-        }
-      );
-
-    if (error) {
-
-      console.error(
-        "NOW AI EVENT ERROR:",
-        error
-      );
-
-      return null;
-    }
-
-    if (
-      !response ||
-      !response.success ||
-      !response.analysis
-    ) {
-
-      console.error(
-        "NOW AI EVENT INVALID RESPONSE:",
-        response
-      );
-
-      return null;
-    }
-
-    return response.analysis;
-
-  } catch (error) {
-
-    console.error(
-      "NOW AI EVENT FAILED:",
-      error
-    );
-
-    return null;
-  }
-
-}
-
-
-/* =========================================================
-   ANALYZE TASK
-   ========================================================= */
-
-async function analyzeTaskWithAI(
-  taskName
-) {
-
-  if (!taskName) {
-    return null;
-  }
-
-  return await nowAIEvent(
-    "task_added",
-    {
-      task: taskName
-    }
-  );
-
-}
-
-
-/* =========================================================
-   SHOW TASK ANALYSIS
-   ========================================================= */
-
-function showAITaskAnalysis(
-  analysis
-) {
-
-  if (!analysis) {
-    return;
-  }
-
-  const score =
-    Number(
-      analysis.score ?? 0
-    );
-
-  const message =
-    String(
-      analysis.message ?? ""
-    );
-
-  const suggestion =
-    String(
-      analysis.suggestion ?? ""
-    );
-
-  const mood =
-    String(
-      analysis.mood ?? "thinking"
-    );
-
-  const moodEmoji = {
-
-    happy: "😊",
-
-    excited: "⚡",
-
-    thinking: "🤔",
-
-    concerned: "😟"
-
-  }[mood] || "🤖";
-
-
-  /*
-   * Open the existing AI panel.
-   */
-
-  openPanel();
-
-
-  /*
-   * Remove the welcome screen.
-   */
-
-  hideWelcome();
-
-
-  /*
-   * Build a clean plain-text message.
-   * addMessage() intentionally uses textContent.
-   */
-
-  let reply =
-    `${moodEmoji} Task effectiveness: ${score}%`;
-
-  if (message) {
-
-    reply +=
-      `\n\n${message}`;
-
-  }
-
-  if (suggestion) {
-
-    reply +=
-      `\n\n💡 ${suggestion}`;
-
-  }
-
-
-  addMessage(
-    "ai",
-    reply
-  );
-
-}
-}
-
-/* =========================================================
-   EXPOSE TASK FUNCTIONS TO OTHER JS FILES
-   ========================================================= */
-
-window.nowAIEvent =
-  nowAIEvent;
-
-window.analyzeTaskWithAI =
-  analyzeTaskWithAI;
-
-window.showAITaskAnalysis =
-  showAITaskAnalysis;
