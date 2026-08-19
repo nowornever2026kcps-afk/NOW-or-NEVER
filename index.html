@@ -4268,6 +4268,10 @@ async function startNotificationRealtime() {
             showToast(
               `🔔 ${payload.new.message}`
             );
+            showDeviceNotification(
+                  "NOW-or-NEVER",
+                  payload.new.message
+                );
 
           }
         )
