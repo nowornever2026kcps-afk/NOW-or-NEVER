@@ -167,10 +167,20 @@
   <div class="notification-actions">
     <button
       type="button"
+      id="clearNotificationHistoryBtn"
+      class="clear-notification-history-btn"
+    >
+      🗑️ Clear Notification History
+    </button>
+    <button
+      type="button"
       id="enableBrowserNotificationsBtn"
       class="enable-browser-notifications-btn"
     >
-      🔔 Enable Device Notifications
+      <span class="notification-enable-icon">🔔</span>
+      <span class="notification-enable-text">
+        Enable Device Notifications
+      </span>
     </button>
 
     <!-- Notification bell -->
@@ -4333,8 +4343,18 @@ function initializeReminderUI() {
     document.getElementById(
       "notificationClose"
     );
-
-
+  const clearNotificationHistoryBtn =
+    document.getElementById(
+      "clearNotificationHistoryBtn"
+    );
+  if (clearNotificationHistoryBtn) {
+  
+    clearNotificationHistoryBtn.addEventListener(
+      "click",
+      clearNotificationHistory
+    );
+  
+  }
   /* Remind Everyone */
 
   if (reminderButton) {
@@ -4608,22 +4628,27 @@ async function enableBrowserNotifications() {
 
     if (permission === "granted") {
 
+      localStorage.setItem(
+        "nowOrNeverDeviceNotifications",
+        "enabled"
+      );
+    
+    
       showToast(
         "🔔 Device notifications enabled!"
       );
-
-
+    
+    
       updateNotificationPermissionButton();
-
+    
     }
-
-    else if (permission === "denied") {
-
-      showToast(
-        "🔕 Notifications were blocked in your browser."
-      );
-
-      updateNotificationPermissionButton();
+        else if (permission === "denied") {
+    
+          showToast(
+            "🔕 Notifications were blocked in your browser."
+          );
+    
+          updateNotificationPermissionButton();
 
     }
 
@@ -4663,7 +4688,13 @@ function updateNotificationPermissionButton() {
 
   if (!browserNotificationsSupported()) {
 
-    button.textContent =
+    button.classList.remove(
+      "notification-enabled"
+    );
+
+    button.querySelector(
+      ".notification-enable-text"
+    ).textContent =
       "⚠️ Notifications Not Supported";
 
     button.disabled = true;
@@ -4673,37 +4704,69 @@ function updateNotificationPermissionButton() {
   }
 
 
-  if (Notification.permission === "granted") {
+  /*
+     We keep our own NOW-or-NEVER preference.
+     This lets "Clear History" reset the UI even
+     though the browser itself cannot revoke permission.
+  */
 
-    button.textContent =
-      "✅ Device Notifications Enabled";
+  const locallyEnabled =
+    localStorage.getItem(
+      "nowOrNeverDeviceNotifications"
+    ) === "enabled";
 
-    button.disabled = true;
 
-  }
-
-  else if (
-    Notification.permission === "denied"
+  if (
+    Notification.permission === "granted" &&
+    locallyEnabled
   ) {
 
-    button.textContent =
-      "🔕 Notifications Blocked";
+    button.classList.add(
+      "notification-enabled"
+    );
 
-    button.disabled = true;
+    return;
 
   }
 
-  else {
 
-    button.textContent =
-      "🔔 Enable Device Notifications";
+  /* Permission is available but NOW-or-NEVER
+     preference has been reset */
 
-    button.disabled = false;
+  button.classList.remove(
+    "notification-enabled"
+  );
+
+
+  const text =
+    button.querySelector(
+      ".notification-enable-text"
+    );
+
+
+  if (text) {
+
+    if (
+      Notification.permission === "denied"
+    ) {
+
+      text.textContent =
+        "🔕 Notifications Blocked";
+
+      button.disabled = true;
+
+    } else {
+
+      text.textContent =
+        "Enable Device Notifications";
+
+      button.disabled = false;
+
+    }
 
   }
 
 }
-
 
 /* ---------------------------------------------------------
    CONNECT BUTTON
@@ -4747,6 +4810,110 @@ if (
 } else {
 
   initializeDeviceNotifications();
+
+}
+  /* =========================================================
+   CLEAR NOTIFICATION HISTORY
+   ========================================================= */
+
+async function clearNotificationHistory() {
+
+  if (!currentUser) {
+
+    showToast(
+      "⚠️ Please log in first."
+    );
+
+    return;
+
+  }
+
+
+  const confirmed =
+    confirm(
+      "Clear all your notification history and reset device notification preference?"
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  try {
+
+    const {
+      error
+    } = await supabaseClient
+      .from("notifications")
+      .delete()
+      .eq(
+        "recipient_id",
+        currentUser.id
+      );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    /*
+       Reset NOW-or-NEVER's local notification
+       preference.
+
+       This does NOT revoke Chrome/Android's
+       actual browser permission.
+    */
+
+    localStorage.removeItem(
+      "nowOrNeverDeviceNotifications"
+    );
+
+
+    /* Refresh notification list */
+
+    renderNotifications([]);
+
+
+    /* Bring the Enable button back */
+
+    const button =
+      document.getElementById(
+        "enableBrowserNotificationsBtn"
+      );
+
+
+    if (button) {
+
+      button.classList.remove(
+        "notification-enabled"
+      );
+
+    }
+
+
+    updateNotificationPermissionButton();
+
+
+    showToast(
+      "🗑️ Notification history cleared."
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "CLEAR NOTIFICATION HISTORY ERROR:",
+      error
+    );
+
+
+    showToast(
+      `⚠️ ${error.message || "Could not clear notification history."}`
+    );
+
+  }
 
 }
 </script>
