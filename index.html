@@ -158,7 +158,212 @@
     </button>
 
   </header>
+<!-- =========================
+     NOTIFICATIONS / REMIND EVERYONE
+========================== -->
 
+<div class="notification-bar">
+
+  <div class="notification-actions">
+
+    <!-- Notification bell -->
+    <button
+      type="button"
+      class="notification-bell"
+      id="notificationBell"
+      title="Notifications"
+      aria-label="Notifications"
+    >
+      🔔
+      <span
+        class="notification-count hidden"
+        id="notificationCount"
+      >0</span>
+    </button>
+
+    <!-- Remind everyone -->
+    <button
+      type="button"
+      class="remind-everyone-btn"
+      id="remindEveryoneBtn"
+    >
+      📢 Remind Everyone
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- =========================
+     NOTIFICATION PANEL
+========================== -->
+
+<div
+  class="notification-panel hidden"
+  id="notificationPanel"
+>
+
+  <div class="notification-panel-header">
+
+    <div>
+      <strong>🔔 Notifications</strong>
+      <div class="small-note">
+        Recent reminders
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="notification-close"
+      id="notificationClose"
+      aria-label="Close notifications"
+    >
+      ×
+    </button>
+
+  </div>
+
+  <div
+    class="notification-list"
+    id="notificationList"
+  >
+    <div class="notification-empty">
+      No notifications yet.
+    </div>
+  </div>
+
+</div>
+
+
+<!-- =========================
+     REMINDER MODAL
+========================== -->
+
+<div
+  class="reminder-modal hidden"
+  id="reminderModal"
+>
+
+  <div
+    class="reminder-modal-backdrop"
+    id="reminderModalBackdrop"
+  ></div>
+
+  <div
+    class="reminder-modal-card"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="reminderModalTitle"
+  >
+
+    <div class="reminder-modal-header">
+
+      <div>
+        <div
+          class="card-title"
+          id="reminderModalTitle"
+        >
+          📢 Remind Everyone
+        </div>
+
+        <div class="small-note">
+          Ask everyone to update their progress.
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="reminder-close"
+        id="reminderClose"
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+    </div>
+
+
+    <div class="reminder-options">
+
+      <button
+        type="button"
+        class="reminder-option"
+        data-reminder-target="hours"
+      >
+        <span class="reminder-option-icon">🕐</span>
+
+        <span>
+          <strong>Study Hours</strong>
+          <small>Ask everyone to update today's hours.</small>
+        </span>
+      </button>
+
+
+      <button
+        type="button"
+        class="reminder-option"
+        data-reminder-target="tasks"
+      >
+        <span class="reminder-option-icon">✅</span>
+
+        <span>
+          <strong>Tasks</strong>
+          <small>Ask everyone to update today's tasks.</small>
+        </span>
+      </button>
+
+
+      <button
+        type="button"
+        class="reminder-option"
+        data-reminder-target="tests"
+      >
+        <span class="reminder-option-icon">📝</span>
+
+        <span>
+          <strong>Tests</strong>
+          <small>Ask everyone to update their tests.</small>
+        </span>
+      </button>
+
+
+      <button
+        type="button"
+        class="reminder-option"
+        data-reminder-target="all"
+      >
+        <span class="reminder-option-icon">⚡</span>
+
+        <span>
+          <strong>Everything</strong>
+          <small>Remind everyone to update everything.</small>
+        </span>
+      </button>
+
+    </div>
+
+
+    <div
+      class="reminder-selected"
+      id="reminderSelected"
+    >
+      Select what you want everyone to update.
+    </div>
+
+
+    <button
+      type="button"
+      class="primary"
+      id="sendReminderBtn"
+      disabled
+    >
+      📢 Send Reminder
+    </button>
+
+  </div>
+
+</div>
 
   <div class="user-info" id="userInfo"></div>
 
