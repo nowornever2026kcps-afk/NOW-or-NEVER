@@ -3754,7 +3754,778 @@ $("todayText").textContent =
     }
   );
 
+/* =========================================================
+   NOW OR NEVER — REMINDER + NOTIFICATION SYSTEM
+   ========================================================= */
 
+let reminderTarget = null;
+let notificationChannel = null;
+
+
+/* ---------------------------------------------------------
+   REMINDER MODAL
+   --------------------------------------------------------- */
+
+function openReminderModal() {
+
+  const modal = document.getElementById("reminderModal");
+
+  if (!modal) return;
+
+  modal.classList.remove("hidden");
+
+  reminderTarget = null;
+
+  document
+    .querySelectorAll(".reminder-option")
+    .forEach(option => {
+      option.classList.remove("selected");
+    });
+
+  const selected =
+    document.getElementById("reminderSelected");
+
+  if (selected) {
+    selected.textContent =
+      "Select what you want everyone to update.";
+  }
+
+  const send =
+    document.getElementById("sendReminderBtn");
+
+  if (send) {
+    send.disabled = true;
+  }
+
+}
+
+
+function closeReminderModal() {
+
+  const modal =
+    document.getElementById("reminderModal");
+
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+
+}
+
+
+/* ---------------------------------------------------------
+   SEND REMINDER
+   --------------------------------------------------------- */
+
+async function sendEveryoneReminder() {
+
+  if (!reminderTarget) {
+    showToast("Select something to remind everyone about.");
+    return;
+  }
+
+
+  const button =
+    document.getElementById("sendReminderBtn");
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "📢 Sending...";
+  }
+
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabaseClient.rpc(
+      "send_everyone_reminder",
+      {
+        p_target: reminderTarget
+      }
+    );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    closeReminderModal();
+
+
+    showToast(
+      `🔔 Reminder sent to ${data?.count ?? "everyone"} users!`
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "SEND REMINDER ERROR:",
+      error
+    );
+
+
+    showToast(
+      `⚠️ ${error.message || "Could not send reminder."}`
+    );
+
+
+  } finally {
+
+    if (button) {
+
+      button.disabled = false;
+
+      button.textContent =
+        "📢 Send Reminder";
+
+    }
+
+  }
+
+}
+
+
+/* ---------------------------------------------------------
+   LOAD NOTIFICATIONS
+   --------------------------------------------------------- */
+
+async function loadNotifications() {
+
+  const list =
+    document.getElementById("notificationList");
+
+  if (!list) return;
+
+
+  try {
+
+    const {
+      data,
+      error
+    } = await supabaseClient
+      .from("notifications")
+      .select("*")
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      )
+      .limit(30);
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    renderNotifications(data || []);
+
+
+  } catch (error) {
+
+    console.error(
+      "LOAD NOTIFICATIONS ERROR:",
+      error
+    );
+
+  }
+
+}
+
+
+/* ---------------------------------------------------------
+   RENDER NOTIFICATIONS
+   --------------------------------------------------------- */
+
+function renderNotifications(notifications) {
+
+  const list =
+    document.getElementById("notificationList");
+
+  if (!list) return;
+
+
+  if (!notifications.length) {
+
+    list.innerHTML = `
+      <div class="notification-empty">
+        No notifications yet.
+      </div>
+    `;
+
+    updateNotificationCount(0);
+
+    return;
+
+  }
+
+
+  let unread = 0;
+
+
+  list.innerHTML =
+    notifications
+      .map(notification => {
+
+        if (!notification.is_read) {
+          unread++;
+        }
+
+
+        const created =
+          notification.created_at
+            ? new Date(
+                notification.created_at
+              ).toLocaleString(
+                "en-IN",
+                {
+                  day: "2-digit",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit"
+                }
+              )
+            : "";
+
+
+        const target =
+          notification.reminder_target ||
+          "all";
+
+
+        return `
+          <div
+            class="notification-item ${
+              notification.is_read
+                ? ""
+                : "unread"
+            }"
+            data-notification-id="${notification.id}"
+            data-reminder-target="${target}"
+          >
+
+            <div class="notification-item-icon">
+              🔔
+            </div>
+
+            <div class="notification-item-content">
+
+              <div class="notification-item-message">
+                ${escapeHtml(
+                  notification.message
+                )}
+              </div>
+
+              <div class="notification-item-time">
+                ${created}
+              </div>
+
+            </div>
+
+          </div>
+        `;
+
+      })
+      .join("");
+
+
+  updateNotificationCount(unread);
+
+
+  /* Make notifications clickable */
+
+  list
+    .querySelectorAll(".notification-item")
+    .forEach(item => {
+
+      item.addEventListener(
+        "click",
+        async () => {
+
+          const id =
+            item.dataset.notificationId;
+
+          const target =
+            item.dataset.reminderTarget;
+
+
+          await markNotificationRead(id);
+
+          closeNotificationPanel();
+
+          openReminderDestination(target);
+
+        }
+      );
+
+    });
+
+}
+
+
+/* ---------------------------------------------------------
+   NOTIFICATION COUNT
+   --------------------------------------------------------- */
+
+function updateNotificationCount(count) {
+
+  const badge =
+    document.getElementById(
+      "notificationCount"
+    );
+
+  if (!badge) return;
+
+
+  badge.textContent =
+    count > 99
+      ? "99+"
+      : String(count);
+
+
+  badge.classList.toggle(
+    "hidden",
+    count === 0
+  );
+
+}
+
+
+/* ---------------------------------------------------------
+   MARK NOTIFICATION READ
+   --------------------------------------------------------- */
+
+async function markNotificationRead(id) {
+
+  if (!id) return;
+
+
+  try {
+
+    await supabaseClient
+      .from("notifications")
+      .update({
+        is_read: true
+      })
+      .eq(
+        "id",
+        id
+      );
+
+    await loadNotifications();
+
+  } catch (error) {
+
+    console.error(
+      "MARK NOTIFICATION READ ERROR:",
+      error
+    );
+
+  }
+
+}
+
+
+/* ---------------------------------------------------------
+   OPEN NOTIFICATION PANEL
+   --------------------------------------------------------- */
+
+function openNotificationPanel() {
+
+  const panel =
+    document.getElementById(
+      "notificationPanel"
+    );
+
+  if (!panel) return;
+
+
+  panel.classList.remove(
+    "hidden"
+  );
+
+  loadNotifications();
+
+}
+
+
+function closeNotificationPanel() {
+
+  const panel =
+    document.getElementById(
+      "notificationPanel"
+    );
+
+  if (panel) {
+
+    panel.classList.add(
+      "hidden"
+    );
+
+  }
+
+}
+
+
+/* ---------------------------------------------------------
+   OPEN RELEVANT SECTION
+   --------------------------------------------------------- */
+
+function openReminderDestination(target) {
+
+  let view = "daily";
+
+
+  if (target === "tasks") {
+    view = "tasks";
+  }
+
+  if (target === "tests") {
+    view = "tests";
+  }
+
+  if (target === "hours" || target === "all") {
+    view = "daily";
+  }
+
+
+  const button =
+    document.querySelector(
+      `.nav button[data-view="${view}"]`
+    );
+
+
+  if (button) {
+
+    button.click();
+
+  }
+
+}
+
+
+/* ---------------------------------------------------------
+   REALTIME NOTIFICATIONS
+   --------------------------------------------------------- */
+
+async function startNotificationRealtime() {
+
+  try {
+
+    if (notificationChannel) {
+
+      await supabaseClient
+        .removeChannel(
+          notificationChannel
+        );
+
+      notificationChannel = null;
+
+    }
+
+
+    if (!currentUser) {
+      return;
+    }
+
+
+    notificationChannel =
+      supabaseClient
+        .channel(
+          `user-notifications-${currentUser.id}`
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter:
+              `recipient_id=eq.${currentUser.id}`
+          },
+          payload => {
+
+            console.log(
+              "NEW NOTIFICATION:",
+              payload.new
+            );
+
+
+            loadNotifications();
+
+
+            showToast(
+              `🔔 ${payload.new.message}`
+            );
+
+          }
+        )
+        .subscribe(
+          status => {
+
+            console.log(
+              "NOTIFICATION REALTIME:",
+              status
+            );
+
+          }
+        );
+
+  } catch (error) {
+
+    console.error(
+      "NOTIFICATION REALTIME ERROR:",
+      error
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   CONNECT UI
+   ========================================================= */
+
+function initializeReminderUI() {
+
+  const reminderButton =
+    document.getElementById(
+      "remindEveryoneBtn"
+    );
+
+  const reminderClose =
+    document.getElementById(
+      "reminderClose"
+    );
+
+  const reminderBackdrop =
+    document.getElementById(
+      "reminderModalBackdrop"
+    );
+
+  const sendButton =
+    document.getElementById(
+      "sendReminderBtn"
+    );
+
+  const notificationBell =
+    document.getElementById(
+      "notificationBell"
+    );
+
+  const notificationClose =
+    document.getElementById(
+      "notificationClose"
+    );
+
+
+  /* Remind Everyone */
+
+  if (reminderButton) {
+
+    reminderButton.addEventListener(
+      "click",
+      openReminderModal
+    );
+
+  }
+
+
+  /* Close modal */
+
+  if (reminderClose) {
+
+    reminderClose.addEventListener(
+      "click",
+      closeReminderModal
+    );
+
+  }
+
+
+  if (reminderBackdrop) {
+
+    reminderBackdrop.addEventListener(
+      "click",
+      closeReminderModal
+    );
+
+  }
+
+
+  /* Reminder options */
+
+  document
+    .querySelectorAll(
+      ".reminder-option"
+    )
+    .forEach(option => {
+
+      option.addEventListener(
+        "click",
+        () => {
+
+          reminderTarget =
+            option.dataset.reminderTarget;
+
+
+          document
+            .querySelectorAll(
+              ".reminder-option"
+            )
+            .forEach(item => {
+
+              item.classList.remove(
+                "selected"
+              );
+
+            });
+
+
+          option.classList.add(
+            "selected"
+          );
+
+
+          const names = {
+
+            hours:
+              "study hours",
+
+            tasks:
+              "tasks",
+
+            tests:
+              "tests",
+
+            all:
+              "everything"
+
+          };
+
+
+          const selected =
+            document.getElementById(
+              "reminderSelected"
+            );
+
+
+          if (selected) {
+
+            selected.textContent =
+              `Everyone will be reminded to update their ${names[reminderTarget]}.`;
+
+          }
+
+
+          if (sendButton) {
+            sendButton.disabled = false;
+          }
+
+        }
+      );
+
+    });
+
+
+  /* Send */
+
+  if (sendButton) {
+
+    sendButton.addEventListener(
+      "click",
+      sendEveryoneReminder
+    );
+
+  }
+
+
+  /* Notification bell */
+
+  if (notificationBell) {
+
+    notificationBell.addEventListener(
+      "click",
+      () => {
+
+        const panel =
+          document.getElementById(
+            "notificationPanel"
+          );
+
+
+        if (!panel) return;
+
+
+        if (
+          panel.classList.contains(
+            "hidden"
+          )
+        ) {
+
+          openNotificationPanel();
+
+        } else {
+
+          closeNotificationPanel();
+
+        }
+
+      }
+    );
+
+  }
+
+
+  /* Close notification panel */
+
+  if (notificationClose) {
+
+    notificationClose.addEventListener(
+      "click",
+      closeNotificationPanel
+    );
+
+  }
+
+
+  /* Initial notifications */
+
+  if (currentUser) {
+
+    loadNotifications();
+
+    startNotificationRealtime();
+
+  }
+
+}
+
+
+/* ---------------------------------------------------------
+   START UI AFTER DOM IS READY
+   --------------------------------------------------------- */
+
+if (
+  document.readyState ===
+  "loading"
+) {
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializeReminderUI
+  );
+
+} else {
+
+  initializeReminderUI();
+
+}
 </script>
 <script src="js/ai.js"></script>
 <script src="js/dragon.js"></script>
