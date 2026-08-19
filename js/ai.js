@@ -829,43 +829,9 @@ addMessage(
 );
 
 
-    if (
-      analysis.suggestion
-    ) {
+ 
 
-      const suggestion =
-        String(
-          analysis.suggestion
-        ).trim();
-
-
-      if (suggestion) {
-
-        reply +=
-          "\n\n💡 " +
-          suggestion;
-
-      }
-
-    }
-
-
-    if (!reply) {
-
-      reply =
-        "I'm here! Tell me what you'd like help with. 🤖";
-
-    }
-
-
-    /* ===================================================
-       SHOW AI RESPONSE IN CHAT
-       =================================================== */
-
-    addMessage(
-      "ai",
-      reply
-    );
+   
 
 
   } catch (error) {
