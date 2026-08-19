@@ -784,7 +784,7 @@
     if (
       !data ||
       !data.success ||
-      !data.analysis
+      !data.answer
     ) {
 
       console.error(
@@ -808,15 +808,25 @@
        EXTRACT AI RESPONSE
        =================================================== */
 
-    const analysis =
-      data.analysis;
+    const reply =
+  String(
+    data.answer || ""
+  ).trim();
 
+if (!reply) {
 
-    let reply =
-      String(
-        analysis.message ||
-        ""
-      ).trim();
+  addMessage(
+    "ai",
+    "NOW AI returned an empty response."
+  );
+
+  return;
+}
+
+addMessage(
+  "ai",
+  reply
+);
 
 
     if (
