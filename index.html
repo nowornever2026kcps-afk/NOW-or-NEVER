@@ -739,28 +739,107 @@
          TASKS
     ========================== -->
 
-    <section class="view" id="tasks">
+   <!-- =========================
+     TASKS
+========================== -->
 
-      <div class="card">
-        <div class="task-summary">
-          <div>
-            <div class="task-summary-title">📝 Today's Tasks</div>
-            <div class="task-summary-count" id="taskDateLabel"></div>
-          </div>
-          <div class="task-summary-count" id="myTaskCount"></div>
+<section class="view" id="tasks">
+
+  <!-- =========================
+       MY TASKS
+  ========================== -->
+  <div class="card my-tasks-card">
+
+    <div class="task-summary">
+
+      <div>
+        <div class="task-summary-title">
+          📌 My Tasks
         </div>
 
-        <div class="task-progress"><span id="myTaskProgress" style="width:0%"></span></div>
-        <div class="small-note">Everyone can see everyone's tasks. You can only add, tick, or delete tasks belonging to your own account.</div>
+        <div
+          class="task-summary-count"
+          id="taskDateLabel"
+        ></div>
       </div>
 
-      <div class="card">
-        <div id="taskBoard">
-          <div class="loading">Loading today's tasks...</div>
+      <div
+        class="task-summary-count"
+        id="myTaskCount"
+      ></div>
+
+    </div>
+
+    <div class="task-progress">
+      <span
+        id="myTaskProgress"
+        style="width:0%"
+      ></span>
+    </div>
+
+    <div class="small-note">
+      Your tasks stay active until you manually update them.
+      Midnight will not reset them.
+    </div>
+
+  </div>
+
+
+  <!-- MY TASKS BOARD -->
+  <div class="card my-task-board-card">
+
+    <div
+      id="myTaskBoard"
+      class="my-task-board"
+    >
+      <div class="loading">
+        Loading your tasks...
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       EVERYONE'S TASKS
+  ========================== -->
+
+  <div class="card everyone-task-card">
+
+    <div class="task-summary">
+
+      <div>
+        <div class="task-summary-title">
+          👥 Everyone's Tasks
+        </div>
+
+        <div class="task-summary-count">
+          Shared task board
         </div>
       </div>
 
-    </section>
+    </div>
+
+    <div class="small-note">
+      Everyone can see everyone's tasks.
+      You can only edit your own tasks.
+    </div>
+
+  </div>
+
+
+  <!-- EVERYONE'S TASK BOARD -->
+  <div class="card">
+
+    <div id="taskBoard">
+      <div class="loading">
+        Loading everyone's tasks...
+      </div>
+    </div>
+
+  </div>
+
+</section>
 
 
     <!-- =========================
@@ -2259,246 +2338,1102 @@ function taskDateLabel(){
   });
 }
 
-async function getTodayTasks(){
-  const {data,error}=await supabaseClient
-    .from("tasks")
-    .select(
-      "id,student_id,task_name,completed,task_date,created_at"
-    )
-    .eq("task_date",localDate())
-    .order("created_at",{ascending:true});
+/* ============================================
+   TASK SYSTEM
+   Manual task-day rollover
+============================================ */
 
-  if(error){
-    console.error("TASK LOAD:",error);
-    return {data:null,error};
-  }
+function taskDateLabel(){
 
-  return {data:data||[],error:null};
-}
+  const date = new Date();
 
-async function renderTasks(){
-  const board=$("taskBoard");
-
-  if(!board) return;
-
-  $("taskDateLabel").textContent=
-    taskDateLabel();
-
-  board.innerHTML=
-    `<div class="loading">Loading today's tasks...</div>`;
-
-  const {data,error}=await getTodayTasks();
-
-  if(error){
-    board.innerHTML=
-      `<div class="empty">
-        Could not load tasks: ${escapeHtml(error.message)}
-      </div>`;
-    return;
-  }
-
-  const {data:profiles,error:profilesError}=
-    await supabaseClient
-      .from("profiles")
-      .select("id,display_name,username")
-      .order("display_name",{ascending:true});
-
-  if(profilesError){
-    console.error("TASK PROFILE LOAD:",profilesError);
-
-    board.innerHTML=
-      `<div class="empty">
-        Could not load task members: ${escapeHtml(profilesError.message)}
-      </div>`;
-
-    return;
-  }
-
-  const profileMap=new Map(
-    (profiles||[]).map(p=>[p.id,p])
+  return date.toLocaleDateString(
+    "en-IN",
+    {
+      weekday:"long",
+      day:"2-digit",
+      month:"short",
+      year:"numeric"
+    }
   );
 
-  const groups=new Map();
+}
 
-  (data||[]).forEach(task=>{
-    const id=task.student_id;
 
-    if(!groups.has(id)){
-      groups.set(id,{
-        profile:profileMap.get(id)||{
-          id,
-          display_name:"Student",
-          username:""
-        },
-        tasks:[]
-      });
+/* =========================================================
+   LOAD ACTIVE TASKS
+
+   IMPORTANT:
+   We no longer filter by today's date.
+
+   Tasks remain visible after midnight until the
+   user manually presses "Update".
+========================================================= */
+
+async function getTodayTasks(){
+
+  const {data,error} = await supabaseClient
+    .from("tasks")
+    .select(
+      "id,student_id,task_name,completed,task_date,created_at,active"
+    )
+    .eq("active",true)
+    .order("created_at",{ascending:true});
+
+
+  if(error){
+
+    console.error(
+      "TASK LOAD:",
+      error
+    );
+
+    return {
+      data:null,
+      error
+    };
+
+  }
+
+
+  return {
+    data:data || [],
+    error:null
+  };
+
+}
+
+
+/* =========================================================
+   FORMAT TASK DATE
+========================================================= */
+
+function formatTaskDay(dateString){
+
+  if(!dateString){
+    return "";
+  }
+
+  const date =
+    new Date(
+      `${dateString}T00:00:00`
+    );
+
+  return date.toLocaleDateString(
+    "en-IN",
+    {
+      day:"2-digit",
+      month:"short"
     }
+  );
 
-    groups.get(id).tasks.push(task);
-  });
+}
 
-  (profiles||[]).forEach(profile=>{
-    if(!groups.has(profile.id)){
-      groups.set(profile.id,{
-        profile,
-        tasks:[]
-      });
-    }
-  });
 
-  if(!groups.size){
-    board.innerHTML=
-      `<div class="empty">No members found.</div>`;
+/* =========================================================
+   RENDER TASKS
+========================================================= */
 
-    $("myTaskCount").textContent="0/0 done";
-    $("myTaskProgress").style.width="0%";
+async function renderTasks(){
+
+  const myBoard =
+    $("myTaskBoard");
+
+  const everyoneBoard =
+    $("taskBoard");
+
+
+  if(!myBoard || !everyoneBoard){
     return;
   }
 
-  let myTotal=0;
-  let myDone=0;
 
-  board.innerHTML=
+  $("taskDateLabel").textContent =
+    taskDateLabel();
+
+
+  myBoard.innerHTML =
+    `<div class="loading">
+       Loading your tasks...
+     </div>`;
+
+
+  everyoneBoard.innerHTML =
+    `<div class="loading">
+       Loading everyone's tasks...
+     </div>`;
+
+
+  const {
+    data,
+    error
+  } = await getTodayTasks();
+
+
+  if(error){
+
+    const message =
+      escapeHtml(error.message);
+
+
+    myBoard.innerHTML =
+      `<div class="empty">
+         Could not load your tasks: ${message}
+       </div>`;
+
+
+    everyoneBoard.innerHTML =
+      `<div class="empty">
+         Could not load tasks: ${message}
+       </div>`;
+
+
+    return;
+
+  }
+
+
+  /* =======================================================
+     LOAD PROFILES
+  ======================================================= */
+
+  const {
+    data:profiles,
+    error:profilesError
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select(
+        "id,display_name,username"
+      )
+      .order(
+        "display_name",
+        {
+          ascending:true
+        }
+      );
+
+
+  if(profilesError){
+
+    console.error(
+      "TASK PROFILE LOAD:",
+      profilesError
+    );
+
+
+    myBoard.innerHTML =
+      `<div class="empty">
+         Could not load task members:
+         ${escapeHtml(profilesError.message)}
+       </div>`;
+
+
+    everyoneBoard.innerHTML =
+      `<div class="empty">
+         Could not load task members:
+         ${escapeHtml(profilesError.message)}
+       </div>`;
+
+
+    return;
+
+  }
+
+
+  const profileMap =
+    new Map(
+      (profiles || [])
+        .map(
+          profile => [
+            profile.id,
+            profile
+          ]
+        )
+    );
+
+
+  const groups =
+    new Map();
+
+
+  /* =======================================================
+     GROUP TASKS BY MEMBER
+  ======================================================= */
+
+  (data || []).forEach(task => {
+
+    const id =
+      task.student_id;
+
+
+    if(!groups.has(id)){
+
+      groups.set(
+        id,
+        {
+          profile:
+            profileMap.get(id) || {
+              id,
+              display_name:"Student",
+              username:""
+            },
+
+          tasks:[]
+        }
+      );
+
+    }
+
+
+    groups
+      .get(id)
+      .tasks
+      .push(task);
+
+  });
+
+
+  /* =======================================================
+     MY TASKS
+  ======================================================= */
+
+  const myGroup =
+    currentUser
+      ? groups.get(currentUser.id)
+      : null;
+
+
+  const myTasks =
+    myGroup?.tasks || [];
+
+
+  const myDone =
+    myTasks.filter(
+      task => task.completed
+    ).length;
+
+
+  const myTotal =
+    myTasks.length;
+
+
+  $("myTaskCount").textContent =
+    `${myDone}/${myTotal} done`;
+
+
+  $("myTaskProgress").style.width =
+    myTotal
+      ? `${(myDone / myTotal) * 100}%`
+      : "0%";
+
+
+  if(!myTasks.length){
+
+    myBoard.innerHTML = `
+      <div class="my-task-empty">
+
+        <div class="my-task-empty-icon">
+          📝
+        </div>
+
+        <div class="my-task-empty-title">
+          No active tasks
+        </div>
+
+        <div class="small-note">
+          Add your first task below.
+        </div>
+
+      </div>
+    `;
+
+  }else{
+
+    const profile =
+      myGroup.profile;
+
+
+    const taskRows =
+      myTasks
+        .map(
+          task =>
+            renderMyTaskRow(
+              task,
+              profile
+            )
+        )
+        .join("");
+
+
+    myBoard.innerHTML = `
+
+      <div class="my-task-person">
+
+        <div class="task-person-head">
+
+          <div class="task-person-avatar">
+            ${escapeHtml(
+              initials(
+                profile.display_name
+              )
+            )}
+          </div>
+
+          <div class="task-person-name">
+            ${escapeHtml(
+              profile.display_name ||
+              "Student"
+            )}
+          </div>
+
+          <div class="task-person-count">
+            ${myDone}/${myTotal} done
+          </div>
+
+        </div>
+
+
+        <div class="my-task-list">
+          ${taskRows}
+        </div>
+
+      </div>
+
+      ${renderTaskAddBox()}
+
+    `;
+
+  }
+
+
+  /* =======================================================
+     EVERYONE ELSE
+  ======================================================= */
+
+  const otherGroups =
     [...groups.values()]
-      .map(group=>{
-        const profile=group.profile;
-        const tasks=group.tasks;
+      .filter(
+        group =>
+          !currentUser ||
+          group.profile.id !== currentUser.id
+      );
 
-        const done=
-          tasks.filter(t=>t.completed).length;
 
-        if(
-          currentUser &&
-          profile.id===currentUser.id
-        ){
-          myTotal=tasks.length;
-          myDone=done;
+  if(!otherGroups.length){
+
+    everyoneBoard.innerHTML = `
+      <div class="empty">
+        No other members have active tasks yet.
+      </div>
+    `;
+
+  }else{
+
+    everyoneBoard.innerHTML =
+      otherGroups
+        .map(
+          group =>
+            renderOtherTaskGroup(
+              group
+            )
+        )
+        .join("");
+
+  }
+
+}
+
+
+/* =========================================================
+   RENDER MY TASK ROW
+========================================================= */
+
+function renderMyTaskRow(
+  task,
+  profile
+){
+
+  const today =
+    localDate();
+
+
+  const isCurrentDay =
+    task.task_date === today;
+
+
+  const dateText =
+    formatTaskDay(
+      task.task_date
+    );
+
+
+  return `
+
+    <div class="task-row my-task-row">
+
+      <input
+        class="task-check"
+        type="checkbox"
+
+        ${task.completed
+          ? "checked"
+          : ""
         }
 
-        const taskRows=
-          tasks.length
-          ? tasks.map(task=>{
-              const isMine=
-                currentUser &&
-                task.student_id===currentUser.id;
+        onchange="
+          toggleTask(
+            '${task.id}',
+            this.checked
+          )
+        "
+      >
+
+
+      <div class="task-main-content">
+
+        <span
+          class="
+            task-label
+            ${task.completed
+              ? "done"
+              : ""
+            }
+          "
+        >
+          ${escapeHtml(
+            task.task_name
+          )}
+        </span>
+
+
+        <span class="task-day-badge">
+
+          ${
+            isCurrentDay
+              ? "📅 Today"
+              : `🕘 ${escapeHtml(dateText)}`
+          }
+
+        </span>
+
+      </div>
+
+
+      <div class="task-actions">
+
+        ${
+          isCurrentDay
+
+          ? `
+            <button
+              class="task-update current"
+              disabled
+              title="Already updated for today"
+            >
+              ✓ Updated
+            </button>
+          `
+
+          : `
+            <button
+              class="task-update"
+              onclick="
+                updateTaskDay(
+                  '${task.id}'
+                )
+              "
+              title="Move this task to today"
+            >
+              ↻ Update
+            </button>
+          `
+        }
+
+
+        <button
+          class="task-delete"
+          onclick="
+            deleteTask(
+              '${task.id}'
+            )
+          "
+        >
+          ✕
+        </button>
+
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   RENDER OTHER MEMBER TASK
+========================================================= */
+
+function renderOtherTaskGroup(
+  group
+){
+
+  const profile =
+    group.profile;
+
+
+  const tasks =
+    group.tasks;
+
+
+  const done =
+    tasks.filter(
+      task => task.completed
+    ).length;
+
+
+  const taskRows =
+    tasks.length
+
+      ? tasks
+          .map(
+            task => {
+
+              const dateText =
+                formatTaskDay(
+                  task.task_date
+                );
+
+
+              const isCurrentDay =
+                task.task_date ===
+                localDate();
+
 
               return `
+
                 <div class="task-row">
 
                   <input
                     class="task-check"
                     type="checkbox"
-                    ${task.completed?"checked":""}
-                    ${isMine?"":"disabled"}
-                    onchange="
-                      toggleTask(
-                        '${task.id}',
-                        this.checked
-                      )
-                    "
+                    ${
+                      task.completed
+                        ? "checked"
+                        : ""
+                    }
+                    disabled
                   >
 
-                  <span
-                    class="task-label
-                    ${task.completed?"done":""}"
-                  >
-                    ${escapeHtml(task.task_name)}
-                  </span>
 
-                  ${
-                    isMine
-                      ? `
-                        <button
-                          class="task-delete"
-                          onclick="
-                            deleteTask('${task.id}')
-                          "
-                        >
-                          ✕
-                        </button>
-                      `
-                      : ""
-                  }
+                  <div class="task-main-content">
+
+                    <span
+                      class="
+                        task-label
+                        ${
+                          task.completed
+                            ? "done"
+                            : ""
+                        }
+                      "
+                    >
+                      ${escapeHtml(
+                        task.task_name
+                      )}
+                    </span>
+
+
+                    <span class="task-day-badge">
+
+                      ${
+                        isCurrentDay
+                          ? "📅 Today"
+                          : `🕘 ${escapeHtml(
+                              dateText
+                            )}`
+                      }
+
+                    </span>
+
+                  </div>
 
                 </div>
+
               `;
-            }).join("")
-          : `
-            <div
-              class="empty"
-              style="padding:8px 0"
-            >
-              No tasks added yet.
-            </div>
-          `;
 
-        const addBox=
-          currentUser &&
-          profile.id===currentUser.id
-          ? `
-            <div class="task-add">
+            }
+          )
+          .join("")
 
-              <input
-                id="newTaskInput"
-                placeholder="Add your task..."
-                maxlength="160"
-                onkeydown="
-                  if(event.key==='Enter') addTask()
-                "
-              >
-
-              <button onclick="addTask()">
-                + Task
-              </button>
-
-            </div>
-
-            <div class="task-owner-note">
-              Only you can edit your tasks.
-            </div>
-          `
-          : "";
-
-        return `
-          <div class="task-person">
-
-            <div class="task-person-head">
-
-              <div class="task-person-avatar">
-                ${escapeHtml(
-                  initials(profile.display_name)
-                )}
-              </div>
-
-              <div class="task-person-name">
-                ${escapeHtml(
-                  profile.display_name||"Student"
-                )}
-              </div>
-
-              <div class="task-person-count">
-                ${done}/${tasks.length} done
-              </div>
-
-            </div>
-
-            ${taskRows}
-            ${addBox}
-
+      : `
+          <div
+            class="empty"
+            style="padding:8px 0"
+          >
+            No active tasks.
           </div>
         `;
-      })
-      .join("");
 
-  $("myTaskCount").textContent=
-    `${myDone}/${myTotal} done`;
 
-  $("myTaskProgress").style.width=
-    myTotal
-      ? `${(myDone/myTotal)*100}%`
-      : "0%";
+  return `
+
+    <div class="task-person">
+
+      <div class="task-person-head">
+
+        <div class="task-person-avatar">
+
+          ${escapeHtml(
+            initials(
+              profile.display_name
+            )
+          )}
+
+        </div>
+
+
+        <div class="task-person-name">
+
+          ${escapeHtml(
+            profile.display_name ||
+            "Student"
+          )}
+
+        </div>
+
+
+        <div class="task-person-count">
+
+          ${done}/${tasks.length} done
+
+        </div>
+
+      </div>
+
+
+      ${taskRows}
+
+    </div>
+
+  `;
+
 }
 
+
+/* =========================================================
+   ADD TASK BOX
+========================================================= */
+
+function renderTaskAddBox(){
+
+  return `
+
+    <div class="task-add">
+
+      <input
+        id="newTaskInput"
+        placeholder="Add your task..."
+        maxlength="160"
+        onkeydown="
+          if(event.key==='Enter'){
+            addTask();
+          }
+        "
+      >
+
+
+      <button
+        onclick="addTask()"
+      >
+        + Task
+      </button>
+
+    </div>
+
+
+    <div class="task-owner-note">
+
+      Only you can edit your tasks.
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   ADD TASK
+========================================================= */
+
+async function addTask(){
+
+  console.log(
+    "[NOW AI] addTask() started"
+  );
+
+
+  if(!currentUser){
+
+    showToast(
+      "Please login first."
+    );
+
+    return;
+
+  }
+
+
+  const input =
+    $("newTaskInput");
+
+
+  if(!input){
+
+    console.error(
+      "[NOW AI] newTaskInput was not found."
+    );
+
+    return;
+
+  }
+
+
+  const text =
+    input.value.trim();
+
+
+  if(!text){
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("tasks")
+      .insert({
+
+        student_id:
+          currentUser.id,
+
+        task_name:
+          text,
+
+        completed:
+          false,
+
+        task_date:
+          localDate(),
+
+        active:
+          true
+
+      });
+
+
+  if(error){
+
+    console.error(
+      "TASK INSERT:",
+      error
+    );
+
+
+    showToast(
+      error.message
+    );
+
+
+    return;
+
+  }
+
+
+  input.value = "";
+
+
+  showToast(
+    "Task added ✓"
+  );
+
+
+  await renderTasks();
+
+
+  /* =======================================================
+     NOW AI
+  ======================================================= */
+
+  if(
+    typeof window.showAICompanion ===
+    "function"
+  ){
+
+    window.showAICompanion(
+      "Hmm... let me check how effective this task is. 🤔",
+      "thinking",
+      0
+    );
+
+  }
+
+
+  if(
+    typeof window.analyzeTaskWithAI ===
+    "function"
+  ){
+
+    try{
+
+      const analysis =
+        await window.analyzeTaskWithAI(
+          text
+        );
+
+
+      if(
+        analysis &&
+        typeof window.showAITaskAnalysis ===
+        "function"
+      ){
+
+        window.showAITaskAnalysis(
+          analysis
+        );
+
+      }else if(
+        typeof window.showAICompanion ===
+        "function"
+      ){
+
+        window.showAICompanion(
+          "I couldn't analyze that task right now, but I've saved it. 👀",
+          "thinking",
+          6000
+        );
+
+      }
+
+    }catch(error){
+
+      console.error(
+        "[NOW AI] Task companion error:",
+        error
+      );
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   COMPLETE / UNCOMPLETE TASK
+========================================================= */
+
+async function toggleTask(
+  id,
+  completed
+){
+
+  if(!currentUser){
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("tasks")
+      .update({
+        completed
+      })
+      .eq(
+        "id",
+        id
+      )
+      .eq(
+        "student_id",
+        currentUser.id
+      );
+
+
+  if(error){
+
+    console.error(
+      "TASK UPDATE:",
+      error
+    );
+
+
+    showToast(
+      error.message
+    );
+
+
+    await renderTasks();
+
+    return;
+
+  }
+
+
+  await renderTasks();
+
+}
+
+
+/* =========================================================
+   MANUAL TASK DAY UPDATE
+
+   This is the important new function.
+
+   It changes ONLY the selected task.
+
+   Midnight does nothing.
+
+   Clicking Update moves that one task to today.
+========================================================= */
+
+async function updateTaskDay(
+  id
+){
+
+  if(!currentUser){
+    return;
+  }
+
+
+  const today =
+    localDate();
+
+
+  const confirmed =
+    confirm(
+      "Update this task to today?\n\n" +
+      "The task will become a new-day task and " +
+      "its completion status will reset."
+    );
+
+
+  if(!confirmed){
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("tasks")
+      .update({
+
+        task_date:
+          today,
+
+        completed:
+          false
+
+      })
+      .eq(
+        "id",
+        id
+      )
+      .eq(
+        "student_id",
+        currentUser.id
+      );
+
+
+  if(error){
+
+    console.error(
+      "TASK DAY UPDATE:",
+      error
+    );
+
+
+    showToast(
+      error.message
+    );
+
+
+    return;
+
+  }
+
+
+  showToast(
+    "Task updated to today ✓"
+  );
+
+
+  await renderTasks();
+
+}
+
+
+/* =========================================================
+   DELETE TASK
+========================================================= */
+
+async function deleteTask(
+  id
+){
+
+  if(!currentUser){
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("tasks")
+      .delete()
+      .eq(
+        "id",
+        id
+      )
+      .eq(
+        "student_id",
+        currentUser.id
+      );
+
+
+  if(error){
+
+    console.error(
+      "TASK DELETE:",
+      error
+    );
+
+
+    showToast(
+      error.message
+    );
+
+
+    return;
+
+  }
+
+
+  showToast(
+    "Task deleted"
+  );
+
+
+  await renderTasks();
+
+}
 async function addTask(){
 
   console.log(
@@ -2789,33 +3724,113 @@ function stopRealtime(){
 }
 
 function startMidnightRefresh(){
-  clearInterval(taskRefreshTimer);
-  clearInterval(weekRefreshTimer);
 
-  let lastDay=localDate();
-  let lastWeek=dateKeyFromDate(getWeekStart());
+  clearInterval(
+    taskRefreshTimer
+  );
 
-  taskRefreshTimer=setInterval(() => {
-    const now=localDate();
-    if(now!==lastDay){
-      lastDay=now;
-      $("date").value=now;
-      $("testDate").value=now;
-      renderTasks();
-      renderStudyChart();
-      renderPersonal();
-      showToast("New day — today's task board is ready.");
-    }
-  },15000);
+  clearInterval(
+    weekRefreshTimer
+  );
 
-  weekRefreshTimer=setInterval(() => {
-    const nowWeek=dateKeyFromDate(getWeekStart());
-    if(nowWeek!==lastWeek){
-      lastWeek=nowWeek;
-      renderStudyChart();
-      showToast("New week — study graph reset.");
-    }
-  },60000);
+
+  let lastDay =
+    localDate();
+
+
+  let lastWeek =
+    dateKeyFromDate(
+      getWeekStart()
+    );
+
+
+  /* =======================================================
+     CALENDAR DAY REFRESH
+
+     IMPORTANT:
+     We intentionally DO NOT call renderTasks()
+     when midnight passes.
+
+     Tasks now roll over manually through
+     updateTaskDay().
+  ======================================================= */
+
+  taskRefreshTimer =
+    setInterval(
+      () => {
+
+        const now =
+          localDate();
+
+
+        if(now !== lastDay){
+
+          lastDay =
+            now;
+
+
+          $("date").value =
+            now;
+
+
+          $("testDate").value =
+            now;
+
+
+          /* DO NOT RESET TASKS HERE */
+
+
+          renderStudyChart();
+
+          renderPersonal();
+
+
+          showToast(
+            "🌙 New calendar day started. Your tasks remain until you update them."
+          );
+
+        }
+
+      },
+      15000
+    );
+
+
+  /* =======================================================
+     WEEKLY STUDY GRAPH
+
+     This remains unchanged.
+  ======================================================= */
+
+  weekRefreshTimer =
+    setInterval(
+      () => {
+
+        const nowWeek =
+          dateKeyFromDate(
+            getWeekStart()
+          );
+
+
+        if(nowWeek !== lastWeek){
+
+          lastWeek =
+            nowWeek;
+
+
+          renderStudyChart();
+
+
+          showToast(
+            "New week — study graph reset."
+          );
+
+        }
+
+      },
+      60000
+    );
+
 }
 
 
