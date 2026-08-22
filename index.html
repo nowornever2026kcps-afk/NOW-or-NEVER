@@ -5987,74 +5987,179 @@ function closeReminderModal() {
 
 async function sendEveryoneReminder() {
 
-  if (!reminderTarget) {
-    showToast("Select something to remind everyone about.");
-    return;
-  }
-
-
-  const button =
-    document.getElementById("sendReminderBtn");
-
-  if (button) {
-    button.disabled = true;
-    button.textContent = "📢 Sending...";
-  }
-
-
-  try {
-
-    const {
-      data,
-      error
-    } = await supabaseClient.rpc(
-      "send_everyone_reminder",
-      {
-        p_target: reminderTarget
-      }
-    );
-
-
-    if (error) {
-      throw error;
+    if (!reminderTarget) {
+  
+      showToast(
+        "Select something to remind everyone about."
+      );
+  
+      return;
+  
     }
-
-
-    closeReminderModal();
-
-
-    showToast(
-      `🔔 Reminder sent to ${data?.count ?? "everyone"} users!`
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      "SEND REMINDER ERROR:",
-      error
-    );
-
-
-    showToast(
-      `⚠️ ${error.message || "Could not send reminder."}`
-    );
-
-
-  } finally {
-
+  
+  
+    const button =
+      document.getElementById(
+        "sendReminderBtn"
+      );
+  
+  
     if (button) {
-
-      button.disabled = false;
-
+  
+      button.disabled = true;
+  
       button.textContent =
-        "📢 Send Reminder";
-
+        "📢 Sending...";
+  
     }
-
+  
+  
+    try {
+  
+      /* =====================================================
+         STEP 1
+         CREATE THE NORMAL IN-SITE REMINDER
+         ===================================================== */
+  
+      const {
+        data,
+        error
+      } =
+        await supabaseClient.rpc(
+          "send_everyone_reminder",
+          {
+            p_target:
+              reminderTarget
+          }
+        );
+  
+  
+      if (error) {
+  
+        throw error;
+  
+      }
+  
+  
+      /* =====================================================
+         STEP 2
+         SEND REAL PC / MOBILE PUSH NOTIFICATION
+         ===================================================== */
+  
+      const {
+        data: sessionData
+      } =
+        await supabaseClient.auth.getSession();
+  
+  
+      const accessToken =
+        sessionData?.session?.access_token;
+  
+  
+      if (!accessToken) {
+  
+        throw new Error(
+          "Your login session could not be verified."
+        );
+  
+      }
+  
+  
+      const pushResponse =
+        await fetch(
+          "https://kvbbgvfrllptqpbkixnv.supabase.co/functions/v1/send-web-push",
+          {
+            method: "POST",
+  
+            headers: {
+  
+              "Content-Type":
+                "application/json",
+  
+              "Authorization":
+                `Bearer ${accessToken}`
+  
+            },
+  
+            body:
+              JSON.stringify({
+                target:
+                  reminderTarget
+              })
+  
+          }
+        );
+  
+  
+      const pushResult =
+        await pushResponse.json();
+  
+  
+      if (!pushResponse.ok) {
+  
+        console.error(
+          "WEB PUSH ERROR:",
+          pushResult
+        );
+  
+        throw new Error(
+          pushResult?.error ||
+          "Push notification could not be sent."
+        );
+  
+      }
+  
+  
+      /* =====================================================
+         SUCCESS
+         ===================================================== */
+  
+      closeReminderModal();
+  
+  
+      showToast(
+        `🔔 Reminder sent to ${
+          data?.count ?? "everyone"
+        } users!`
+      );
+  
+  
+      console.log(
+        "WEB PUSH RESULT:",
+        pushResult
+      );
+  
+  
+    } catch (error) {
+  
+      console.error(
+        "SEND REMINDER ERROR:",
+        error
+      );
+  
+  
+      showToast(
+        `⚠️ ${
+          error.message ||
+          "Could not send reminder."
+        }`
+      );
+  
+  
+    } finally {
+  
+      if (button) {
+  
+        button.disabled = false;
+  
+        button.textContent =
+          "📢 Send Reminder";
+  
+      }
+  
+    }
+  
   }
-
-}
 
 
 /* ---------------------------------------------------------
