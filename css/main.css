@@ -2012,69 +2012,250 @@ body::after{width:230px;height:230px;right:-90px;top:62%;background:rgba(103,232
 /* =========================================================
    NOW OR NEVER — NOTIFICATIONS + REMIND EVERYONE
    ========================================================= */
-
-/* ---------------------------------------------------------
-   NOTIFICATION BAR
-   --------------------------------------------------------- */
+/* =========================================================
+   NOW OR NEVER — NOTIFICATION CONTROL BAR
+   ========================================================= */
 
 .notification-bar {
   width: 100%;
+
   display: flex;
   justify-content: flex-end;
   align-items: center;
+
   padding: 8px 20px;
+
   box-sizing: border-box;
+
   position: relative;
   z-index: 1000;
 }
 
+
+/* =========================================================
+   CONTROL GROUP
+   ========================================================= */
+
 .notification-actions {
   display: flex;
+
   align-items: center;
-  gap: 10px;
+
+  gap: 8px;
 }
 
 
-/* ---------------------------------------------------------
-   NOTIFICATION BELL
-   --------------------------------------------------------- */
+/* =========================================================
+   CLEAR HISTORY
+   ========================================================= */
 
-.notification-bell {
-  position: relative;
-  width: 44px;
-  height: 44px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  color: inherit;
-  font-size: 20px;
-  cursor: pointer;
+#clearNotificationHistoryBtn {
 
-  display: flex;
+  height: 40px;
+
+  padding: 0 13px;
+
+  display: inline-flex;
+
   align-items: center;
   justify-content: center;
 
+  gap: 6px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.09);
+
+  border-radius: 11px;
+
+  background:
+    rgba(255, 255, 255, 0.035);
+
+  color:
+    rgba(235, 235, 235, 0.68);
+
+  font-size: 11px;
+
+  font-weight: 650;
+
+  cursor: pointer;
+
   transition:
-    transform 0.2s ease,
-    background 0.2s ease;
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
 }
+
+
+#clearNotificationHistoryBtn:hover {
+
+  background:
+    rgba(255, 255, 255, 0.075);
+
+  border-color:
+    rgba(255, 255, 255, 0.16);
+
+  color:
+    rgba(255, 255, 255, 0.95);
+
+  transform:
+    translateY(-1px);
+}
+
+
+#clearNotificationHistoryBtn:active {
+
+  transform:
+    scale(0.96);
+}
+
+
+/* =========================================================
+   ENABLE DEVICE NOTIFICATIONS
+   ========================================================= */
+
+#enableDeviceNotificationsBtn {
+
+  height: 40px;
+
+  padding: 0 15px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  border:
+    1px solid rgba(130, 165, 255, 0.22);
+
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(105, 140, 255, 0.12),
+      rgba(105, 140, 255, 0.045)
+    );
+
+  color:
+    rgba(225, 232, 255, 0.90);
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+
+#enableDeviceNotificationsBtn:hover {
+
+  transform:
+    translateY(-1px);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(105, 140, 255, 0.20),
+      rgba(105, 140, 255, 0.08)
+    );
+
+  border-color:
+    rgba(130, 165, 255, 0.38);
+
+  box-shadow:
+    0 5px 18px
+    rgba(80, 120, 255, 0.12);
+}
+
+
+#enableDeviceNotificationsBtn:active {
+
+  transform:
+    scale(0.96);
+}
+
+
+/* =========================================================
+   NOTIFICATION BELL
+   ========================================================= */
+
+.notification-bell {
+
+  position: relative;
+
+  width: 42px;
+  height: 42px;
+
+  flex: 0 0 42px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.11);
+
+  border-radius: 50%;
+
+  background:
+    rgba(255, 255, 255, 0.045);
+
+  color: inherit;
+
+  font-size: 19px;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
 
 .notification-bell:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.14);
+
+  transform:
+    translateY(-1px);
+
+  background:
+    rgba(255, 255, 255, 0.09);
+
+  border-color:
+    rgba(255, 255, 255, 0.18);
+
+  box-shadow:
+    0 5px 18px
+    rgba(0, 0, 0, 0.22);
 }
+
 
 .notification-bell:active {
-  transform: scale(0.95);
+
+  transform:
+    scale(0.91);
 }
 
 
-/* ---------------------------------------------------------
+/* =========================================================
    UNREAD COUNT
-   --------------------------------------------------------- */
+   ========================================================= */
 
 .notification-count {
+
   position: absolute;
+
   top: -4px;
   right: -4px;
 
@@ -2082,62 +2263,203 @@ body::after{width:230px;height:230px;right:-90px;top:62%;background:rgba(103,232
   height: 19px;
 
   padding: 0 4px;
+
   box-sizing: border-box;
 
-  border-radius: 999px;
-
   display: flex;
+
   align-items: center;
   justify-content: center;
 
+  border-radius: 999px;
+
+  background:
+    #ff4757;
+
+  color:
+    #fff;
+
+  border:
+    2px solid #101010;
+
   font-size: 10px;
-  font-weight: 800;
 
-  background: #ff4757;
-  color: white;
+  font-weight: 850;
 
-  border: 2px solid rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 2px 8px
+    rgba(255, 71, 87, 0.35);
+
+  animation:
+    notificationCountPop
+    0.22s
+    ease-out;
 }
 
-.hidden {
-  display: none !important;
+
+@keyframes notificationCountPop {
+
+  from {
+    opacity: 0;
+    transform:
+      scale(0.55);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      scale(1);
+  }
+
 }
 
 
-/* ---------------------------------------------------------
-   REMIND EVERYONE BUTTON
-   --------------------------------------------------------- */
+/* =========================================================
+   REMIND EVERYONE
+   ========================================================= */
 
 .remind-everyone-btn {
-  min-height: 44px;
+
+  min-height: 40px;
 
   padding: 0 16px;
 
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 12px;
+  display: inline-flex;
 
-  background: rgba(255, 255, 255, 0.08);
+  align-items: center;
+  justify-content: center;
 
-  color: inherit;
+  gap: 7px;
 
-  font-size: 14px;
-  font-weight: 700;
+  border:
+    1px solid rgba(255, 255, 255, 0.13);
+
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.075),
+      rgba(255, 255, 255, 0.035)
+    );
+
+  color:
+    rgba(245, 245, 245, 0.92);
+
+  font-size: 12px;
+
+  font-weight: 750;
 
   cursor: pointer;
 
   transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease;
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
+
 
 .remind-everyone-btn:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.14);
+
+  transform:
+    translateY(-1px);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.12),
+      rgba(255, 255, 255, 0.055)
+    );
+
+  border-color:
+    rgba(255, 255, 255, 0.22);
+
+  box-shadow:
+    0 6px 20px
+    rgba(0, 0, 0, 0.20);
 }
 
+
 .remind-everyone-btn:active {
-  transform: scale(0.97);
+
+  transform:
+    scale(0.96);
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+  .notification-bar {
+
+    padding:
+      7px 10px;
+
+  }
+
+
+  .notification-actions {
+
+    width: 100%;
+
+    justify-content:
+      flex-end;
+
+    gap: 6px;
+
+  }
+
+
+  #clearNotificationHistoryBtn {
+
+    padding:
+      0 10px;
+
+    font-size:
+      10px;
+
+  }
+
+
+  #enableDeviceNotificationsBtn {
+
+    padding:
+      0 11px;
+
+    font-size:
+      10px;
+
+  }
+
+
+  .notification-bell {
+
+    width:
+      40px;
+
+    height:
+      40px;
+
+    flex-basis:
+      40px;
+
+  }
+
+
+  .remind-everyone-btn {
+
+    padding:
+      0 11px;
+
+    font-size:
+      10px;
+
+  }
+
 }
 
 
