@@ -1153,34 +1153,289 @@ addMessage(
   }
 
 
-  function showAITaskAnalysis(analysis) {
+ function showAITaskAnalysis(analysis) {
 
-    if (!analysis) return;
+  if (!analysis) return;
 
-    const score = Number(analysis.score);
-    const message = String(analysis.message || "").trim();
-    const suggestion = String(analysis.suggestion || "").trim();
-    const mood = String(analysis.mood || "").toLowerCase();
+  // ---------------------------------------------------------
+  // BASIC FIELDS
+  // ---------------------------------------------------------
 
-    let prefix = "🤖 Here's what I think about that task:";
+  const score = Number(
+    analysis.score ??
+    analysis.effectiveness_score
+  );
 
-    if (Number.isFinite(score)) {
-      if (score >= 90) prefix = `⚡ ${score}% — Excellent task!`;
-      else if (score >= 75) prefix = `😊 ${score}% — That's a good task!`;
-      else if (score >= 55) prefix = `🤔 ${score}% — It could be stronger.`;
-      else prefix = `👀 ${score}% — Let's improve this task.`;
+  const message =
+    String(
+      analysis.message ??
+      analysis.ai_message ??
+      ""
+    ).trim();
+
+  const suggestion =
+    String(
+      analysis.suggestion ??
+      analysis.improvement ??
+      ""
+    ).trim();
+
+  const mood =
+    String(
+      analysis.mood ?? "thinking"
+    ).toLowerCase();
+
+
+  // ---------------------------------------------------------
+  // EXTRA ANALYSIS
+  // ---------------------------------------------------------
+
+  const neet =
+    String(
+      analysis.neet_relevance ?? ""
+    ).trim();
+
+  const board =
+    String(
+      analysis.board_relevance ?? ""
+    ).trim();
+
+  const priority =
+    String(
+      analysis.priority ?? ""
+    ).trim();
+
+  const importance =
+    Number(
+      analysis.importance
+    );
+
+  const recommendedTime =
+    String(
+      analysis.recommended_time ?? ""
+    ).trim();
+
+  const timeAdvice =
+    String(
+      analysis.time_advice ?? ""
+    ).trim();
+
+  const analysisText =
+    String(
+      analysis.analysis ?? ""
+    ).trim();
+
+  const neetReason =
+    String(
+      analysis.neet_reason ?? ""
+    ).trim();
+
+  const boardReason =
+    String(
+      analysis.board_reason ?? ""
+    ).trim();
+
+  const improvement =
+    String(
+      analysis.improvement ?? ""
+    ).trim();
+
+  const strategy =
+    String(
+      analysis.strategy ?? ""
+    ).trim();
+
+
+  // ---------------------------------------------------------
+  // HEADLINE
+  // ---------------------------------------------------------
+
+  let prefix =
+    "🤖 Here's what I think about that task:";
+
+  if (Number.isFinite(score)) {
+
+    if (score >= 90) {
+
+      prefix =
+        `⚡ ${score}% — Excellent task!`;
+
+    } else if (score >= 75) {
+
+      prefix =
+        `😊 ${score}% — That's a good task!`;
+
+    } else if (score >= 55) {
+
+      prefix =
+        `🤔 ${score}% — It could be stronger.`;
+
+    } else {
+
+      prefix =
+        `👀 ${score}% — Let's improve this task.`;
     }
+  }
 
-    let text = prefix;
-    if (message) text += ` ${message}`;
-    if (suggestion) text += ` 💡 ${suggestion}`;
 
-    showAICompanion(
-      text,
-      mood === "happy" ? "happy" : "thinking",
-      8500
+  // ---------------------------------------------------------
+  // BUILD FULL COMPANION MESSAGE
+  // ---------------------------------------------------------
+
+  const sections = [];
+
+  sections.push(prefix);
+
+
+  if (message) {
+
+    sections.push(
+      `\n${message}`
     );
   }
+
+
+  // ---------------------------------------------------------
+  // QUICK STATS
+  // ---------------------------------------------------------
+
+  const stats = [];
+
+  if (neet) {
+
+    stats.push(
+      `📚 NEET: ${neet}`
+    );
+  }
+
+  if (board) {
+
+    stats.push(
+      `📝 Boards: ${board}`
+    );
+  }
+
+  if (priority) {
+
+    stats.push(
+      `🔥 Priority: ${priority}`
+    );
+  }
+
+  if (
+    Number.isFinite(importance)
+  ) {
+
+    stats.push(
+      `⭐ Importance: ${importance}/10`
+    );
+  }
+
+  if (recommendedTime) {
+
+    stats.push(
+      `⏱ Recommended: ${recommendedTime}`
+    );
+  }
+
+  if (stats.length) {
+
+    sections.push(
+      `\n${stats.join("\n")}`
+    );
+  }
+
+
+  // ---------------------------------------------------------
+  // ANALYSIS
+  // ---------------------------------------------------------
+
+  if (analysisText) {
+
+    sections.push(
+      `\n🔎 Why:\n${analysisText}`
+    );
+  }
+
+
+  // ---------------------------------------------------------
+  // NEET
+  // ---------------------------------------------------------
+
+  if (neetReason) {
+
+    sections.push(
+      `\n📚 NEET:\n${neetReason}`
+    );
+  }
+
+
+  // ---------------------------------------------------------
+  // BOARDS
+  // ---------------------------------------------------------
+
+  if (boardReason) {
+
+    sections.push(
+      `\n📝 Boards:\n${boardReason}`
+    );
+  }
+
+
+  // ---------------------------------------------------------
+  // TIME ADVICE
+  // ---------------------------------------------------------
+
+  if (timeAdvice) {
+
+    sections.push(
+      `\n⏱ Time advice:\n${timeAdvice}`
+    );
+  }
+
+
+  // ---------------------------------------------------------
+  // IMPROVEMENT
+  // ---------------------------------------------------------
+
+  const finalImprovement =
+    improvement ||
+    suggestion;
+
+  if (finalImprovement) {
+
+    sections.push(
+      `\n💡 Improve:\n${finalImprovement}`
+    );
+  }
+
+
+  // ---------------------------------------------------------
+  // STRATEGY
+  // ---------------------------------------------------------
+
+  if (strategy) {
+
+    sections.push(
+      `\n🎯 Strategy:\n${strategy}`
+    );
+  }
+
+
+  // ---------------------------------------------------------
+  // SHOW COMPANION
+  // ---------------------------------------------------------
+
+  showAICompanion(
+    sections.join("\n"),
+    mood === "happy"
+      ? "happy"
+      : mood === "concerned"
+        ? "concerned"
+        : "thinking",
+    12000
+  );
+}
 
 
   window.showAICompanion = showAICompanion;
