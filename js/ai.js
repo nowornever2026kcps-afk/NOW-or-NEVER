@@ -13,6 +13,7 @@
      ======================================================= */
 
   const FUNCTION_NAME = "now-ai";
+  const TASK_FUNCTION_NAME = "now-ai-task";
 
   const MAX_MESSAGE_LENGTH = 4000;
 
@@ -1121,11 +1122,13 @@ addMessage(
     try {
       const { data, error } =
         await supabaseClient.functions.invoke(
-          FUNCTION_NAME,
+          TASK_FUNCTION_NAME,
           {
             body: {
               event: "task_added",
-              data: { task }
+              data: {
+                task
+              }
             }
           }
         );
