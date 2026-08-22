@@ -3488,3 +3488,104 @@ body::after{width:230px;height:230px;right:-90px;top:62%;background:rgba(103,232
   transform:
     scale(0.96);
 }
+/* =========================================================
+   DEVICE NOTIFICATION BUTTON
+   ========================================================= */
+
+#enableBrowserNotificationsBtn {
+  width: auto !important;
+  min-width: 0 !important;
+  height: 44px !important;
+
+  margin: 0 !important;
+  padding: 0 16px !important;
+
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  border:
+    1px solid rgba(130, 165, 255, 0.24) !important;
+
+  border-radius: 12px !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(105, 140, 255, 0.13),
+      rgba(105, 140, 255, 0.045)
+    ) !important;
+
+  color:
+    rgba(225, 232, 255, 0.92) !important;
+
+  font-size: 12px !important;
+  font-weight: 700 !important;
+
+  box-shadow:
+    none !important;
+
+  cursor: pointer;
+
+  transition:
+    transform .18s ease,
+    background .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease;
+}
+
+
+#enableBrowserNotificationsBtn:hover {
+  transform: translateY(-1px);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(105, 140, 255, 0.20),
+      rgba(105, 140, 255, 0.08)
+    ) !important;
+
+  border-color:
+    rgba(130, 165, 255, 0.42) !important;
+
+  box-shadow:
+    0 6px 20px rgba(80, 120, 255, 0.14) !important;
+}
+
+
+#enableBrowserNotificationsBtn:active {
+  transform: scale(.96);
+}
+
+
+/* notification icon */
+
+#enableBrowserNotificationsBtn .notification-enable-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+
+/* notification text */
+
+#enableBrowserNotificationsBtn .notification-enable-text {
+  white-space: nowrap;
+}
+
+
+/* mobile */
+
+@media (max-width: 600px) {
+
+  #enableBrowserNotificationsBtn {
+    height: 40px !important;
+    padding: 0 11px !important;
+    font-size: 10px !important;
+  }
+
+  #enableBrowserNotificationsBtn .notification-enable-icon {
+    font-size: 14px;
+  }
+
+}
