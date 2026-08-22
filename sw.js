@@ -36,30 +36,45 @@ self.addEventListener("push", event => {
     "NOW-or-NEVER";
 
 
-  const options = {
-
+   const options = {
+  
     body:
       data.body ||
       "You have a new notification.",
-
+  
     icon:
       data.icon ||
       "/NOW-or-NEVER/logo.png",
-
+  
     badge:
       data.badge ||
       "/NOW-or-NEVER/logo.png",
-
+  
     tag:
       data.tag ||
-      "now-or-never",
-
+      `now-or-never-${Date.now()}`,
+  
+    renotify: true,
+  
+    requireInteraction: false,
+  
+    vibrate: [
+      200,
+      100,
+      200,
+      100,
+      400
+    ],
+  
+    timestamp:
+      Date.now(),
+  
     data: {
       url:
         data.url ||
         "/NOW-or-NEVER/"
     }
-
+  
   };
 
 
