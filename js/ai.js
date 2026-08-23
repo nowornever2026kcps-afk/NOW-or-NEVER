@@ -1077,7 +1077,7 @@ addMessage(
      PET COMPANION
      ======================================================= */
 
-  function showAICompanion(message, mood = "thinking", duration = 0) {
+function showAICompanion(message, mood = "thinking", duration = 0) {
 
   if (!companion) {
     companion = document.getElementById("nowAiCompanion");
@@ -1088,33 +1088,64 @@ addMessage(
     return;
   }
 
-  const messageBox = companion.querySelector(".now-ai-companion-message");
+  const messageBox =
+    companion.querySelector(".now-ai-companion-message");
 
-  if (!messageBox) return;
+  if (!messageBox) {
+    console.warn("[NOW AI] Companion message box not found.");
+    return;
+  }
 
-  // Cancel any previous automatic timer
+  // Clear any previous timer
   if (companionTimer) {
     clearTimeout(companionTimer);
     companionTimer = null;
   }
 
   // ----------------------------------------------------------
-  // MESSAGE
+  // BUILD MESSAGE
   // ----------------------------------------------------------
 
-  messageBox.innerHTML = `
-    <div class="now-ai-companion-scroll">
-      ${escapeHtml(String(message || ""))}
-    </div>
+  messageBox.innerHTML = "";
 
-    <button
-      type="button"
-      class="now-ai-companion-ok"
-      aria-label="Close NOW AI message"
-    >
-      OK
-    </button>
-  `;
+  const scrollArea =
+    document.createElement("div");
+
+  scrollArea.className =
+    "now-ai-companion-scroll";
+
+  scrollArea.textContent =
+    String(message || "");
+
+  const okButton =
+    document.createElement("button");
+
+  okButton.type = "button";
+
+  okButton.className =
+    "now-ai-companion-ok";
+
+  okButton.textContent =
+    "OK";
+
+  okButton.setAttribute(
+    "aria-label",
+    "Close NOW AI message"
+  );
+
+  // ----------------------------------------------------------
+  // IMPORTANT:
+  // Put scroll area and button as SEPARATE children.
+  // The button must NOT be inside the scrollable area.
+  // ----------------------------------------------------------
+
+  messageBox.appendChild(
+    scrollArea
+  );
+
+  messageBox.appendChild(
+    okButton
+  );
 
   // ----------------------------------------------------------
   // MOOD
@@ -1127,7 +1158,8 @@ addMessage(
   );
 
   if (
-    ["thinking", "happy", "concerned"].includes(mood)
+    ["thinking", "happy", "concerned"]
+      .includes(mood)
   ) {
     companion.classList.add(mood);
   }
@@ -1142,45 +1174,40 @@ addMessage(
   // OK BUTTON
   // ----------------------------------------------------------
 
-  const okButton =
-    messageBox.querySelector(
-      ".now-ai-companion-ok"
-    );
+  okButton.onclick = function(event) {
 
-  if (okButton) {
-    okButton.addEventListener(
-      "click",
-      () => {
+    event.preventDefault();
+    event.stopPropagation();
 
-        if (companionTimer) {
-          clearTimeout(companionTimer);
-          companionTimer = null;
-        }
+    if (companionTimer) {
+      clearTimeout(companionTimer);
+      companionTimer = null;
+    }
 
-        companion.classList.remove("show");
+    companion.classList.remove("show");
 
-      },
-      { once: true }
-    );
-  }
+  };
 
   // ----------------------------------------------------------
-  // OPTIONAL TIMER
+  // OPTIONAL AUTO CLOSE
   // ----------------------------------------------------------
-  // duration = 0 means stay until OK is clicked.
+  // duration = 0 means:
+  // stay open until OK is pressed.
 
   if (duration > 0) {
 
-    companionTimer = setTimeout(() => {
+    companionTimer =
+      setTimeout(() => {
 
-      companion?.classList.remove("show");
+        companion?.classList.remove(
+          "show"
+        );
 
-      companionTimer = null;
+        companionTimer = null;
 
-    }, duration);
+      }, duration);
 
   }
-
 }
 
   async function analyzeTaskWithAI(taskName) {
@@ -1504,7 +1531,7 @@ addMessage(
       : mood === "concerned"
         ? "concerned"
         : "thinking",
-    0
+    12000
   );
 }
 
