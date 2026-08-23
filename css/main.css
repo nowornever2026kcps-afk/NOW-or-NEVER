@@ -3697,9 +3697,7 @@ body::after{width:230px;height:230px;right:-90px;top:62%;background:rgba(103,232
    SCROLLABLE MESSAGE + OK BUTTON
    ========================================================= */
 
-#nowAiCompanion {
-  pointer-events: auto !important;
-}
+
 
 #nowAiCompanion .now-ai-companion-message {
   display: flex !important;
@@ -3863,4 +3861,21 @@ body::after{width:230px;height:230px;right:-90px;top:62%;background:rgba(103,232
     font-size: 13px;
   }
 
+}
+/* =========================================================
+   NOW AI COMPANION — COMPLETE HIDE WHEN CLOSED
+   ========================================================= */
+
+/* CLOSED */
+#nowAiCompanion:not(.show) {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* OPEN */
+#nowAiCompanion.show {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
 }
