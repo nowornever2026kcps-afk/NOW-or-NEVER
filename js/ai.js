@@ -1077,40 +1077,111 @@ addMessage(
      PET COMPANION
      ======================================================= */
 
-  function showAICompanion(message, mood = "thinking", duration = 6500) {
+  function showAICompanion(message, mood = "thinking", duration = 0) {
 
-    if (!companion) {
-      companion = document.getElementById("nowAiCompanion");
-    }
-
-    if (!companion) {
-      console.warn("[NOW AI] Companion element not found.");
-      return;
-    }
-
-    const messageBox = companion.querySelector(".now-ai-companion-message");
-    if (!messageBox) return;
-
-    if (companionTimer) {
-      clearTimeout(companionTimer);
-      companionTimer = null;
-    }
-
-    messageBox.textContent = String(message || "");
-    companion.classList.remove("thinking", "happy", "concerned");
-    if (["thinking", "happy", "concerned"].includes(mood)) {
-      companion.classList.add(mood);
-    }
-    companion.classList.add("show");
-
-    if (duration > 0) {
-      companionTimer = setTimeout(() => {
-        companion?.classList.remove("show");
-        companionTimer = null;
-      }, duration);
-    }
+  if (!companion) {
+    companion = document.getElementById("nowAiCompanion");
   }
 
+  if (!companion) {
+    console.warn("[NOW AI] Companion element not found.");
+    return;
+  }
+
+  const messageBox = companion.querySelector(".now-ai-companion-message");
+
+  if (!messageBox) return;
+
+  // Cancel any previous automatic timer
+  if (companionTimer) {
+    clearTimeout(companionTimer);
+    companionTimer = null;
+  }
+
+  // ----------------------------------------------------------
+  // MESSAGE
+  // ----------------------------------------------------------
+
+  messageBox.innerHTML = `
+    <div class="now-ai-companion-scroll">
+      ${escapeHtml(String(message || ""))}
+    </div>
+
+    <button
+      type="button"
+      class="now-ai-companion-ok"
+      aria-label="Close NOW AI message"
+    >
+      OK
+    </button>
+  `;
+
+  // ----------------------------------------------------------
+  // MOOD
+  // ----------------------------------------------------------
+
+  companion.classList.remove(
+    "thinking",
+    "happy",
+    "concerned"
+  );
+
+  if (
+    ["thinking", "happy", "concerned"].includes(mood)
+  ) {
+    companion.classList.add(mood);
+  }
+
+  // ----------------------------------------------------------
+  // SHOW
+  // ----------------------------------------------------------
+
+  companion.classList.add("show");
+
+  // ----------------------------------------------------------
+  // OK BUTTON
+  // ----------------------------------------------------------
+
+  const okButton =
+    messageBox.querySelector(
+      ".now-ai-companion-ok"
+    );
+
+  if (okButton) {
+    okButton.addEventListener(
+      "click",
+      () => {
+
+        if (companionTimer) {
+          clearTimeout(companionTimer);
+          companionTimer = null;
+        }
+
+        companion.classList.remove("show");
+
+      },
+      { once: true }
+    );
+  }
+
+  // ----------------------------------------------------------
+  // OPTIONAL TIMER
+  // ----------------------------------------------------------
+  // duration = 0 means stay until OK is clicked.
+
+  if (duration > 0) {
+
+    companionTimer = setTimeout(() => {
+
+      companion?.classList.remove("show");
+
+      companionTimer = null;
+
+    }, duration);
+
+  }
+
+}
 
   async function analyzeTaskWithAI(taskName) {
 
@@ -1433,7 +1504,7 @@ addMessage(
       : mood === "concerned"
         ? "concerned"
         : "thinking",
-    12000
+    0
   );
 }
 
