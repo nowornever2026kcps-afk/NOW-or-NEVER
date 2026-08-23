@@ -3692,3 +3692,175 @@ body::after{width:230px;height:230px;right:-90px;top:62%;background:rgba(103,232
   }
 
 }
+/* =========================================================
+   NOW AI TASK COMPANION
+   SCROLLABLE MESSAGE + OK BUTTON
+   ========================================================= */
+
+#nowAiCompanion {
+  pointer-events: auto !important;
+}
+
+#nowAiCompanion .now-ai-companion-message {
+  display: flex !important;
+  flex-direction: column !important;
+
+  width: 100%;
+  min-width: 0;
+
+  max-height: 300px;
+
+  overflow: hidden !important;
+
+  box-sizing: border-box;
+
+  pointer-events: auto !important;
+}
+
+/* ---------------------------------------------------------
+   SCROLL AREA
+   --------------------------------------------------------- */
+
+#nowAiCompanion .now-ai-companion-scroll {
+  flex: 1 1 auto;
+
+  min-height: 0;
+
+  max-height: 235px;
+
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+
+  padding-right: 8px;
+
+  box-sizing: border-box;
+
+  white-space: pre-wrap;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+
+  line-height: 1.45;
+
+  -webkit-overflow-scrolling: touch;
+
+  touch-action: pan-y;
+
+  pointer-events: auto !important;
+
+  cursor: text;
+}
+
+/* ---------------------------------------------------------
+   SCROLLBAR
+   --------------------------------------------------------- */
+
+#nowAiCompanion
+.now-ai-companion-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+#nowAiCompanion
+.now-ai-companion-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#nowAiCompanion
+.now-ai-companion-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.30);
+
+  border-radius: 10px;
+}
+
+#nowAiCompanion
+.now-ai-companion-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.50);
+}
+
+/* Firefox */
+
+#nowAiCompanion
+.now-ai-companion-scroll {
+  scrollbar-width: thin;
+
+  scrollbar-color:
+    rgba(255,255,255,0.30)
+    transparent;
+}
+
+/* ---------------------------------------------------------
+   OK BUTTON
+   --------------------------------------------------------- */
+
+#nowAiCompanion .now-ai-companion-ok {
+  flex: 0 0 auto;
+
+  align-self: flex-end;
+
+  margin-top: 10px;
+
+  min-width: 58px;
+  height: 36px;
+
+  padding: 0 16px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: rgba(255,255,255,0.18);
+
+  color: inherit;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  pointer-events: auto !important;
+
+  position: relative;
+  z-index: 20;
+
+  touch-action: manipulation;
+
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+
+#nowAiCompanion .now-ai-companion-ok:hover {
+  background: rgba(255,255,255,0.28);
+
+  transform: translateY(-1px);
+}
+
+#nowAiCompanion .now-ai-companion-ok:active {
+  transform: scale(0.94);
+}
+
+/* ---------------------------------------------------------
+   MOBILE
+   --------------------------------------------------------- */
+
+@media (max-width: 600px) {
+
+  #nowAiCompanion
+  .now-ai-companion-message {
+    max-height: 270px;
+  }
+
+  #nowAiCompanion
+  .now-ai-companion-scroll {
+    max-height: 205px;
+  }
+
+  #nowAiCompanion
+  .now-ai-companion-ok {
+    min-width: 62px;
+    height: 38px;
+
+    font-size: 13px;
+  }
+
+}
