@@ -1531,7 +1531,7 @@ function showAICompanion(message, mood = "thinking", duration = 0) {
       : mood === "concerned"
         ? "concerned"
         : "thinking",
-    12000
+    30000
   );
 }
 
