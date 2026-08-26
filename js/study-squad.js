@@ -1147,6 +1147,29 @@ function startClassroomPresence() {
     supabaseClient
       .channel(channelName);
 
+   classroomPresenceChannel.on(
+        "presence",
+        {
+          event: "sync"
+        },
+        () => {
+      
+          const activeUsers =
+            getActiveClassroomUsers();
+      
+          console.log(
+            "[Study Squad] Active students:",
+            activeUsers
+          );
+      
+          console.log(
+            "[Study Squad] Active student count:",
+            activeUsers.length
+          );
+      
+        }
+      );
+
 
   classroomPresenceChannel
     .subscribe(async (status) => {
@@ -1182,6 +1205,50 @@ function startClassroomPresence() {
 
 }
 
+/* =========================================================
+   GET ACTIVE CLASSROOM USERS
+   STEP 4B.6B
+   ========================================================= */
+
+function getActiveClassroomUsers() {
+
+  if (!classroomPresenceChannel) {
+    return [];
+  }
+
+  const state =
+    classroomPresenceChannel.presenceState();
+
+  const users = [];
+
+  Object.values(state).forEach(
+    presences => {
+
+      presences.forEach(
+        presence => {
+
+          if (
+            presence.user_id &&
+            !users.includes(
+              presence.user_id
+            )
+          ) {
+
+            users.push(
+              presence.user_id
+            );
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+  return users;
+
+}
 /* =========================================================
    SEND CLASSROOM MESSAGE
    STEP 4B.2
