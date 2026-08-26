@@ -1229,3 +1229,73 @@ a {
   }
 
 }
+/* =========================================================
+   CHAT MESSAGES — STEP 4B.3
+   ========================================================= */
+
+.chat-message {
+  max-width: 78%;
+
+  margin-bottom: 13px;
+
+  padding: 9px 11px;
+
+  border: 1px solid #292929;
+  border-radius: 12px;
+
+  background: #151515;
+
+  overflow-wrap: anywhere;
+}
+
+
+.chat-message-mine {
+  margin-left: auto;
+
+  background: #202020;
+
+  border-color: #383838;
+}
+
+
+.chat-message-other {
+  margin-right: auto;
+}
+
+
+.chat-message-header {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-bottom: 5px;
+}
+
+
+.chat-sender {
+  font-size: 10px;
+
+  font-weight: 800;
+
+  color: #eee;
+}
+
+
+.chat-time {
+  font-size: 9px;
+
+  color: #666;
+}
+
+
+.chat-message-body {
+  font-size: 12px;
+
+  line-height: 1.5;
+
+  color: #ddd;
+
+  white-space: pre-wrap;
+}
