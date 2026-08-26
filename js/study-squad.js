@@ -375,10 +375,10 @@ async function joinClassroom(
    * Already joined.
    */
 
-  if (existingMember) {
+    if (existingMember) {
 
     showToast(
-      "You're already in this classroom."
+      "Opening classroom..."
     );
 
     restoreJoinButton(
@@ -386,9 +386,10 @@ async function joinClassroom(
       "Open"
     );
 
+    openClassroom(classroomId);
+
     return;
   }
-
 
   /*
    * Join classroom.
@@ -426,15 +427,174 @@ async function joinClassroom(
     "Joined the Study Squad! 🎉"
   );
 
-
   restoreJoinButton(
     button,
-    "Joined"
+    "Open"
   );
+
+  openClassroom(classroomId);
 
 }
 
+/* =========================================================
+   OPEN CLASSROOM
+   ========================================================= */
 
+async function openClassroom(classroomId) {
+
+  console.log(
+    "[Study Squad] Opening classroom:",
+    classroomId
+  );
+
+
+  const {
+    data: classroom,
+    error
+  } =
+    await supabaseClient
+      .from("study_classrooms")
+      .select(`
+        id,
+        name,
+        subject,
+        exam_type
+      `)
+      .eq("id", classroomId)
+      .maybeSingle();
+
+
+  if (error) {
+
+    console.error(
+      "[Study Squad] Failed to open classroom:",
+      error
+    );
+
+    showToast(
+      "Couldn't open classroom."
+    );
+
+    return;
+  }
+
+
+  if (!classroom) {
+
+    showToast(
+      "Classroom not found."
+    );
+
+    return;
+  }
+
+
+  const classroomList =
+    $("classroomList");
+
+  const classroomDirectory =
+    classroomList?.closest(
+      ".squad-card"
+    );
+
+  const classroomRoom =
+    $("classroomRoom");
+
+
+  if (!classroomRoom) {
+
+    console.error(
+      "[Study Squad] classroomRoom element not found."
+    );
+
+    showToast(
+      "Classroom screen is missing."
+    );
+
+    return;
+  }
+
+
+  /*
+   * Fill classroom information.
+   */
+
+  if ($("roomSubject")) {
+
+    $("roomSubject").textContent =
+      classroom.subject;
+  }
+
+
+  if ($("roomTitle")) {
+
+    $("roomTitle").textContent =
+      classroom.name;
+  }
+
+
+  if ($("roomExam")) {
+
+    $("roomExam").textContent =
+      formatExamType(
+        classroom.exam_type
+      );
+  }
+
+
+  /*
+   * Hide classroom directory.
+   */
+
+  if (classroomDirectory) {
+
+    classroomDirectory.classList.add(
+      "hidden"
+    );
+  }
+
+
+  /*
+   * Hide the hero/actions while inside
+   * the classroom.
+   */
+
+  document
+    .querySelector(".squad-hero")
+    ?.classList
+    .add("hidden");
+
+  document
+    .querySelector(".squad-actions")
+    ?.classList
+    .add("hidden");
+
+
+  /*
+   * Show classroom.
+   */
+
+  classroomRoom.classList.remove(
+    "hidden"
+  );
+
+
+  /*
+   * Scroll to the top.
+   */
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+
+
+  console.log(
+    "[Study Squad] Classroom opened:",
+    classroom.name
+  );
+
+}
 /* =========================================================
    CREATE CLASSROOM
    ========================================================= */
@@ -771,6 +931,59 @@ function escapeHtml(value) {
 
 }
 
+/* =========================================================
+   BACK TO CLASSROOMS
+   ========================================================= */
+
+$("backToClassroomsBtn")?.addEventListener(
+  "click",
+  () => {
+
+    const classroomRoom =
+      $("classroomRoom");
+
+    if (classroomRoom) {
+
+      classroomRoom.classList.add(
+        "hidden"
+      );
+
+    }
+
+
+    document
+      .querySelector(".squad-hero")
+      ?.classList
+      .remove("hidden");
+
+
+    document
+      .querySelector(".squad-actions")
+      ?.classList
+      .remove("hidden");
+
+
+    const classroomDirectory =
+      $("classroomList")
+        ?.closest(".squad-card");
+
+
+    if (classroomDirectory) {
+
+      classroomDirectory.classList.remove(
+        "hidden"
+      );
+
+    }
+
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+
+  }
+);
 
 /* =========================================================
    INITIALIZATION
