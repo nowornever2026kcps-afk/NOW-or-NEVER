@@ -1166,6 +1166,22 @@ function startClassroomPresence() {
             "[Study Squad] Active student count:",
             activeUsers.length
           );
+         const activeCount =
+              $("classroomActiveCount");
+            
+            if (activeCount) {
+            
+              const count =
+                activeUsers.length;
+            
+              activeCount.textContent =
+                `🟢 ${count} ${
+                  count === 1
+                    ? "student"
+                    : "students"
+                } active`;
+            
+            }
       
         }
       );
