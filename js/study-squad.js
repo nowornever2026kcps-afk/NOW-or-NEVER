@@ -1180,6 +1180,18 @@ function startClassroomPresence() {
                     ? "student"
                     : "students"
                 } active`;
+
+               const activePanel =
+                 $("activeStudentsPanel");
+               
+               if (
+                 activePanel &&
+                 !activePanel.classList.contains("hidden")
+               ) {
+               
+                 showActiveStudents();
+               
+               }
             
             }
       
@@ -1265,6 +1277,181 @@ function getActiveClassroomUsers() {
   return users;
 
 }
+
+/* =========================================================
+   ACTIVE STUDENT LIST
+   STEP 4B.6D
+   ========================================================= */
+
+async function showActiveStudents() {
+
+  const panel =
+    $("activeStudentsPanel");
+
+  const list =
+    $("activeStudentsList");
+
+  if (!panel || !list) {
+    return;
+  }
+
+
+  const activeUsers =
+    getActiveClassroomUsers();
+
+
+  if (!activeUsers.length) {
+
+    list.innerHTML = `
+      <div class="active-student-item">
+        No active students.
+      </div>
+    `;
+
+    panel.classList.remove("hidden");
+
+    return;
+  }
+
+
+  list.innerHTML = `
+    <div class="active-student-item">
+      Loading students...
+    </div>
+  `;
+
+  panel.classList.remove("hidden");
+
+
+  /* -------------------------------------------------------
+     LOAD PROFILES
+     ------------------------------------------------------- */
+
+  const {
+    data: profiles,
+    error
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select(`
+        id,
+        username,
+        display_name
+      `)
+      .in(
+        "id",
+        activeUsers
+      );
+
+
+  if (error) {
+
+    console.error(
+      "[Study Squad] Failed to load active students:",
+      error
+    );
+
+    list.innerHTML = `
+      <div class="active-student-item">
+        Couldn't load students.
+      </div>
+    `;
+
+    return;
+  }
+
+
+  const profileMap =
+    new Map();
+
+  (profiles || []).forEach(
+    profile => {
+
+      profileMap.set(
+        profile.id,
+        profile
+      );
+
+    }
+  );
+
+
+  /* -------------------------------------------------------
+     RENDER
+     ------------------------------------------------------- */
+
+  list.innerHTML =
+    activeUsers
+      .map(userId => {
+
+        const profile =
+          profileMap.get(userId);
+
+
+        const isMe =
+          currentUser &&
+          userId === currentUser.id;
+
+
+        const name =
+          isMe
+            ? "You"
+            : (
+                profile?.display_name ||
+                profile?.username ||
+                "Student"
+              );
+
+
+        return `
+          <div
+            class="active-student-item"
+          >
+
+            <span
+              class="active-student-dot"
+            ></span>
+
+            <span
+              class="active-student-name"
+            >
+              ${escapeHtml(name)}
+            </span>
+
+          </div>
+        `;
+
+      })
+      .join("");
+
+}
+
+/* =========================================================
+   ACTIVE STUDENT PANEL CONTROLS
+   ========================================================= */
+
+$("classroomActiveCount")
+  ?.addEventListener(
+    "click",
+    () => {
+
+      showActiveStudents();
+
+    }
+  );
+
+
+$("closeActiveStudents")
+  ?.addEventListener(
+    "click",
+    () => {
+
+      $("activeStudentsPanel")
+        ?.classList
+        .add("hidden");
+
+    }
+  );
 /* =========================================================
    SEND CLASSROOM MESSAGE
    STEP 4B.2
