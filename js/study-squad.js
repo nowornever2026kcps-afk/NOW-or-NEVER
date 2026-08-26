@@ -2314,3 +2314,125 @@ document.addEventListener(
   opacity: 0.55;
   cursor: not-allowed;
 }
+/* =========================================================
+   STUDY SQUAD — NEED MENTOR BUTTON
+   STEP 4C.4E
+   ========================================================= */
+
+const needMentorBtn =
+  document.getElementById("needMentorBtn");
+
+if (needMentorBtn) {
+
+  needMentorBtn.addEventListener(
+    "click",
+    async () => {
+
+      /* ---------------------------------------------------
+         Make sure a classroom is open
+         --------------------------------------------------- */
+
+      if (!activeClassroomId) {
+
+        showToast(
+          "Please open a classroom first."
+        );
+
+        return;
+      }
+
+
+      /* ---------------------------------------------------
+         Prevent rapid clicking
+         --------------------------------------------------- */
+
+      if (needMentorBtn.disabled) {
+        return;
+      }
+
+
+      needMentorBtn.disabled = true;
+
+      const originalText =
+        needMentorBtn.innerHTML;
+
+      needMentorBtn.innerHTML =
+        "⏳ Requesting...";
+
+
+      try {
+
+        const {
+          data,
+          error
+        } =
+          await supabaseClient.rpc(
+            "request_study_mentor",
+            {
+              p_classroom_id:
+                activeClassroomId
+            }
+          );
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        console.log(
+          "[Study Squad] Mentor request:",
+          data
+        );
+
+
+        needMentorBtn.innerHTML =
+          "✅ Mentor requested";
+
+
+        showToast(
+          "Mentor requested! 🤖"
+        );
+
+
+        /* -------------------------------------------------
+           Re-enable after 5 seconds.
+           Database has its own 2-minute protection.
+           ------------------------------------------------- */
+
+        setTimeout(() => {
+
+          needMentorBtn.disabled =
+            false;
+
+          needMentorBtn.innerHTML =
+            originalText;
+
+        }, 5000);
+
+
+      } catch (error) {
+
+        console.error(
+          "[Study Squad] Need Mentor failed:",
+          error
+        );
+
+
+        needMentorBtn.disabled =
+          false;
+
+        needMentorBtn.innerHTML =
+          originalText;
+
+
+        showToast(
+          "Couldn't request the mentor."
+        );
+
+      }
+
+    }
+  );
+
+}
