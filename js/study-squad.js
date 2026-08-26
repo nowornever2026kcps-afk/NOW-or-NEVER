@@ -64,6 +64,7 @@ function showToast(message) {
 
 let currentUser = null;
 let activeClassroomId = null;
+let classroomRealtimeChannel = null;
 
 /* =========================================================
    CREATE CLASSROOM MODAL
@@ -635,6 +636,7 @@ async function openClassroom(
     .remove("hidden");
     
    await loadClassroomMessages();
+   subscribeToClassroomMessages();
 
 
   /* -------------------------------------------------------
@@ -673,6 +675,16 @@ $("backToClassroomsBtn")
           ?.closest(
             ".squad-card"
           );
+      if (classroomRealtimeChannel) {
+
+        supabaseClient
+          .removeChannel(
+            classroomRealtimeChannel
+          );
+      
+        classroomRealtimeChannel = null;
+      
+      }
 
 
       /* Hide room */
@@ -1603,6 +1615,243 @@ function formatMessageTime(
       minute: "2-digit"
     }
   );
+
+}
+
+/* =========================================================
+   CLASSROOM REALTIME
+   STEP 4B.4
+   ========================================================= */
+
+function subscribeToClassroomMessages() {
+
+  if (!activeClassroomId) {
+    return;
+  }
+
+
+  /* Remove previous subscription */
+
+  if (classroomRealtimeChannel) {
+
+    supabaseClient
+      .removeChannel(
+        classroomRealtimeChannel
+      );
+
+    classroomRealtimeChannel = null;
+  }
+
+
+  console.log(
+    "[Study Squad] Starting realtime for:",
+    activeClassroomId
+  );
+
+
+  classroomRealtimeChannel =
+    supabaseClient
+      .channel(
+        `study-classroom-${activeClassroomId}`
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "study_messages",
+          filter:
+            `classroom_id=eq.${activeClassroomId}`
+        },
+        payload => {
+
+          console.log(
+            "[Study Squad] New realtime message:",
+            payload.new
+          );
+
+
+          /*
+           * Add only the newly inserted message.
+           * We don't reload the entire conversation.
+           */
+
+          renderRealtimeMessage(
+            payload.new
+          );
+
+        }
+      )
+      .subscribe(
+        status => {
+
+          console.log(
+            "[Study Squad] Realtime status:",
+            status
+          );
+
+        }
+      );
+
+}
+
+/* =========================================================
+   RENDER REALTIME MESSAGE
+   ========================================================= */
+
+async function renderRealtimeMessage(
+  message
+) {
+
+  const messagesContainer =
+    $("classroomMessages");
+
+
+  if (!messagesContainer) {
+    return;
+  }
+
+
+  /*
+   * Ignore messages belonging to another classroom.
+   */
+
+  if (
+    message.classroom_id !==
+    activeClassroomId
+  ) {
+    return;
+  }
+
+
+  /*
+   * If this message already exists in the DOM,
+   * don't add it twice.
+   */
+
+  if (
+    messagesContainer.querySelector(
+      `[data-message-id="${message.id}"]`
+    )
+  ) {
+    return;
+  }
+
+
+  /* -------------------------------------------------------
+     GET SENDER PROFILE
+     ------------------------------------------------------- */
+
+  const {
+    data: profile
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select(`
+        id,
+        username,
+        display_name
+      `)
+      .eq(
+        "id",
+        message.sender_id
+      )
+      .maybeSingle();
+
+
+  const isMine =
+    currentUser &&
+    message.sender_id ===
+      currentUser.id;
+
+
+  const senderName =
+    isMine
+      ? "You"
+      : (
+          profile?.display_name ||
+          profile?.username ||
+          "Student"
+        );
+
+
+  const messageTime =
+    formatMessageTime(
+      message.created_at
+    );
+
+
+  /* -------------------------------------------------------
+     REMOVE EMPTY STATE
+     ------------------------------------------------------- */
+
+  const emptyState =
+    messagesContainer.querySelector(
+      ".chat-empty"
+    );
+
+
+  if (emptyState) {
+    emptyState.remove();
+  }
+
+
+  /* -------------------------------------------------------
+     CREATE MESSAGE
+     ------------------------------------------------------- */
+
+  const messageElement =
+    document.createElement("div");
+
+
+  messageElement.className =
+    `chat-message ${
+      isMine
+        ? "chat-message-mine"
+        : "chat-message-other"
+    }`;
+
+
+  messageElement.dataset.messageId =
+    message.id;
+
+
+  messageElement.innerHTML = `
+
+    <div class="chat-message-header">
+
+      <span class="chat-sender">
+        ${escapeHtml(senderName)}
+      </span>
+
+      <span class="chat-time">
+        ${escapeHtml(messageTime)}
+      </span>
+
+    </div>
+
+    <div class="chat-message-body">
+      ${escapeHtml(message.message)}
+    </div>
+
+  `;
+
+
+  messagesContainer.appendChild(
+    messageElement
+  );
+
+
+  /* -------------------------------------------------------
+     SCROLL TO NEW MESSAGE
+     ------------------------------------------------------- */
+
+  messagesContainer.scrollTo({
+    top:
+      messagesContainer.scrollHeight,
+    behavior:
+      "smooth"
+  });
 
 }
 
