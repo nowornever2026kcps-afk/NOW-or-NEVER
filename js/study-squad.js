@@ -440,6 +440,10 @@ async function joinClassroom(
    OPEN CLASSROOM
    ========================================================= */
 
+/* =========================================================
+   OPEN CLASSROOM
+   ========================================================= */
+
 async function openClassroom(classroomId) {
 
   console.log(
@@ -489,37 +493,20 @@ async function openClassroom(classroomId) {
   }
 
 
-   const classroomList =
-     $("classroomList");
-   
-   const classroomDirectory =
-     classroomList?.closest(
-       ".squad-card"
-     );
-   
-   const classroomRoom =
-     $("classroomRoom");
-   
-   
-   /*
-    * Move the classroom room to the exact
-    * position occupied by the classroom list.
-    *
-    * This makes it behave like a view switch
-    * instead of appearing underneath the list.
-    */
-   
-   if (
-     classroomRoom &&
-     classroomDirectory
-   ) {
-   
-     classroomDirectory.parentNode.insertBefore(
-       classroomRoom,
-       classroomDirectory
-     );
-   
-   }
+  /* -------------------------------------------------------
+     GET ELEMENTS
+     ------------------------------------------------------- */
+
+  const classroomList =
+    $("classroomList");
+
+  const classroomDirectory =
+    classroomList?.closest(
+      ".squad-card"
+    );
+
+  const classroomRoom =
+    $("classroomRoom");
 
 
   if (!classroomRoom) {
@@ -536,9 +523,9 @@ async function openClassroom(classroomId) {
   }
 
 
-  /*
-   * Fill classroom information.
-   */
+  /* -------------------------------------------------------
+     FILL CLASSROOM INFORMATION
+     ------------------------------------------------------- */
 
   if ($("roomSubject")) {
 
@@ -563,27 +550,46 @@ async function openClassroom(classroomId) {
   }
 
 
-  /*
-   * Hide classroom directory.
-   */
+  /* -------------------------------------------------------
+     MOVE CLASSROOM ROOM TO THE SAME POSITION
+     AS THE CLASSROOM DIRECTORY
+     ------------------------------------------------------- */
+
+  if (
+    classroomDirectory &&
+    classroomRoom
+  ) {
+
+    classroomDirectory.parentNode.insertBefore(
+      classroomRoom,
+      classroomDirectory
+    );
+
+  }
+
+
+  /* -------------------------------------------------------
+     HIDE DIRECTORY
+     ------------------------------------------------------- */
 
   if (classroomDirectory) {
 
     classroomDirectory.classList.add(
       "hidden"
     );
+
   }
 
 
-  /*
-   * Hide the hero/actions while inside
-   * the classroom.
-   */
+  /* -------------------------------------------------------
+     HIDE HERO + ACTIONS
+     ------------------------------------------------------- */
 
   document
     .querySelector(".squad-hero")
     ?.classList
     .add("hidden");
+
 
   document
     .querySelector(".squad-actions")
@@ -591,18 +597,18 @@ async function openClassroom(classroomId) {
     .add("hidden");
 
 
-  /*
-   * Show classroom.
-   */
+  /* -------------------------------------------------------
+     SHOW CLASSROOM
+     ------------------------------------------------------- */
 
   classroomRoom.classList.remove(
     "hidden"
   );
 
 
-  /*
-   * Scroll to the top.
-   */
+  /* -------------------------------------------------------
+     SCROLL TO TOP
+     ------------------------------------------------------- */
 
   window.scrollTo({
     top: 0,
