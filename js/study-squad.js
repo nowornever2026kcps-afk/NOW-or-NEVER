@@ -2269,51 +2269,7 @@ document.addEventListener(
   }
 );
 
-/* =========================================================
-   NEED MENTOR BUTTON
-   ========================================================= */
 
-.need-mentor-btn {
-  display: inline-flex;
-
-  align-items: center;
-  justify-content: center;
-
-  gap: 6px;
-
-  padding: 7px 11px;
-
-  border: 1px solid #444;
-  border-radius: 8px;
-
-  background: #171717;
-
-  color: #f1f1f1;
-
-  font-size: 12px;
-  font-weight: 600;
-
-  cursor: pointer;
-
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.15s ease;
-}
-
-.need-mentor-btn:hover {
-  background: #222;
-  border-color: #666;
-}
-
-.need-mentor-btn:active {
-  transform: scale(0.97);
-}
-
-.need-mentor-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
 /* =========================================================
    STUDY SQUAD — NEED MENTOR BUTTON
    STEP 4C.4E
