@@ -1355,31 +1355,26 @@ a {
    ========================================================= */
 
 .active-students-panel {
-  position: fixed;
+  position: absolute;
 
-  top: 50%;
-  left: 50%;
-
-  transform: translate(-50%, -50%);
+  top: calc(100% + 8px);
+  right: 0;
 
   z-index: 9999;
 
-  width: min(300px, calc(100vw - 32px));
-
-  max-height: 70vh;
+  width: 230px;
+  max-width: calc(100vw - 24px);
 
   background: #111;
 
   border: 1px solid #333;
-
-  border-radius: 14px;
+  border-radius: 12px;
 
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.65);
+    0 12px 35px rgba(0, 0, 0, 0.5);
 
   overflow: hidden;
 }
-
 
 /* ---------------------------------------------------------
    HEADER
