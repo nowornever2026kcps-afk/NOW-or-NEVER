@@ -1,6 +1,6 @@
 /* =========================================================
    NOW-or-NEVER — STUDY SQUAD
-   STEP 3 — DATABASE CONNECTION
+   STEP 4A — CLASSROOM VIEW
    ========================================================= */
 
 const SUPABASE_URL =
@@ -8,6 +8,7 @@ const SUPABASE_URL =
 
 const SUPABASE_KEY =
   "sb_publishable_YaS6ZJfi4VrAbtGymRBr6w_ocpvX0I-";
+
 
 const supabaseClient =
   window.supabase.createClient(
@@ -27,24 +28,33 @@ const supabaseClient =
    HELPERS
    ========================================================= */
 
-const $ = id => document.getElementById(id);
+const $ = id =>
+  document.getElementById(id);
 
 
 function showToast(message) {
 
-  const toast = $("squadToast");
+  const toast =
+    $("squadToast");
 
   if (!toast) return;
 
-  toast.textContent = message;
+  toast.textContent =
+    message;
 
   toast.classList.add("show");
 
-  clearTimeout(showToast.timer);
+  clearTimeout(
+    showToast.timer
+  );
 
-  showToast.timer = setTimeout(() => {
-    toast.classList.remove("show");
-  }, 2600);
+  showToast.timer =
+    setTimeout(() => {
+
+      toast.classList.remove("show");
+
+    }, 2600);
+
 }
 
 
@@ -124,13 +134,12 @@ async function loadClassrooms() {
   if (!list) return;
 
 
-  /*
-   * Loading state
-   */
-
   list.innerHTML = `
     <div class="classroom-empty">
-      <div class="empty-icon">⏳</div>
+
+      <div class="empty-icon">
+        ⏳
+      </div>
 
       <strong>
         Loading classrooms...
@@ -139,6 +148,7 @@ async function loadClassrooms() {
       <p>
         Finding active Study Squads.
       </p>
+
     </div>
   `;
 
@@ -173,7 +183,10 @@ async function loadClassrooms() {
 
     list.innerHTML = `
       <div class="classroom-empty">
-        <div class="empty-icon">⚠️</div>
+
+        <div class="empty-icon">
+          ⚠️
+        </div>
 
         <strong>
           Couldn't load classrooms
@@ -182,16 +195,13 @@ async function loadClassrooms() {
         <p>
           ${escapeHtml(error.message)}
         </p>
+
       </div>
     `;
 
     return;
   }
 
-
-  /*
-   * No classrooms
-   */
 
   if (!data || data.length === 0) {
 
@@ -217,88 +227,88 @@ async function loadClassrooms() {
   }
 
 
-  /*
-   * Render classrooms
-   */
+  list.innerHTML =
+    data
+      .map(classroom => {
 
-  list.innerHTML = data
-    .map(classroom => {
+        return `
+          <article
+            class="classroom-item"
+            data-classroom-id="${escapeHtml(classroom.id)}"
+          >
 
-      return `
-        <article
-          class="classroom-item"
-          data-classroom-id="${escapeHtml(classroom.id)}"
-        >
+            <div class="classroom-item-top">
 
-          <div class="classroom-item-top">
+              <div class="classroom-subject">
+                ${escapeHtml(classroom.subject)}
+              </div>
 
-            <div class="classroom-subject">
-              ${escapeHtml(classroom.subject)}
+              <div class="classroom-exam">
+                ${escapeHtml(
+                  formatExamType(
+                    classroom.exam_type
+                  )
+                )}
+              </div>
+
             </div>
 
-            <div class="classroom-exam">
-              ${escapeHtml(formatExamType(classroom.exam_type))}
+
+            <h4>
+              ${escapeHtml(classroom.name)}
+            </h4>
+
+
+            ${
+              classroom.description
+                ? `
+                  <p class="classroom-description">
+                    ${escapeHtml(
+                      classroom.description
+                    )}
+                  </p>
+                `
+                : ""
+            }
+
+
+            <div class="classroom-item-bottom">
+
+              <span>
+                👥 Study Squad
+              </span>
+
+              <button
+                type="button"
+                class="join-classroom-btn"
+                data-classroom-id="${escapeHtml(
+                  classroom.id
+                )}"
+              >
+                Join
+              </button>
+
             </div>
 
-          </div>
+          </article>
+        `;
 
+      })
+      .join("");
 
-          <h4>
-            ${escapeHtml(classroom.name)}
-          </h4>
-
-
-          ${
-            classroom.description
-              ? `
-                <p class="classroom-description">
-                  ${escapeHtml(classroom.description)}
-                </p>
-              `
-              : ""
-          }
-
-
-          <div class="classroom-item-bottom">
-
-            <span>
-              👥 Study Squad
-            </span>
-
-            <button
-              type="button"
-              class="join-classroom-btn"
-              data-classroom-id="${escapeHtml(classroom.id)}"
-            >
-              Join
-            </button>
-
-          </div>
-
-        </article>
-      `;
-
-    })
-    .join("");
-
-
-  /*
-   * Add Join listeners
-   */
 
   list
-    .querySelectorAll(".join-classroom-btn")
+    .querySelectorAll(
+      ".join-classroom-btn"
+    )
     .forEach(button => {
 
       button.addEventListener(
         "click",
         () => {
 
-          const classroomId =
-            button.dataset.classroomId;
-
           joinClassroom(
-            classroomId,
+            button.dataset.classroomId,
             button
           );
 
@@ -334,13 +344,14 @@ async function joinClassroom(
     button.disabled = true;
 
     button.textContent =
-      "Joining...";
+      "Opening...";
+
   }
 
 
-  /*
-   * Check whether already a member.
-   */
+  /* -------------------------------------------------------
+     CHECK MEMBERSHIP
+     ------------------------------------------------------- */
 
   const {
     data: existingMember,
@@ -349,8 +360,14 @@ async function joinClassroom(
     await supabaseClient
       .from("study_classroom_members")
       .select("id")
-      .eq("classroom_id", classroomId)
-      .eq("user_id", currentUser.id)
+      .eq(
+        "classroom_id",
+        classroomId
+      )
+      .eq(
+        "user_id",
+        currentUser.id
+      )
       .maybeSingle();
 
 
@@ -371,29 +388,28 @@ async function joinClassroom(
   }
 
 
-  /*
-   * Already joined.
-   */
+  /* -------------------------------------------------------
+     ALREADY MEMBER
+     ------------------------------------------------------- */
 
-    if (existingMember) {
-
-    showToast(
-      "Opening classroom..."
-    );
+  if (existingMember) {
 
     restoreJoinButton(
       button,
       "Open"
     );
 
-    openClassroom(classroomId);
+    openClassroom(
+      classroomId
+    );
 
     return;
   }
 
-  /*
-   * Join classroom.
-   */
+
+  /* -------------------------------------------------------
+     JOIN
+     ------------------------------------------------------- */
 
   const {
     error: joinError
@@ -401,8 +417,11 @@ async function joinClassroom(
     await supabaseClient
       .from("study_classroom_members")
       .insert({
-        classroom_id: classroomId,
-        user_id: currentUser.id
+        classroom_id:
+          classroomId,
+
+        user_id:
+          currentUser.id
       });
 
 
@@ -417,7 +436,9 @@ async function joinClassroom(
       "Couldn't join the classroom."
     );
 
-    restoreJoinButton(button);
+    restoreJoinButton(
+      button
+    );
 
     return;
   }
@@ -427,24 +448,27 @@ async function joinClassroom(
     "Joined the Study Squad! 🎉"
   );
 
+
   restoreJoinButton(
     button,
     "Open"
   );
 
-  openClassroom(classroomId);
+
+  openClassroom(
+    classroomId
+  );
 
 }
 
-/* =========================================================
-   OPEN CLASSROOM
-   ========================================================= */
 
 /* =========================================================
    OPEN CLASSROOM
    ========================================================= */
 
-async function openClassroom(classroomId) {
+async function openClassroom(
+  classroomId
+) {
 
   console.log(
     "[Study Squad] Opening classroom:",
@@ -464,7 +488,10 @@ async function openClassroom(classroomId) {
         subject,
         exam_type
       `)
-      .eq("id", classroomId)
+      .eq(
+        "id",
+        classroomId
+      )
       .maybeSingle();
 
 
@@ -494,16 +521,15 @@ async function openClassroom(classroomId) {
 
 
   /* -------------------------------------------------------
-     GET ELEMENTS
+     ELEMENTS
      ------------------------------------------------------- */
 
-  const classroomList =
-    $("classroomList");
-
   const classroomDirectory =
-    classroomList?.closest(
-      ".squad-card"
-    );
+    $("classroomList")
+      ?.closest(
+        ".squad-card"
+      );
+
 
   const classroomRoom =
     $("classroomRoom");
@@ -512,7 +538,7 @@ async function openClassroom(classroomId) {
   if (!classroomRoom) {
 
     console.error(
-      "[Study Squad] classroomRoom element not found."
+      "[Study Squad] classroomRoom not found."
     );
 
     showToast(
@@ -524,13 +550,14 @@ async function openClassroom(classroomId) {
 
 
   /* -------------------------------------------------------
-     FILL CLASSROOM INFORMATION
+     FILL CLASSROOM DETAILS
      ------------------------------------------------------- */
 
   if ($("roomSubject")) {
 
     $("roomSubject").textContent =
       classroom.subject;
+
   }
 
 
@@ -538,6 +565,7 @@ async function openClassroom(classroomId) {
 
     $("roomTitle").textContent =
       classroom.name;
+
   }
 
 
@@ -547,52 +575,51 @@ async function openClassroom(classroomId) {
       formatExamType(
         classroom.exam_type
       );
-  }
-
-
-  /* -------------------------------------------------------
-     MOVE CLASSROOM ROOM TO THE SAME POSITION
-     AS THE CLASSROOM DIRECTORY
-     ------------------------------------------------------- */
-
-  if (
-    classroomDirectory &&
-    classroomRoom
-  ) {
-
-    classroomDirectory.parentNode.insertBefore(
-      classroomRoom,
-      classroomDirectory
-    );
 
   }
 
 
   /* -------------------------------------------------------
-     HIDE DIRECTORY
+     HIDE CLASSROOM DIRECTORY
+     
+     IMPORTANT:
+     We DON'T move the classroom room in the DOM.
+     We simply hide the directory and show the room.
+     
+     This makes the room occupy the same visual
+     position without duplicate declarations or
+     DOM-position problems.
      ------------------------------------------------------- */
 
   if (classroomDirectory) {
 
-    classroomDirectory.classList.add(
-      "hidden"
-    );
+    classroomDirectory
+      .classList
+      .add("hidden");
 
   }
 
 
   /* -------------------------------------------------------
-     HIDE HERO + ACTIONS
+     HIDE HERO
      ------------------------------------------------------- */
 
   document
-    .querySelector(".squad-hero")
+    .querySelector(
+      ".squad-hero"
+    )
     ?.classList
     .add("hidden");
 
 
+  /* -------------------------------------------------------
+     HIDE ACTION BUTTONS
+     ------------------------------------------------------- */
+
   document
-    .querySelector(".squad-actions")
+    .querySelector(
+      ".squad-actions"
+    )
     ?.classList
     .add("hidden");
 
@@ -601,13 +628,13 @@ async function openClassroom(classroomId) {
      SHOW CLASSROOM
      ------------------------------------------------------- */
 
-  classroomRoom.classList.remove(
-    "hidden"
-  );
+  classroomRoom
+    .classList
+    .remove("hidden");
 
 
   /* -------------------------------------------------------
-     SCROLL TO TOP
+     GO TO TOP
      ------------------------------------------------------- */
 
   window.scrollTo({
@@ -622,6 +649,79 @@ async function openClassroom(classroomId) {
   );
 
 }
+
+
+/* =========================================================
+   BACK TO CLASSROOMS
+   ========================================================= */
+
+$("backToClassroomsBtn")
+  ?.addEventListener(
+    "click",
+    () => {
+
+      const classroomRoom =
+        $("classroomRoom");
+
+
+      const classroomDirectory =
+        $("classroomList")
+          ?.closest(
+            ".squad-card"
+          );
+
+
+      /* Hide room */
+
+      if (classroomRoom) {
+
+        classroomRoom
+          .classList
+          .add("hidden");
+
+      }
+
+
+      /* Show classroom directory */
+
+      if (classroomDirectory) {
+
+        classroomDirectory
+          .classList
+          .remove("hidden");
+
+      }
+
+
+      /* Show hero */
+
+      document
+        .querySelector(
+          ".squad-hero"
+        )
+        ?.classList
+        .remove("hidden");
+
+
+      /* Show actions */
+
+      document
+        .querySelector(
+          ".squad-actions"
+        )
+        ?.classList
+        .remove("hidden");
+
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+
+    }
+  );
+
+
 /* =========================================================
    CREATE CLASSROOM
    ========================================================= */
@@ -662,17 +762,14 @@ async function createClassroom() {
       .trim();
 
 
-  /*
-   * Validation
-   */
-
   if (!name) {
 
     showToast(
       "Enter a classroom name."
     );
 
-    $("classroomName")?.focus();
+    $("classroomName")
+      ?.focus();
 
     return;
   }
@@ -684,7 +781,8 @@ async function createClassroom() {
       "Select a subject."
     );
 
-    $("classroomSubject")?.focus();
+    $("classroomSubject")
+      ?.focus();
 
     return;
   }
@@ -696,7 +794,8 @@ async function createClassroom() {
       "Select an exam."
     );
 
-    $("classroomExam")?.focus();
+    $("classroomExam")
+      ?.focus();
 
     return;
   }
@@ -708,16 +807,14 @@ async function createClassroom() {
 
   if (saveButton) {
 
-    saveButton.disabled = true;
+    saveButton.disabled =
+      true;
 
     saveButton.textContent =
       "Creating...";
+
   }
 
-
-  /*
-   * Create classroom.
-   */
 
   const {
     data: classroom,
@@ -728,9 +825,12 @@ async function createClassroom() {
       .insert({
         name,
         subject,
-        exam_type: examType,
-        description: description || null,
-        created_by: currentUser.id
+        exam_type:
+          examType,
+        description:
+          description || null,
+        created_by:
+          currentUser.id
       })
       .select()
       .single();
@@ -753,18 +853,23 @@ async function createClassroom() {
   }
 
 
-  /*
-   * Automatically add creator as first member.
-   */
+  /* -------------------------------------------------------
+     ADD CREATOR AS MEMBER
+     ------------------------------------------------------- */
 
   const {
     error: memberError
   } =
     await supabaseClient
-      .from("study_classroom_members")
+      .from(
+        "study_classroom_members"
+      )
       .insert({
-        classroom_id: classroom.id,
-        user_id: currentUser.id
+        classroom_id:
+          classroom.id,
+
+        user_id:
+          currentUser.id
       });
 
 
@@ -774,12 +879,6 @@ async function createClassroom() {
       "[Study Squad] Creator membership failed:",
       memberError
     );
-
-    /*
-     * The classroom exists but membership failed.
-     * We don't delete it automatically because
-     * we want to preserve the created classroom.
-     */
 
     showToast(
       "Classroom created, but joining failed."
@@ -794,26 +893,11 @@ async function createClassroom() {
   }
 
 
-  /*
-   * Clear form.
-   */
-
   clearCreateClassroomForm();
-
-
-  /*
-   * Close modal.
-   */
 
   closeCreateClassroomModal();
 
-
-  /*
-   * Reload classrooms.
-   */
-
   await loadClassrooms();
-
 
   restoreSaveButton();
 
@@ -821,64 +905,81 @@ async function createClassroom() {
 
 
 /* =========================================================
-   SAVE BUTTON
+   SAVE CLASSROOM BUTTON
    ========================================================= */
 
-$("saveClassroomBtn")?.addEventListener(
-  "click",
-  createClassroom
-);
+$("saveClassroomBtn")
+  ?.addEventListener(
+    "click",
+    createClassroom
+  );
 
 
 /* =========================================================
-   BROWSE BUTTON
+   BROWSE CLASSROOMS BUTTON
    ========================================================= */
 
-$("browseClassroomsBtn")?.addEventListener(
-  "click",
-  () => {
+$("browseClassroomsBtn")
+  ?.addEventListener(
+    "click",
+    () => {
 
-    const list =
-      $("classroomList");
+      const list =
+        $("classroomList");
 
-    if (!list) return;
+      if (!list) return;
 
-    list.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
+      list.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
 
-  }
-);
+    }
+  );
 
 
 /* =========================================================
-   CLEAR FORM
+   CLEAR CREATE FORM
    ========================================================= */
 
 function clearCreateClassroomForm() {
 
   if ($("classroomName")) {
-    $("classroomName").value = "";
+
+    $("classroomName").value =
+      "";
+
   }
+
 
   if ($("classroomSubject")) {
-    $("classroomSubject").value = "";
+
+    $("classroomSubject").value =
+      "";
+
   }
+
 
   if ($("classroomExam")) {
-    $("classroomExam").value = "";
+
+    $("classroomExam").value =
+      "";
+
   }
 
+
   if ($("classroomDescription")) {
-    $("classroomDescription").value = "";
+
+    $("classroomDescription").value =
+      "";
+
   }
 
 }
 
 
 /* =========================================================
-   BUTTON RESTORATION
+   RESTORE SAVE BUTTON
    ========================================================= */
 
 function restoreSaveButton() {
@@ -888,12 +989,18 @@ function restoreSaveButton() {
 
   if (!button) return;
 
-  button.disabled = false;
+  button.disabled =
+    false;
 
   button.textContent =
     "Create Classroom";
+
 }
 
+
+/* =========================================================
+   RESTORE JOIN BUTTON
+   ========================================================= */
 
 function restoreJoinButton(
   button,
@@ -902,9 +1009,11 @@ function restoreJoinButton(
 
   if (!button) return;
 
-  button.disabled = false;
+  button.disabled =
+    false;
 
-  button.textContent = text;
+  button.textContent =
+    text;
 
 }
 
@@ -940,92 +1049,44 @@ function formatExamType(
    HTML ESCAPE
    ========================================================= */
 
-function escapeHtml(value) {
+function escapeHtml(
+  value
+) {
 
-  if (value === null ||
-      value === undefined) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
 
     return "";
+
   }
 
 
   return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
 
 }
 
-/* =========================================================
-   BACK TO CLASSROOMS
-   ========================================================= */
-
-$("backToClassroomsBtn")?.addEventListener(
-  "click",
-  () => {
-
-    const classroomRoom =
-      $("classroomRoom");
-
-    if (classroomRoom) {
-
-      classroomRoom.classList.add(
-        "hidden"
-      );
-
-    }
-
-
-    document
-      .querySelector(".squad-hero")
-      ?.classList
-      .remove("hidden");
-
-
-    document
-      .querySelector(".squad-actions")
-      ?.classList
-      .remove("hidden");
-
-
-    const classroomDirectory =
-      $("classroomList")
-        ?.closest(".squad-card");
-    
-     const classroomRoom =
-     $("classroomRoom");
-   
-   
-   if (
-     classroomRoom &&
-     classroomDirectory
-   ) {
-   
-     classroomDirectory.parentNode.insertBefore(
-       classroomRoom,
-       classroomDirectory.nextSibling
-     );
-   
-   }
-
-    if (classroomDirectory) {
-
-      classroomDirectory.classList.remove(
-        "hidden"
-      );
-
-    }
-
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
-
-  }
-);
 
 /* =========================================================
    INITIALIZATION
@@ -1039,10 +1100,6 @@ document.addEventListener(
       "[Study Squad] Initializing..."
     );
 
-
-    /*
-     * Get current Supabase session.
-     */
 
     const {
       data,
@@ -1068,10 +1125,6 @@ document.addEventListener(
     }
 
 
-    /*
-     * No logged-in user.
-     */
-
     if (!data?.session) {
 
       console.log(
@@ -1085,10 +1138,6 @@ document.addEventListener(
     }
 
 
-    /*
-     * Store current user.
-     */
-
     currentUser =
       data.session.user;
 
@@ -1098,10 +1147,6 @@ document.addEventListener(
       currentUser.id
     );
 
-
-    /*
-     * Load real classrooms.
-     */
 
     await loadClassrooms();
 
