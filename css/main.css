@@ -3879,3 +3879,38 @@ body::after{width:230px;height:230px;right:-90px;top:62%;background:rgba(103,232
   visibility: visible !important;
   pointer-events: auto !important;
 }
+/* =========================================================
+   STUDY SQUAD NAVIGATION
+   ========================================================= */
+
+.nav .nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+
+  padding: 8px 5px;
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 650;
+
+  text-decoration: none;
+
+  transition:
+    background .15s ease,
+    color .15s ease,
+    transform .12s ease;
+}
+
+.nav .nav-link:hover {
+  background: #242424;
+  color: var(--text);
+}
+
+.nav .nav-link:active {
+  transform: scale(.97);
+}
