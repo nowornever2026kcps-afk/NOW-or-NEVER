@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#0b0b0b"
+  >
+
+  <title>Study Squad — NOW-or-NEVER</title>
+
+  <link
+    rel="stylesheet"
+    href="css/study-squad.css"
+  >
+
+</head>
+
+<body>
+
+  <div class="squad-app">
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <header class="squad-header">
+
+      <a
+        href="index.html"
+        class="back-button"
+      >
+        ← NOW-or-NEVER
+      </a>
+
+      <div class="squad-brand">
+
+        <div class="squad-icon">
+          👥
+        </div>
+
+        <div>
+          <h1>Study Squad</h1>
+
+          <p>
+            Learn together. Solve together. Rise together.
+          </p>
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
+
+    <section class="squad-hero">
+
+      <div class="hero-badge">
+        🧠 AI-ASSISTED CLASSROOM
+      </div>
+
+      <h2>
+        Your study group,
+        <span>with a mentor.</span>
+      </h2>
+
+      <p>
+        Join other students, discuss doubts, debate answers,
+        and call the AI Mentor when your classroom needs help.
+      </p>
+
+    </section>
+
+
+    <!-- =====================================================
+         ACTIONS
+    ====================================================== -->
+
+    <section class="squad-actions">
+
+      <button
+        id="browseClassroomsBtn"
+        class="squad-primary"
+      >
+        📚 Browse Classrooms
+      </button>
+
+      <button
+        id="createClassroomBtn"
+        class="squad-secondary"
+      >
+        ＋ Create Classroom
+      </button>
+
+    </section>
+
+
+    <!-- =====================================================
+         CLASSROOM AREA
+    ====================================================== -->
+
+    <section class="squad-card">
+
+      <div class="squad-card-header">
+
+        <div>
+
+          <h3>
+            📚 Classrooms
+          </h3>
+
+          <p>
+            Find a classroom and start learning together.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div
+        id="classroomList"
+        class="classroom-list"
+      >
+
+        <div class="classroom-empty">
+
+          <div class="empty-icon">
+            👥
+          </div>
+
+          <strong>
+            No classrooms loaded yet
+          </strong>
+
+          <p>
+            We're setting up your Study Squad.
+          </p>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         CREATE CLASSROOM MODAL
+    ====================================================== -->
+
+    <div
+      id="createClassroomModal"
+      class="squad-modal hidden"
+    >
+
+      <div
+        class="squad-modal-backdrop"
+        id="createClassroomBackdrop"
+      ></div>
+
+
+      <div
+        class="squad-modal-card"
+      >
+
+        <div class="modal-header">
+
+          <div>
+
+            <h3>
+              Create Classroom
+            </h3>
+
+            <p>
+              Start a new Study Squad.
+            </p>
+
+          </div>
+
+          <button
+            id="closeCreateClassroom"
+            class="modal-close"
+            type="button"
+          >
+            ×
+          </button>
+
+        </div>
+
+
+        <div class="squad-field">
+
+          <label>
+            Classroom name
+          </label>
+
+          <input
+            id="classroomName"
+            type="text"
+            maxlength="80"
+            placeholder="e.g. NEET Biology — Human Physiology"
+          >
+
+        </div>
+
+
+        <div class="squad-field">
+
+          <label>
+            Subject
+          </label>
+
+          <select id="classroomSubject">
+
+            <option value="">
+              Select subject
+            </option>
+
+            <option value="Physics">
+              Physics
+            </option>
+
+            <option value="Chemistry">
+              Chemistry
+            </option>
+
+            <option value="Biology">
+              Biology
+            </option>
+
+            <option value="Mathematics">
+              Mathematics
+            </option>
+
+            <option value="English">
+              English
+            </option>
+
+            <option value="Other">
+              Other
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="squad-field">
+
+          <label>
+            Exam
+          </label>
+
+          <select id="classroomExam">
+
+            <option value="">
+              Select exam
+            </option>
+
+            <option value="NEET">
+              NEET
+            </option>
+
+            <option value="BOARD">
+              Board
+            </option>
+
+            <option value="BOTH">
+              NEET + Board
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="squad-field">
+
+          <label>
+            Description
+          </label>
+
+          <textarea
+            id="classroomDescription"
+            maxlength="300"
+            placeholder="What will students discuss here?"
+          ></textarea>
+
+        </div>
+
+
+        <button
+          id="saveClassroomBtn"
+          class="squad-primary"
+          type="button"
+        >
+          Create Classroom
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         TOAST
+    ====================================================== -->
+
+    <div
+      id="squadToast"
+      class="squad-toast"
+    ></div>
+
+  </div>
+
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+  ></script>
+
+  <script
+    src="js/study-squad.js"
+  ></script>
+
+</body>
+
+</html>
