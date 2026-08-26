@@ -193,22 +193,68 @@
       </div>
 
 
-      <div class="classroom-room-placeholder">
+      <div class="classroom-chat">
 
-        <div class="room-placeholder-icon">
-          💬
-        </div>
+  <!-- ================================
+       MESSAGES
+  ================================= -->
 
-        <h3>
-          Welcome to the classroom
-        </h3>
+  <div
+    id="classroomMessages"
+    class="classroom-messages"
+  >
 
-        <p>
-          The discussion room is ready.
-          Chat will be added next.
-        </p>
+    <div class="chat-empty">
 
+      <div class="chat-empty-icon">
+        💬
       </div>
+
+      <h3>
+        Start the discussion
+      </h3>
+
+      <p>
+        Ask a question, share an explanation,
+        or help another student.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- ================================
+       MESSAGE INPUT
+  ================================= -->
+
+  <form
+    id="classroomMessageForm"
+    class="classroom-message-form"
+  >
+
+    <textarea
+      id="classroomMessageInput"
+      class="classroom-message-input"
+      rows="1"
+      maxlength="1000"
+      placeholder="Ask a doubt or share your thoughts..."
+      autocomplete="off"
+    ></textarea>
+
+
+    <button
+      id="sendClassroomMessageBtn"
+      type="submit"
+      class="send-classroom-message"
+      aria-label="Send message"
+    >
+      ➤
+    </button>
+
+  </form>
+
+</div>
 
     </section>
 
