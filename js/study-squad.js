@@ -65,7 +65,7 @@ function showToast(message) {
 let currentUser = null;
 let activeClassroomId = null;
 let classroomRealtimeChannel = null;
-
+let classroomPresenceChannel = null;
 /* =========================================================
    CREATE CLASSROOM MODAL
    ========================================================= */
@@ -637,6 +637,7 @@ async function openClassroom(
     
    await loadClassroomMessages();
    subscribeToClassroomMessages();
+   startClassroomPresence();
 
 
   /* -------------------------------------------------------
@@ -666,26 +667,36 @@ $("backToClassroomsBtn")
     "click",
     () => {
 
-      const classroomRoom =
-        $("classroomRoom");
+      if (classroomPresenceChannel) {
 
-
-      const classroomDirectory =
-        $("classroomList")
-          ?.closest(
-            ".squad-card"
-          );
-      if (classroomRealtimeChannel) {
-
-        supabaseClient
-          .removeChannel(
-            classroomRealtimeChannel
-          );
+        supabaseClient.removeChannel(
+          classroomPresenceChannel
+        );
       
-        classroomRealtimeChannel = null;
+        classroomPresenceChannel = null;
       
       }
-
+      
+            const classroomRoom =
+              $("classroomRoom");
+      
+      
+            const classroomDirectory =
+              $("classroomList")
+                ?.closest(
+                  ".squad-card"
+                );
+            if (classroomRealtimeChannel) {
+      
+              supabaseClient
+                .removeChannel(
+                  classroomRealtimeChannel
+                );
+            
+              classroomRealtimeChannel = null;
+            
+            }
+      
 
       /* Hide room */
 
@@ -1100,6 +1111,74 @@ function escapeHtml(
       "'",
       "&#039;"
     );
+
+}
+
+
+/* =========================================================
+   CLASSROOM PRESENCE
+   STEP 4B.6A
+   ========================================================= */
+
+function startClassroomPresence() {
+
+  if (!activeClassroomId || !currentUser) {
+    return;
+  }
+
+
+  /* Remove an old presence channel if one exists */
+
+  if (classroomPresenceChannel) {
+
+    supabaseClient.removeChannel(
+      classroomPresenceChannel
+    );
+
+    classroomPresenceChannel = null;
+  }
+
+
+  const channelName =
+    `study-presence-${activeClassroomId}`;
+
+
+  classroomPresenceChannel =
+    supabaseClient
+      .channel(channelName);
+
+
+  classroomPresenceChannel
+    .subscribe(async (status) => {
+
+      console.log(
+        "[Study Squad] Presence status:",
+        status
+      );
+
+
+      if (status === "SUBSCRIBED") {
+
+        const trackStatus =
+          await classroomPresenceChannel.track({
+
+            user_id:
+              currentUser.id,
+
+            joined_at:
+              new Date().toISOString()
+
+          });
+
+
+        console.log(
+          "[Study Squad] Presence tracked:",
+          trackStatus
+        );
+
+      }
+
+    });
 
 }
 
