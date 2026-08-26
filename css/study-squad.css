@@ -757,3 +757,153 @@ a {
   }
 
 }
+/* =========================================================
+   CLASSROOM ITEMS
+   ========================================================= */
+
+.classroom-item {
+  padding: 15px;
+
+  margin-bottom: 10px;
+
+  border: 1px solid #2c2c2c;
+
+  border-radius: 13px;
+
+  background: #111;
+
+  transition:
+    background .15s ease,
+    border-color .15s ease,
+    transform .12s ease;
+}
+
+.classroom-item:last-child {
+  margin-bottom: 0;
+}
+
+.classroom-item:hover {
+  background: #161616;
+
+  border-color: #3a3a3a;
+
+  transform: translateY(-1px);
+}
+
+.classroom-item-top {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-bottom: 9px;
+}
+
+.classroom-subject {
+  color: #bca8ff;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  text-transform: uppercase;
+
+  letter-spacing: .5px;
+}
+
+.classroom-exam {
+  padding: 4px 7px;
+
+  border: 1px solid #303030;
+
+  border-radius: 7px;
+
+  background: #191919;
+
+  color: #a5a5a5;
+
+  font-size: 9px;
+
+  font-weight: 750;
+}
+
+.classroom-item h4 {
+  margin: 0;
+
+  color: var(--text);
+
+  font-size: 14px;
+
+  line-height: 1.35;
+}
+
+.classroom-description {
+  margin: 7px 0 0;
+
+  color: var(--muted);
+
+  font-size: 11px;
+
+  line-height: 1.5;
+}
+
+.classroom-item-bottom {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-top: 13px;
+
+  padding-top: 11px;
+
+  border-top: 1px solid #222;
+
+  color: #777;
+
+  font-size: 10px;
+}
+
+.join-classroom-btn {
+  min-width: 65px;
+
+  min-height: 30px;
+
+  padding: 0 10px;
+
+  border: 1px solid #3b3b3b;
+
+  border-radius: 8px;
+
+  background: #202020;
+
+  color: #eee;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  transition:
+    background .15s ease,
+    transform .12s ease;
+}
+
+.join-classroom-btn:hover {
+  background: #292929;
+}
+
+.join-classroom-btn:active {
+  transform: scale(.96);
+}
+
+.join-classroom-btn:disabled {
+  opacity: .55;
+
+  cursor: default;
+}
