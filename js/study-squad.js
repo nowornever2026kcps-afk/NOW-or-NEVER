@@ -2350,6 +2350,8 @@ if (needMentorBtn) {
           "Mentor requested! 🤖"
         );
 
+        await updateMentorRequestCount();
+
 
         /* -------------------------------------------------
            Re-enable after 5 seconds.
@@ -2390,5 +2392,76 @@ if (needMentorBtn) {
 
     }
   );
+}
+/* =========================================================
+   MENTOR REQUEST COUNT
+   STEP 4C.4F
+   ========================================================= */
+
+async function updateMentorRequestCount() {
+
+  const countEl =
+    document.getElementById(
+      "mentorRequestCount"
+    );
+
+  if (!countEl || !activeClassroomId) {
+    return;
+  }
+
+  try {
+
+    const {
+      count,
+      error
+    } = await supabaseClient
+      .from("study_mentor_requests")
+      .select("id", {
+        count: "exact",
+        head: true
+      })
+      .eq(
+        "classroom_id",
+        activeClassroomId
+      )
+      .gte(
+        "created_at",
+        new Date(
+          Date.now() - 2 * 60 * 1000
+        ).toISOString()
+      );
+
+    if (error) {
+      throw error;
+    }
+
+    if (count && count > 0) {
+
+      countEl.textContent =
+        count;
+
+      countEl.style.display =
+        "inline-flex";
+
+    } else {
+
+      countEl.textContent = "";
+
+      countEl.style.display =
+        "none";
+    }
+
+  } catch (error) {
+
+    console.error(
+      "[Study Squad] Mentor count error:",
+      error
+    );
+
+  }
 
 }
+setInterval(
+  updateMentorRequestCount,
+  15000
+);
