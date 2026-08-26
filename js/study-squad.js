@@ -63,7 +63,7 @@ function showToast(message) {
    ========================================================= */
 
 let currentUser = null;
-
+let activeClassroomId = null;
 
 /* =========================================================
    CREATE CLASSROOM MODAL
@@ -469,6 +469,7 @@ async function joinClassroom(
 async function openClassroom(
   classroomId
 ) {
+   activeClassroomId = classroomId;
 
   console.log(
     "[Study Squad] Opening classroom:",
@@ -1087,7 +1088,181 @@ function escapeHtml(
 
 }
 
+/* =========================================================
+   SEND CLASSROOM MESSAGE
+   STEP 4B.2
+   ========================================================= */
 
+$("classroomMessageForm")
+  ?.addEventListener(
+    "submit",
+    async (event) => {
+
+      event.preventDefault();
+
+
+      /* ---------------------------------------------------
+         BASIC CHECKS
+         --------------------------------------------------- */
+
+      if (!currentUser) {
+
+        showToast(
+          "Please log in first."
+        );
+
+        return;
+      }
+
+
+      if (!activeClassroomId) {
+
+        showToast(
+          "No classroom is currently open."
+        );
+
+        return;
+      }
+
+
+      const input =
+        $("classroomMessageInput");
+
+      const sendButton =
+        $("sendClassroomMessageBtn");
+
+
+      if (!input) return;
+
+
+      const message =
+        input.value.trim();
+
+
+      /* ---------------------------------------------------
+         DON'T SEND EMPTY MESSAGES
+         --------------------------------------------------- */
+
+      if (!message) {
+
+        input.focus();
+
+        return;
+      }
+
+
+      /* ---------------------------------------------------
+         1000 CHARACTER LIMIT
+         --------------------------------------------------- */
+
+      if (message.length > 1000) {
+
+        showToast(
+          "Message is too long."
+        );
+
+        return;
+      }
+
+
+      /* ---------------------------------------------------
+         DISABLE SEND WHILE SAVING
+         --------------------------------------------------- */
+
+      if (sendButton) {
+
+        sendButton.disabled =
+          true;
+
+        sendButton.textContent =
+          "…";
+
+      }
+
+
+      try {
+
+        /* -----------------------------------------------
+           INSERT MESSAGE
+           ----------------------------------------------- */
+
+        const {
+          error
+        } =
+          await supabaseClient
+            .from("study_messages")
+            .insert({
+
+              classroom_id:
+                activeClassroomId,
+
+              sender_id:
+                currentUser.id,
+
+              message:
+                message,
+
+              message_type:
+                "student"
+
+            });
+
+
+        /* -----------------------------------------------
+           HANDLE ERROR
+           ----------------------------------------------- */
+
+        if (error) {
+
+          console.error(
+            "[Study Squad] Failed to send message:",
+            error
+          );
+
+          showToast(
+            "Couldn't send message."
+          );
+
+          return;
+        }
+
+
+        /* -----------------------------------------------
+           SUCCESS
+           ----------------------------------------------- */
+
+        input.value = "";
+
+
+        /*
+         * Keep the input focused so the student
+         * can immediately type another message.
+         */
+
+        input.focus();
+
+
+        console.log(
+          "[Study Squad] Message sent successfully."
+        );
+
+
+      } finally {
+
+        if (sendButton) {
+
+          sendButton.disabled =
+            false;
+
+          sendButton.textContent =
+            "➤";
+
+        }
+
+      }
+
+    }
+  );
 /* =========================================================
    INITIALIZATION
    ========================================================= */
