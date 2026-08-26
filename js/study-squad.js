@@ -90,7 +90,6 @@ function openCreateClassroom() {
     .classList
     .remove("hidden");
    
-   await loadClassroomMessages();
 
 }
 
@@ -634,6 +633,8 @@ async function openClassroom(
   classroomRoom
     .classList
     .remove("hidden");
+    
+   await loadClassroomMessages();
 
 
   /* -------------------------------------------------------
