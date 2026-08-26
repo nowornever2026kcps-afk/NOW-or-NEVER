@@ -489,16 +489,37 @@ async function openClassroom(classroomId) {
   }
 
 
-  const classroomList =
-    $("classroomList");
-
-  const classroomDirectory =
-    classroomList?.closest(
-      ".squad-card"
-    );
-
-  const classroomRoom =
-    $("classroomRoom");
+   const classroomList =
+     $("classroomList");
+   
+   const classroomDirectory =
+     classroomList?.closest(
+       ".squad-card"
+     );
+   
+   const classroomRoom =
+     $("classroomRoom");
+   
+   
+   /*
+    * Move the classroom room to the exact
+    * position occupied by the classroom list.
+    *
+    * This makes it behave like a view switch
+    * instead of appearing underneath the list.
+    */
+   
+   if (
+     classroomRoom &&
+     classroomDirectory
+   ) {
+   
+     classroomDirectory.parentNode.insertBefore(
+       classroomRoom,
+       classroomDirectory
+     );
+   
+   }
 
 
   if (!classroomRoom) {
@@ -966,7 +987,22 @@ $("backToClassroomsBtn")?.addEventListener(
     const classroomDirectory =
       $("classroomList")
         ?.closest(".squad-card");
-
+    
+     const classroomRoom =
+     $("classroomRoom");
+   
+   
+   if (
+     classroomRoom &&
+     classroomDirectory
+   ) {
+   
+     classroomDirectory.parentNode.insertBefore(
+       classroomRoom,
+       classroomDirectory.nextSibling
+     );
+   
+   }
 
     if (classroomDirectory) {
 
