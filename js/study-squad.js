@@ -89,6 +89,8 @@ function openCreateClassroom() {
   createClassroomModal
     .classList
     .remove("hidden");
+   
+   await loadClassroomMessages();
 
 }
 
@@ -1263,6 +1265,346 @@ $("classroomMessageForm")
 
     }
   );
+
+/* =========================================================
+   LOAD CLASSROOM MESSAGES
+   STEP 4B.3
+   ========================================================= */
+
+async function loadClassroomMessages() {
+
+  const messagesContainer =
+    $("classroomMessages");
+
+  if (!messagesContainer) {
+    console.error(
+      "[Study Squad] classroomMessages element not found."
+    );
+    return;
+  }
+
+  if (!activeClassroomId) {
+    console.error(
+      "[Study Squad] No active classroom."
+    );
+    return;
+  }
+
+
+  /* -------------------------------------------------------
+     LOADING STATE
+     ------------------------------------------------------- */
+
+  messagesContainer.innerHTML = `
+    <div class="chat-empty">
+      <div class="chat-empty-icon">
+        ⏳
+      </div>
+
+      <h3>
+        Loading discussion...
+      </h3>
+
+      <p>
+        Getting the classroom messages.
+      </p>
+    </div>
+  `;
+
+
+  /* -------------------------------------------------------
+     GET MESSAGES
+     ------------------------------------------------------- */
+
+  const {
+    data: messages,
+    error
+  } =
+    await supabaseClient
+      .from("study_messages")
+      .select(`
+        id,
+        classroom_id,
+        sender_id,
+        message,
+        message_type,
+        created_at
+      `)
+      .eq(
+        "classroom_id",
+        activeClassroomId
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true
+        }
+      );
+
+
+  /* -------------------------------------------------------
+     ERROR
+     ------------------------------------------------------- */
+
+  if (error) {
+
+    console.error(
+      "[Study Squad] Failed to load messages:",
+      error
+    );
+
+    messagesContainer.innerHTML = `
+      <div class="chat-empty">
+
+        <div class="chat-empty-icon">
+          ⚠️
+        </div>
+
+        <h3>
+          Couldn't load messages
+        </h3>
+
+        <p>
+          Please try refreshing the classroom.
+        </p>
+
+      </div>
+    `;
+
+    return;
+  }
+
+
+  /* -------------------------------------------------------
+     NO MESSAGES
+     ------------------------------------------------------- */
+
+  if (!messages || messages.length === 0) {
+
+    messagesContainer.innerHTML = `
+      <div class="chat-empty">
+
+        <div class="chat-empty-icon">
+          💬
+        </div>
+
+        <h3>
+          Start the discussion
+        </h3>
+
+        <p>
+          Ask a question, share an explanation,
+          or help another student.
+        </p>
+
+      </div>
+    `;
+
+    return;
+  }
+
+
+  /* -------------------------------------------------------
+     GET UNIQUE SENDERS
+     ------------------------------------------------------- */
+
+  const senderIds = [
+    ...new Set(
+      messages.map(
+        message => message.sender_id
+      )
+    )
+  ];
+
+
+  /* -------------------------------------------------------
+     LOAD PROFILES
+     ------------------------------------------------------- */
+
+  const {
+    data: profiles,
+    error: profileError
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select(`
+        id,
+        username,
+        display_name
+      `)
+      .in(
+        "id",
+        senderIds
+      );
+
+
+  if (profileError) {
+
+    console.error(
+      "[Study Squad] Failed to load profiles:",
+      profileError
+    );
+
+  }
+
+
+  /* -------------------------------------------------------
+     PROFILE LOOKUP
+     ------------------------------------------------------- */
+
+  const profileMap =
+    new Map();
+
+  (profiles || []).forEach(
+    profile => {
+
+      profileMap.set(
+        profile.id,
+        profile
+      );
+
+    }
+  );
+
+
+  /* -------------------------------------------------------
+     RENDER MESSAGES
+     ------------------------------------------------------- */
+
+  messagesContainer.innerHTML =
+    messages
+      .map(message => {
+
+        const profile =
+          profileMap.get(
+            message.sender_id
+          );
+
+
+        const isMine =
+          currentUser &&
+          message.sender_id ===
+            currentUser.id;
+
+
+        const senderName =
+          isMine
+            ? "You"
+            : (
+                profile?.display_name ||
+                profile?.username ||
+                "Student"
+              );
+
+
+        const messageTime =
+          formatMessageTime(
+            message.created_at
+          );
+
+
+        const messageType =
+          message.message_type ||
+          "student";
+
+
+        return `
+          <div
+            class="chat-message ${
+              isMine
+                ? "chat-message-mine"
+                : "chat-message-other"
+            }"
+            data-message-id="${escapeHtml(
+              message.id
+            )}"
+          >
+
+            <div class="chat-message-header">
+
+              <span class="chat-sender">
+                ${escapeHtml(senderName)}
+              </span>
+
+              <span class="chat-time">
+                ${escapeHtml(messageTime)}
+              </span>
+
+            </div>
+
+
+            <div class="chat-message-body">
+
+              ${escapeHtml(
+                message.message
+              )}
+
+            </div>
+
+          </div>
+        `;
+
+      })
+      .join("");
+
+
+  /* -------------------------------------------------------
+     SCROLL TO BOTTOM
+     ------------------------------------------------------- */
+
+  messagesContainer.scrollTop =
+    messagesContainer.scrollHeight;
+
+
+  console.log(
+    "[Study Squad] Loaded",
+    messages.length,
+    "messages."
+  );
+
+}
+
+
+/* =========================================================
+   MESSAGE TIME FORMAT
+   ========================================================= */
+
+function formatMessageTime(
+  timestamp
+) {
+
+  if (!timestamp) {
+    return "";
+  }
+
+
+  const date =
+    new Date(timestamp);
+
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+
+    return "";
+
+  }
+
+
+  return date.toLocaleString(
+    [],
+    {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  );
+
+}
+
 /* =========================================================
    INITIALIZATION
    ========================================================= */
