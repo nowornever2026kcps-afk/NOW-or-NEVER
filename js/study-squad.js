@@ -3316,3 +3316,461 @@ function setupStudyHelpPanel() {
     );
 
 }
+
+loadStudyHelpRequests();
+
+setInterval(
+    loadStudyHelpRequests,
+    10000
+);
+
+
+async function loadStudyHelpRequests() {
+
+    if (!currentClassroomId) {
+        return;
+    }
+
+    const list =
+        document.getElementById("studyHelpList");
+
+    const count =
+        document.getElementById("studyHelpCount");
+
+    if (!list) {
+        return;
+    }
+
+    const {
+        data,
+        error
+    } = await supabaseClient.rpc(
+        "get_study_help_requests",
+        {
+            p_classroom_id: currentClassroomId
+        }
+    );
+
+    if (error) {
+
+        console.error(
+            "[Study Help] Failed to load requests:",
+            error
+        );
+
+        list.innerHTML = `
+            <div class="study-help-empty">
+                <div>⚠️</div>
+                <strong>Couldn't load Study Help</strong>
+                <p>
+                    Please try again.
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+    const requests = data || [];
+
+    /*
+     * Update count
+     */
+
+    if (count) {
+
+        count.textContent =
+            `${requests.length} active request${
+                requests.length === 1 ? "" : "s"
+            }`;
+
+    }
+
+
+    /*
+     * Empty state
+     */
+
+    if (requests.length === 0) {
+
+        list.innerHTML = `
+            <div class="study-help-empty">
+                <div>✨</div>
+                <strong>No active requests</strong>
+                <p>
+                    Doubts and answer conflicts will appear here.
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+
+    /*
+     * Render requests
+     */
+
+    list.innerHTML =
+        requests
+            .map(renderStudyHelpRequest)
+            .join("");
+
+
+    /*
+     * Only the classroom host gets
+     * mentor controls.
+     */
+
+    setupStudyHelpActions(requests);
+}
+
+function renderStudyHelpRequest(request) {
+
+    const typeMap = {
+
+        unresolved_doubt: {
+            icon: "🤔",
+            label: "Unresolved Doubt"
+        },
+
+        explicit_mentor: {
+            icon: "🧑‍🏫",
+            label: "Mentor Requested"
+        },
+
+        conflicting_answers: {
+            icon: "⚠️",
+            label: "Conflicting Answers"
+        },
+
+        multiple_requests: {
+            icon: "👥",
+            label: "Multiple Requests"
+        }
+
+    };
+
+
+    const type =
+        typeMap[request.trigger_type] ||
+        {
+            icon: "🧭",
+            label: "Study Help"
+        };
+
+
+    const priority =
+        Number(request.priority || 0);
+
+
+    const sender =
+        request.sender_name ||
+        "Student";
+
+
+    const message =
+        request.message ||
+        "No message available.";
+
+
+    const requestCount =
+        Number(
+            request.mentor_request_count || 1
+        );
+
+
+    /*
+     * Host controls
+     */
+
+    let controls = "";
+
+
+    if (request.is_host) {
+
+        controls = `
+
+            <div class="study-help-host-controls">
+
+                <textarea
+                    class="study-help-reply"
+                    data-intervention-id="${escapeHtml(
+                        request.id
+                    )}"
+                    placeholder="Write a mentor reply..."
+                    rows="2"
+                ></textarea>
+
+                <div class="study-help-actions">
+
+                    <button
+                        type="button"
+                        class="study-help-send"
+                        data-intervention-id="${escapeHtml(
+                            request.id
+                        )}"
+                    >
+                        🧑‍🏫 Reply
+                    </button>
+
+                    <button
+                        type="button"
+                        class="study-help-resolve"
+                        data-intervention-id="${escapeHtml(
+                            request.id
+                        )}"
+                    >
+                        ✓ Resolve
+                    </button>
+
+                </div>
+
+            </div>
+
+        `;
+
+    } else {
+
+        controls = `
+
+            <div class="study-help-waiting">
+                🧑‍🏫 Waiting for mentor...
+            </div>
+
+        `;
+
+    }
+
+
+    return `
+
+        <article
+            class="study-help-card"
+            data-intervention-card="${escapeHtml(
+                request.id
+            )}"
+        >
+
+            <div class="study-help-card-top">
+
+                <div class="study-help-type">
+                    ${type.icon}
+                    ${type.label}
+                </div>
+
+                <span class="study-help-priority">
+                    ${priority}
+                </span>
+
+            </div>
+
+
+            <div class="study-help-message">
+                ${escapeHtml(message)}
+            </div>
+
+
+            <div class="study-help-meta">
+
+                <span>
+                    👤 ${escapeHtml(sender)}
+                </span>
+
+                <span>
+                    👥 ${requestCount}
+                </span>
+
+            </div>
+
+
+            ${controls}
+
+        </article>
+
+    `;
+}
+
+function setupStudyHelpActions(requests) {
+
+    /*
+     * Send mentor reply
+     */
+
+    document
+        .querySelectorAll(
+            ".study-help-send"
+        )
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                async function() {
+
+                    const id =
+                        this.dataset.interventionId;
+
+                    const textarea =
+                        document.querySelector(
+                            `.study-help-reply[data-intervention-id="${CSS.escape(id)}"]`
+                        );
+
+                    if (!textarea) {
+                        return;
+                    }
+
+                    const message =
+                        textarea.value.trim();
+
+                    if (!message) {
+
+                        showToast(
+                            "Write a reply first."
+                        );
+
+                        textarea.focus();
+
+                        return;
+                    }
+
+                    this.disabled = true;
+
+                    this.textContent =
+                        "Sending...";
+
+
+                    const {
+                        data,
+                        error
+                    } =
+                        await supabaseClient.rpc(
+                            "send_study_mentor_reply",
+                            {
+                                p_intervention_id:
+                                    id,
+
+                                p_message:
+                                    message
+                            }
+                        );
+
+
+                    if (error) {
+
+                        console.error(
+                            "[Study Help] Reply error:",
+                            error
+                        );
+
+                        showToast(
+                            error.message ||
+                            "Couldn't send reply."
+                        );
+
+                        this.disabled = false;
+
+                        this.textContent =
+                            "🧑‍🏫 Reply";
+
+                        return;
+                    }
+
+
+                    textarea.value = "";
+
+                    showToast(
+                        "Mentor reply sent ✓"
+                    );
+
+
+                    await loadStudyHelpRequests();
+
+                    /*
+                     * Refresh classroom messages.
+                     */
+
+                    if (
+                        typeof loadClassroomMessages ===
+                        "function"
+                    ) {
+
+                        await loadClassroomMessages();
+
+                    }
+
+                }
+            );
+
+        });
+
+
+    /*
+     * Resolve request
+     */
+
+    document
+        .querySelectorAll(
+            ".study-help-resolve"
+        )
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                async function() {
+
+                    const id =
+                        this.dataset.interventionId;
+
+
+                    this.disabled = true;
+
+                    this.textContent =
+                        "Resolving...";
+
+
+                    const {
+                        error
+                    } =
+                        await supabaseClient.rpc(
+                            "resolve_study_intervention",
+                            {
+                                p_intervention_id:
+                                    id
+                            }
+                        );
+
+
+                    if (error) {
+
+                        console.error(
+                            "[Study Help] Resolve error:",
+                            error
+                        );
+
+                        showToast(
+                            error.message ||
+                            "Couldn't resolve request."
+                        );
+
+                        this.disabled = false;
+
+                        this.textContent =
+                            "✓ Resolve";
+
+                        return;
+                    }
+
+
+                    showToast(
+                        "Request resolved ✓"
+                    );
+
+
+                    await loadStudyHelpRequests();
+
+                }
+            );
+
+        });
+
+}
