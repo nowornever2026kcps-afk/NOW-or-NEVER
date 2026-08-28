@@ -1,4004 +1,2585 @@
 /* =========================================================
    NOW-or-NEVER — STUDY SQUAD
-   STEP 4A — CLASSROOM VIEW
+   ======================================================== */
+
+:root {
+  --bg: #0b0b0b;
+  --surface: #151515;
+  --surface2: #1d1d1d;
+  --border: #2b2b2b;
+
+  --text: #f2f2f2;
+  --muted: #929292;
+  --soft: #c9c9c9;
+
+  --white: #ffffff;
+}
+
+
+* {
+  box-sizing: border-box;
+}
+
+
+html {
+  scroll-behavior: smooth;
+}
+
+
+body {
+  margin: 0;
+
+  min-height: 100vh;
+
+  background: var(--bg);
+
+  color: var(--text);
+
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+
+button {
+  cursor: pointer;
+}
+
+
+a {
+  color: inherit;
+}
+
+
+/* =========================================================
+   APP
    ========================================================= */
 
-const SUPABASE_URL =
-  "https://kvbbgvfrllptqpbkixnv.supabase.co";
+.squad-app {
 
-const SUPABASE_KEY =
-  "sb_publishable_YaS6ZJfi4VrAbtGymRBr6w_ocpvX0I-";
+  width: 100%;
+
+  max-width: 760px;
+
+  margin: 0 auto;
+
+  padding:
+    20px
+    16px
+    50px;
+}
 
 
-const supabaseClient =
-  window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY,
-    {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
-      }
-    }
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.squad-header {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 16px;
+
+  margin-bottom: 30px;
+}
+
+
+.back-button {
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  min-height: 38px;
+
+  padding: 0 12px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 10px;
+
+  background: #111;
+
+  color: var(--soft);
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  text-decoration: none;
+
+  transition:
+    background .15s ease,
+    transform .12s ease;
+}
+
+
+.back-button:hover {
+
+  background: var(--surface2);
+}
+
+
+.back-button:active {
+
+  transform: scale(.98);
+}
+
+
+.squad-brand {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 11px;
+}
+
+
+.squad-icon {
+
+  width: 44px;
+
+  height: 44px;
+
+  display: grid;
+
+  place-items: center;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 13px;
+
+  background: #111;
+
+  font-size: 21px;
+}
+
+
+.squad-brand h1 {
+
+  margin: 0;
+
+  font-size: 19px;
+
+  font-weight: 800;
+
+  letter-spacing: -.3px;
+}
+
+
+.squad-brand p {
+
+  margin: 3px 0 0;
+
+  color: var(--muted);
+
+  font-size: 11px;
+}
+
+
+/* =========================================================
+   HERO
+   ========================================================= */
+
+.squad-hero {
+
+  padding:
+    28px
+    22px;
+
+  margin-bottom: 14px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 18px;
+
+  background:
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(255,255,255,.06),
+      transparent 35%
+    ),
+    var(--surface);
+}
+
+
+.hero-badge {
+
+  display: inline-flex;
+
+  padding:
+    6px
+    9px;
+
+  border:
+    1px solid #303030;
+
+  border-radius: 999px;
+
+  background: #101010;
+
+  color: var(--muted);
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: .6px;
+}
+
+
+.squad-hero h2 {
+
+  margin:
+    15px
+    0
+    10px;
+
+  font-size: clamp(
+    27px,
+    7vw,
+    42px
   );
 
+  line-height: 1.05;
 
-/* =========================================================
-   HELPERS
-   ========================================================= */
-
-const $ = id =>
-  document.getElementById(id);
+  letter-spacing: -1.3px;
+}
 
 
-function showToast(message) {
+.squad-hero h2 span {
 
-  const toast =
-    $("squadToast");
+  color: #bca8ff;
+}
 
-  if (!toast) return;
 
-  toast.textContent =
-    message;
+.squad-hero p {
 
-  toast.classList.add("show");
+  max-width: 590px;
 
-  clearTimeout(
-    showToast.timer
-  );
+  margin: 0;
 
-  showToast.timer =
-    setTimeout(() => {
+  color: var(--muted);
 
-      toast.classList.remove("show");
+  font-size: 13px;
 
-    }, 2600);
-
+  line-height: 1.65;
 }
 
 
 /* =========================================================
-   CURRENT USER
+   ACTIONS
    ========================================================= */
 
-let currentUser = null;
-let activeClassroomId = null;
-let classroomRealtimeChannel = null;
-let classroomPresenceChannel = null;
-/* =========================================================
-   CREATE CLASSROOM MODAL
-   ========================================================= */
+.squad-actions {
 
-const createClassroomBtn =
-  $("createClassroomBtn");
+  display: grid;
 
-const createClassroomModal =
-  $("createClassroomModal");
+  grid-template-columns:
+    1fr
+    1fr;
 
-const createClassroomBackdrop =
-  $("createClassroomBackdrop");
+  gap: 10px;
 
-const closeCreateClassroom =
-  $("closeCreateClassroom");
-
-
-function openCreateClassroom() {
-
-  if (!createClassroomModal) return;
-
-  createClassroomModal
-    .classList
-    .remove("hidden");
-   
-
+  margin-bottom: 14px;
 }
 
 
-function closeCreateClassroomModal() {
+.squad-primary,
+.squad-secondary {
 
-  if (!createClassroomModal) return;
+  min-height: 46px;
 
-  createClassroomModal
-    .classList
-    .add("hidden");
+  border-radius: 11px;
 
+  font-weight: 800;
+
+  transition:
+    transform .12s ease,
+    background .15s ease;
 }
 
 
-createClassroomBtn?.addEventListener(
-  "click",
-  openCreateClassroom
-);
+.squad-primary {
+
+  border:
+    1px solid #444;
+
+  background: #f1f1f1;
+
+  color: #0a0a0a;
+}
 
 
-closeCreateClassroom?.addEventListener(
-  "click",
-  closeCreateClassroomModal
-);
+.squad-secondary {
+
+  border:
+    1px solid #333;
+
+  background: #191919;
+
+  color: var(--text);
+}
 
 
-createClassroomBackdrop?.addEventListener(
-  "click",
-  closeCreateClassroomModal
-);
+.squad-primary:active,
+.squad-secondary:active {
 
-
-/* =========================================================
-   LOAD CLASSROOMS
-   ========================================================= */
-
-async function loadClassrooms() {
-
-  const list =
-    $("classroomList");
-
-  if (!list) return;
-
-
-  list.innerHTML = `
-    <div class="classroom-empty">
-
-      <div class="empty-icon">
-        ⏳
-      </div>
-
-      <strong>
-        Loading classrooms...
-      </strong>
-
-      <p>
-        Finding active Study Squads.
-      </p>
-
-    </div>
-  `;
-
-
-  const {
-    data,
-    error
-  } =
-    await supabaseClient
-      .from("study_classrooms")
-      .select(`
-        id,
-        name,
-        subject,
-        exam_type,
-        description,
-        created_by,
-        created_at
-      `)
-      .eq("is_active", true)
-      .order("created_at", {
-        ascending: false
-      });
-
-
-  if (error) {
-
-    console.error(
-      "[Study Squad] Failed to load classrooms:",
-      error
-    );
-
-    list.innerHTML = `
-      <div class="classroom-empty">
-
-        <div class="empty-icon">
-          ⚠️
-        </div>
-
-        <strong>
-          Couldn't load classrooms
-        </strong>
-
-        <p>
-          ${escapeHtml(error.message)}
-        </p>
-
-      </div>
-    `;
-
-    return;
-  }
-
-
-  if (!data || data.length === 0) {
-
-    list.innerHTML = `
-      <div class="classroom-empty">
-
-        <div class="empty-icon">
-          👥
-        </div>
-
-        <strong>
-          No classrooms yet
-        </strong>
-
-        <p>
-          Be the first student to create a Study Squad.
-        </p>
-
-      </div>
-    `;
-
-    return;
-  }
-
-
-  list.innerHTML =
-    data
-      .map(classroom => {
-
-        return `
-          <article
-            class="classroom-item"
-            data-classroom-id="${escapeHtml(classroom.id)}"
-          >
-
-            <div class="classroom-item-top">
-
-              <div class="classroom-subject">
-                ${escapeHtml(classroom.subject)}
-              </div>
-
-              <div class="classroom-exam">
-                ${escapeHtml(
-                  formatExamType(
-                    classroom.exam_type
-                  )
-                )}
-              </div>
-
-            </div>
-
-
-            <h4>
-              ${escapeHtml(classroom.name)}
-            </h4>
-
-
-            ${
-              classroom.description
-                ? `
-                  <p class="classroom-description">
-                    ${escapeHtml(
-                      classroom.description
-                    )}
-                  </p>
-                `
-                : ""
-            }
-
-
-            <div class="classroom-item-bottom">
-
-              <span>
-                👥 Study Squad
-              </span>
-
-              <button
-                type="button"
-                class="join-classroom-btn"
-                data-classroom-id="${escapeHtml(
-                  classroom.id
-                )}"
-              >
-                Join
-              </button>
-
-            </div>
-
-          </article>
-        `;
-
-      })
-      .join("");
-
-
-  list
-    .querySelectorAll(
-      ".join-classroom-btn"
-    )
-    .forEach(button => {
-
-      button.addEventListener(
-        "click",
-        () => {
-
-          joinClassroom(
-            button.dataset.classroomId,
-            button
-          );
-
-        }
-      );
-
-    });
-
+  transform: scale(.985);
 }
 
 
 /* =========================================================
-   JOIN CLASSROOM
+   CARD
    ========================================================= */
 
-async function joinClassroom(
-  classroomId,
-  button
-) {
+.squad-card {
 
-  if (!currentUser) {
+  background: var(--surface);
 
-    showToast(
-      "Please log in first."
-    );
+  border:
+    1px solid var(--border);
 
-    return;
-  }
+  border-radius: 15px;
+
+  padding: 15px;
+}
 
 
-  if (button) {
+.squad-card-header {
 
-    button.disabled = true;
+  display: flex;
 
-    button.textContent =
-      "Opening...";
+  align-items: center;
 
-  }
+  justify-content: space-between;
 
-
-  /* -------------------------------------------------------
-     CHECK MEMBERSHIP
-     ------------------------------------------------------- */
-
-  const {
-    data: existingMember,
-    error: existingError
-  } =
-    await supabaseClient
-      .from("study_classroom_members")
-      .select("id")
-      .eq(
-        "classroom_id",
-        classroomId
-      )
-      .eq(
-        "user_id",
-        currentUser.id
-      )
-      .maybeSingle();
+  margin-bottom: 15px;
+}
 
 
-  if (existingError) {
+.squad-card-header h3 {
 
-    console.error(
-      "[Study Squad] Membership check failed:",
-      existingError
-    );
+  margin: 0;
 
-    showToast(
-      "Couldn't check classroom membership."
-    );
+  font-size: 14px;
 
-    restoreJoinButton(button);
-
-    return;
-  }
+  font-weight: 800;
+}
 
 
-  /* -------------------------------------------------------
-     ALREADY MEMBER
-     ------------------------------------------------------- */
+.squad-card-header p {
 
-  if (existingMember) {
+  margin:
+    4px
+    0
+    0;
 
-    restoreJoinButton(
-      button,
-      "Open"
-    );
+  color: var(--muted);
 
-    openClassroom(
-      classroomId
-    );
-
-    return;
-  }
-
-
-  /* -------------------------------------------------------
-     JOIN
-     ------------------------------------------------------- */
-
-  const {
-    error: joinError
-  } =
-    await supabaseClient
-      .from("study_classroom_members")
-      .insert({
-        classroom_id:
-          classroomId,
-
-        user_id:
-          currentUser.id
-      });
-
-
-  if (joinError) {
-
-    console.error(
-      "[Study Squad] Failed to join classroom:",
-      joinError
-    );
-
-    showToast(
-      "Couldn't join the classroom."
-    );
-
-    restoreJoinButton(
-      button
-    );
-
-    return;
-  }
-
-
-  showToast(
-    "Joined the Study Squad! 🎉"
-  );
-
-
-  restoreJoinButton(
-    button,
-    "Open"
-  );
-
-
-  openClassroom(
-    classroomId
-  );
-
+  font-size: 11px;
 }
 
 
 /* =========================================================
-   OPEN CLASSROOM
+   EMPTY STATE
    ========================================================= */
 
-async function openClassroom(
-  classroomId
-) {
-   activeClassroomId = classroomId;
+.classroom-empty {
 
-  console.log(
-    "[Study Squad] Opening classroom:",
-    classroomId
-  );
+  display: flex;
 
+  flex-direction: column;
 
-  const {
-    data: classroom,
-    error
-  } =
-    await supabaseClient
-      .from("study_classrooms")
-      .select(`
-        id,
-        name,
-        subject,
-        exam_type
-      `)
-      .eq(
-        "id",
-        classroomId
-      )
-      .maybeSingle();
+  align-items: center;
+
+  justify-content: center;
+
+  min-height: 230px;
+
+  padding: 30px;
+
+  border:
+    1px dashed #303030;
+
+  border-radius: 13px;
+
+  background: #111;
+
+  text-align: center;
+}
 
 
-  if (error) {
+.empty-icon {
 
-    console.error(
-      "[Study Squad] Failed to open classroom:",
-      error
-    );
+  margin-bottom: 10px;
 
-    showToast(
-      "Couldn't open classroom."
-    );
-
-    return;
-  }
+  font-size: 34px;
+}
 
 
-  if (!classroom) {
+.classroom-empty strong {
 
-    showToast(
-      "Classroom not found."
-    );
-
-    return;
-  }
+  font-size: 13px;
+}
 
 
-  /* -------------------------------------------------------
-     ELEMENTS
-     ------------------------------------------------------- */
+.classroom-empty p {
 
-  const classroomDirectory =
-    $("classroomList")
-      ?.closest(
-        ".squad-card"
-      );
+  margin:
+    6px
+    0
+    0;
 
+  color: var(--muted);
 
-  const classroomRoom =
-    $("classroomRoom");
-
-
-  if (!classroomRoom) {
-
-    console.error(
-      "[Study Squad] classroomRoom not found."
-    );
-
-    showToast(
-      "Classroom screen is missing."
-    );
-
-    return;
-  }
-
-
-  /* -------------------------------------------------------
-     FILL CLASSROOM DETAILS
-     ------------------------------------------------------- */
-
-  if ($("roomSubject")) {
-
-    $("roomSubject").textContent =
-      classroom.subject;
-
-  }
-
-
-  if ($("roomTitle")) {
-
-    $("roomTitle").textContent =
-      classroom.name;
-
-  }
-
-
-  if ($("roomExam")) {
-
-    $("roomExam").textContent =
-      formatExamType(
-        classroom.exam_type
-      );
-
-  }
-
-
-  /* -------------------------------------------------------
-     HIDE CLASSROOM DIRECTORY
-     
-     IMPORTANT:
-     We DON'T move the classroom room in the DOM.
-     We simply hide the directory and show the room.
-     
-     This makes the room occupy the same visual
-     position without duplicate declarations or
-     DOM-position problems.
-     ------------------------------------------------------- */
-
-  if (classroomDirectory) {
-
-    classroomDirectory
-      .classList
-      .add("hidden");
-
-  }
-
-
-  /* -------------------------------------------------------
-     HIDE HERO
-     ------------------------------------------------------- */
-
-  document
-    .querySelector(
-      ".squad-hero"
-    )
-    ?.classList
-    .add("hidden");
-
-
-  /* -------------------------------------------------------
-     HIDE ACTION BUTTONS
-     ------------------------------------------------------- */
-
-  document
-    .querySelector(
-      ".squad-actions"
-    )
-    ?.classList
-    .add("hidden");
-
-
-  /* -------------------------------------------------------
-     SHOW CLASSROOM
-     ------------------------------------------------------- */
-
-  classroomRoom
-    .classList
-    .remove("hidden");
-    
-   await loadClassroomMessages();
-   setupStudyHelpPanel();
-   subscribeToClassroomMessages();
-   startClassroomPresence();
-
-   /* Automatic AI Mentor voting system */
-   startAIMentorPollSystem();
-   
-
-
-  /* -------------------------------------------------------
-     GO TO TOP
-     ------------------------------------------------------- */
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-
-
-  console.log(
-    "[Study Squad] Classroom opened:",
-    classroom.name
-  );
-
+  font-size: 11px;
 }
 
 
 /* =========================================================
-   BACK TO CLASSROOMS
+   MODAL
    ========================================================= */
 
-$("backToClassroomsBtn")
-  ?.addEventListener(
-    "click",
-    () => {
+.squad-modal {
 
-      if (classroomPresenceChannel) {
+  position: fixed;
 
-        supabaseClient.removeChannel(
-          classroomPresenceChannel
-        );
-      
-        classroomPresenceChannel = null;
-      
-      }
-      
-            const classroomRoom =
-              $("classroomRoom");
-      
-      
-            const classroomDirectory =
-              $("classroomList")
-                ?.closest(
-                  ".squad-card"
-                );
-            if (classroomRealtimeChannel) {
-      
-              supabaseClient
-                .removeChannel(
-                  classroomRealtimeChannel
-                );
-            
-              classroomRealtimeChannel = null;
-            
-            }
-      
+  inset: 0;
 
-      /* Hide room */
+  z-index: 1000;
 
-      if (classroomRoom) {
+  display: grid;
 
-        classroomRoom
-          .classList
-          .add("hidden");
+  place-items: center;
 
-      }
+  padding: 18px;
+}
 
 
-      /* Show classroom directory */
+.squad-modal.hidden {
 
-      if (classroomDirectory) {
+  display: none;
+}
 
-        classroomDirectory
-          .classList
-          .remove("hidden");
 
-      }
+.squad-modal-backdrop {
 
-      stopAIMentorPollSystem();
+  position: absolute;
 
+  inset: 0;
 
-      /* Show hero */
+  background:
+    rgba(0,0,0,.72);
 
-      document
-        .querySelector(
-          ".squad-hero"
-        )
-        ?.classList
-        .remove("hidden");
+  backdrop-filter:
+    blur(4px);
+}
 
 
-      /* Show actions */
+.squad-modal-card {
 
-      document
-        .querySelector(
-          ".squad-actions"
-        )
-        ?.classList
-        .remove("hidden");
+  position: relative;
 
+  width: 100%;
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
+  max-width: 500px;
 
-    }
-  );
+  max-height: calc(100vh - 36px);
 
+  overflow-y: auto;
 
-/* =========================================================
-   CREATE CLASSROOM
-   ========================================================= */
+  padding: 17px;
 
-async function createClassroom() {
+  border:
+    1px solid #303030;
 
-  if (!currentUser) {
+  border-radius: 16px;
 
-    showToast(
-      "Please log in first."
-    );
+  background: #151515;
 
-    return;
-  }
+  box-shadow:
+    0 25px 80px rgba(0,0,0,.55);
+}
 
 
-  const name =
-    $("classroomName")
-      ?.value
-      .trim();
+.modal-header {
 
+  display: flex;
 
-  const subject =
-    $("classroomSubject")
-      ?.value
-      .trim();
+  align-items: flex-start;
 
+  justify-content: space-between;
 
-  const examType =
-    $("classroomExam")
-      ?.value
-      .trim();
+  gap: 15px;
 
+  margin-bottom: 18px;
+}
 
-  const description =
-    $("classroomDescription")
-      ?.value
-      .trim();
 
+.modal-header h3 {
 
-  if (!name) {
+  margin: 0;
 
-    showToast(
-      "Enter a classroom name."
-    );
+  font-size: 16px;
+}
 
-    $("classroomName")
-      ?.focus();
 
-    return;
-  }
+.modal-header p {
 
+  margin:
+    4px
+    0
+    0;
 
-  if (!subject) {
+  color: var(--muted);
 
-    showToast(
-      "Select a subject."
-    );
+  font-size: 11px;
+}
 
-    $("classroomSubject")
-      ?.focus();
 
-    return;
-  }
+.modal-close {
 
+  width: 32px;
 
-  if (!examType) {
+  height: 32px;
 
-    showToast(
-      "Select an exam."
-    );
+  border: 0;
 
-    $("classroomExam")
-      ?.focus();
+  border-radius: 9px;
 
-    return;
-  }
+  background: #202020;
 
+  color: var(--soft);
 
-  const saveButton =
-    $("saveClassroomBtn");
+  font-size: 20px;
 
+  line-height: 1;
+}
 
-  if (saveButton) {
 
-    saveButton.disabled =
-      true;
+.squad-field {
 
-    saveButton.textContent =
-      "Creating...";
+  margin-bottom: 13px;
+}
 
-  }
 
+.squad-field label {
 
-  const {
-    data: classroom,
-    error: classroomError
-  } =
-    await supabaseClient
-      .from("study_classrooms")
-      .insert({
-        name,
-        subject,
-        exam_type:
-          examType,
-        description:
-          description || null,
-        created_by:
-          currentUser.id
-      })
-      .select()
-      .single();
+  display: block;
 
+  margin-bottom: 6px;
 
-  if (classroomError) {
+  color: var(--muted);
 
-    console.error(
-      "[Study Squad] Classroom creation failed:",
-      classroomError
-    );
+  font-size: 11px;
 
-    showToast(
-      "Couldn't create classroom."
-    );
+  font-weight: 650;
+}
 
-    restoreSaveButton();
 
-    return;
-  }
+.squad-field input,
+.squad-field select,
+.squad-field textarea {
 
+  width: 100%;
 
-  /* -------------------------------------------------------
-     ADD CREATOR AS MEMBER
-     ------------------------------------------------------- */
+  border:
+    1px solid #303030;
 
-  const {
-    error: memberError
-  } =
-    await supabaseClient
-      .from(
-        "study_classroom_members"
-      )
-      .insert({
-        classroom_id:
-          classroom.id,
+  border-radius: 10px;
 
-        user_id:
-          currentUser.id
-      });
+  background: #101010;
 
+  color: var(--text);
 
-  if (memberError) {
+  outline: none;
 
-    console.error(
-      "[Study Squad] Creator membership failed:",
-      memberError
-    );
+  padding:
+    11px
+    12px;
+}
 
-    showToast(
-      "Classroom created, but joining failed."
-    );
 
-  } else {
+.squad-field input,
+.squad-field select {
 
-    showToast(
-      "Classroom created! 🎉"
-    );
+  height: 44px;
+}
 
-  }
 
+.squad-field textarea {
 
-  clearCreateClassroomForm();
+  min-height: 90px;
 
-  closeCreateClassroomModal();
+  resize: vertical;
+}
 
-  await loadClassrooms();
 
-  restoreSaveButton();
+.squad-field input:focus,
+.squad-field select:focus,
+.squad-field textarea:focus {
 
+  border-color: #686868;
+
+  background: #131313;
 }
 
 
 /* =========================================================
-   SAVE CLASSROOM BUTTON
+   TOAST
    ========================================================= */
 
-$("saveClassroomBtn")
-  ?.addEventListener(
-    "click",
-    createClassroom
-  );
+.squad-toast {
+
+  position: fixed;
+
+  left: 50%;
+
+  bottom: 22px;
+
+  z-index: 2000;
+
+  transform:
+    translate(-50%, 15px);
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  padding:
+    10px
+    14px;
+
+  border:
+    1px solid #333;
+
+  border-radius: 10px;
+
+  background: #181818;
+
+  color: var(--text);
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  transition:
+    opacity .2s ease,
+    transform .2s ease;
+}
 
 
-/* =========================================================
-   BROWSE CLASSROOMS BUTTON
-   ========================================================= */
+.squad-toast.show {
 
-$("browseClassroomsBtn")
-  ?.addEventListener(
-    "click",
-    () => {
+  opacity: 1;
 
-      const list =
-        $("classroomList");
-
-      if (!list) return;
-
-      list.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-
-    }
-  );
-
-
-/* =========================================================
-   CLEAR CREATE FORM
-   ========================================================= */
-
-function clearCreateClassroomForm() {
-
-  if ($("classroomName")) {
-
-    $("classroomName").value =
-      "";
-
-  }
-
-
-  if ($("classroomSubject")) {
-
-    $("classroomSubject").value =
-      "";
-
-  }
-
-
-  if ($("classroomExam")) {
-
-    $("classroomExam").value =
-      "";
-
-  }
-
-
-  if ($("classroomDescription")) {
-
-    $("classroomDescription").value =
-      "";
-
-  }
-
+  transform:
+    translate(-50%, 0);
 }
 
 
 /* =========================================================
-   RESTORE SAVE BUTTON
+   MOBILE
    ========================================================= */
 
-function restoreSaveButton() {
+@media (max-width: 560px) {
 
-  const button =
-    $("saveClassroomBtn");
+  .squad-app {
 
-  if (!button) return;
-
-  button.disabled =
-    false;
-
-  button.textContent =
-    "Create Classroom";
-
-}
-
-
-/* =========================================================
-   RESTORE JOIN BUTTON
-   ========================================================= */
-
-function restoreJoinButton(
-  button,
-  text = "Join"
-) {
-
-  if (!button) return;
-
-  button.disabled =
-    false;
-
-  button.textContent =
-    text;
-
-}
-
-
-/* =========================================================
-   FORMAT EXAM TYPE
-   ========================================================= */
-
-function formatExamType(
-  examType
-) {
-
-  switch (examType) {
-
-    case "NEET":
-      return "NEET";
-
-    case "BOARD":
-      return "Board";
-
-    case "BOTH":
-      return "NEET + Board";
-
-    default:
-      return examType || "Exam";
-
-  }
-
-}
-
-
-/* =========================================================
-   HTML ESCAPE
-   ========================================================= */
-
-function escapeHtml(
-  value
-) {
-
-  if (
-    value === null ||
-    value === undefined
-  ) {
-
-    return "";
-
+    padding:
+      14px
+      12px
+      40px;
   }
 
 
-  return String(value)
-    .replaceAll(
-      "&",
-      "&amp;"
-    )
-    .replaceAll(
-      "<",
-      "&lt;"
-    )
-    .replaceAll(
-      ">",
-      "&gt;"
-    )
-    .replaceAll(
-      '"',
-      "&quot;"
-    )
-    .replaceAll(
-      "'",
-      "&#039;"
-    );
+  .squad-header {
+
+    align-items: flex-start;
+
+    flex-direction: column-reverse;
+
+    gap: 12px;
+  }
+
+
+  .back-button {
+
+    width: 100%;
+  }
+
+
+  .squad-brand {
+
+    width: 100%;
+  }
+
+
+  .squad-actions {
+
+    grid-template-columns: 1fr;
+  }
+
+
+  .squad-hero {
+
+    padding:
+      23px
+      17px;
+  }
 
 }
-
-
 /* =========================================================
-   CLASSROOM PRESENCE
-   STEP 4B.6A
+   CLASSROOM ITEMS
    ========================================================= */
 
-function startClassroomPresence() {
+.classroom-item {
+  padding: 15px;
 
-  if (!activeClassroomId || !currentUser) {
-    return;
-  }
+  margin-bottom: 10px;
 
+  border: 1px solid #2c2c2c;
 
-  /* Remove an old presence channel if one exists */
+  border-radius: 13px;
 
-  if (classroomPresenceChannel) {
+  background: #111;
 
-    supabaseClient.removeChannel(
-      classroomPresenceChannel
-    );
-
-    classroomPresenceChannel = null;
-  }
-
-
-  const channelName =
-    `study-presence-${activeClassroomId}`;
-
-
-  classroomPresenceChannel =
-    supabaseClient
-      .channel(channelName);
-
-   classroomPresenceChannel.on(
-        "presence",
-        {
-          event: "sync"
-        },
-        () => {
-      
-          const activeUsers =
-            getActiveClassroomUsers();
-      
-          console.log(
-            "[Study Squad] Active students:",
-            activeUsers
-          );
-      
-          console.log(
-            "[Study Squad] Active student count:",
-            activeUsers.length
-          );
-         const activeCount =
-              $("classroomActiveCount");
-            
-            if (activeCount) {
-            
-              const count =
-                activeUsers.length;
-            
-              activeCount.textContent =
-                `🟢 ${count} ${
-                  count === 1
-                    ? "student"
-                    : "students"
-                } active`;
-
-               const activePanel =
-                 $("activeStudentsPanel");
-               
-               if (
-                 activePanel &&
-                 !activePanel.classList.contains("hidden")
-               ) {
-               
-                 showActiveStudents();
-               
-               }
-            
-            }
-      
-        }
-      );
-
-
-  classroomPresenceChannel
-    .subscribe(async (status) => {
-
-      console.log(
-        "[Study Squad] Presence status:",
-        status
-      );
-
-
-      if (status === "SUBSCRIBED") {
-
-        const trackStatus =
-          await classroomPresenceChannel.track({
-
-            user_id:
-              currentUser.id,
-
-            joined_at:
-              new Date().toISOString()
-
-          });
-
-
-        console.log(
-          "[Study Squad] Presence tracked:",
-          trackStatus
-        );
-
-      }
-
-    });
-
+  transition:
+    background .15s ease,
+    border-color .15s ease,
+    transform .12s ease;
 }
 
+.classroom-item:last-child {
+  margin-bottom: 0;
+}
+
+.classroom-item:hover {
+  background: #161616;
+
+  border-color: #3a3a3a;
+
+  transform: translateY(-1px);
+}
+
+.classroom-item-top {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-bottom: 9px;
+}
+
+.classroom-subject {
+  color: #bca8ff;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  text-transform: uppercase;
+
+  letter-spacing: .5px;
+}
+
+.classroom-exam {
+  padding: 4px 7px;
+
+  border: 1px solid #303030;
+
+  border-radius: 7px;
+
+  background: #191919;
+
+  color: #a5a5a5;
+
+  font-size: 9px;
+
+  font-weight: 750;
+}
+
+.classroom-item h4 {
+  margin: 0;
+
+  color: var(--text);
+
+  font-size: 14px;
+
+  line-height: 1.35;
+}
+
+.classroom-description {
+  margin: 7px 0 0;
+
+  color: var(--muted);
+
+  font-size: 11px;
+
+  line-height: 1.5;
+}
+
+.classroom-item-bottom {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-top: 13px;
+
+  padding-top: 11px;
+
+  border-top: 1px solid #222;
+
+  color: #777;
+
+  font-size: 10px;
+}
+
+.join-classroom-btn {
+  min-width: 65px;
+
+  min-height: 30px;
+
+  padding: 0 10px;
+
+  border: 1px solid #3b3b3b;
+
+  border-radius: 8px;
+
+  background: #202020;
+
+  color: #eee;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  transition:
+    background .15s ease,
+    transform .12s ease;
+}
+
+.join-classroom-btn:hover {
+  background: #292929;
+}
+
+.join-classroom-btn:active {
+  transform: scale(.96);
+}
+
+.join-classroom-btn:disabled {
+  opacity: .55;
+
+  cursor: default;
+}
 /* =========================================================
-   GET ACTIVE CLASSROOM USERS
-   STEP 4B.6B
+   CLASSROOM ROOM — STEP 4A
    ========================================================= */
 
-function getActiveClassroomUsers() {
-
-  if (!classroomPresenceChannel) {
-    return [];
-  }
-
-  const state =
-    classroomPresenceChannel.presenceState();
-
-  const users = [];
-
-  Object.values(state).forEach(
-    presences => {
-
-      presences.forEach(
-        presence => {
-
-          if (
-            presence.user_id &&
-            !users.includes(
-              presence.user_id
-            )
-          ) {
-
-            users.push(
-              presence.user_id
-            );
-
-          }
-
-        }
-      );
-
-    }
-  );
-
-  return users;
-
+.classroom-room.hidden {
+  display: none;
 }
 
+.classroom-room-header {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 14px;
+
+  margin-bottom: 20px;
+}
+
+.back-to-classrooms {
+  flex-shrink: 0;
+
+  min-height: 36px;
+
+  padding: 0 11px;
+
+  border: 1px solid #303030;
+
+  border-radius: 9px;
+
+  background: #111;
+
+  color: #cfcfcf;
+
+  font-size: 11px;
+
+  font-weight: 750;
+
+  cursor: pointer;
+
+  transition:
+    background .15s ease,
+    transform .12s ease;
+}
+
+.back-to-classrooms:hover {
+  background: #202020;
+}
+
+.back-to-classrooms:active {
+  transform: scale(.97);
+}
+
+.classroom-room-info {
+  min-width: 0;
+}
+
+.classroom-room-info h2 {
+  margin: 3px 0 4px;
+
+  font-size: 19px;
+
+  line-height: 1.25;
+
+  letter-spacing: -.3px;
+
+  overflow-wrap: anywhere;
+}
+
+.classroom-room-info p {
+  margin: 0;
+
+  color: var(--muted);
+
+  font-size: 11px;
+}
+
+.classroom-room-placeholder {
+  min-height: 300px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 30px;
+
+  border: 1px dashed #303030;
+
+  border-radius: 13px;
+
+  background: #111;
+
+  text-align: center;
+}
+
+.room-placeholder-icon {
+  margin-bottom: 10px;
+
+  font-size: 36px;
+}
+
+.classroom-room-placeholder h3 {
+  margin: 0;
+
+  font-size: 14px;
+}
+
+.classroom-room-placeholder p {
+  max-width: 300px;
+
+  margin: 7px 0 0;
+
+  color: var(--muted);
+
+  font-size: 11px;
+
+  line-height: 1.5;
+}
 /* =========================================================
-   ACTIVE STUDENT LIST
+   CLASSROOM CHAT — STEP 4B.1
+   ========================================================= */
+
+.classroom-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+
+/* ---------------------------------------------------------
+   MESSAGE AREA
+   --------------------------------------------------------- */
+
+.classroom-messages {
+  min-height: 360px;
+  max-height: 560px;
+
+  overflow-y: auto;
+
+  padding: 16px;
+
+  border: 1px solid #292929;
+  border-radius: 14px;
+
+  background: #0d0d0d;
+
+  scrollbar-width: thin;
+}
+
+
+.classroom-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+
+.classroom-messages::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background: #333;
+}
+
+
+/* ---------------------------------------------------------
+   EMPTY CHAT
+   --------------------------------------------------------- */
+
+.chat-empty {
+  min-height: 320px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  padding: 25px;
+}
+
+
+.chat-empty-icon {
+  font-size: 34px;
+  margin-bottom: 10px;
+}
+
+
+.chat-empty h3 {
+  margin: 0;
+
+  font-size: 15px;
+}
+
+
+.chat-empty p {
+  max-width: 320px;
+
+  margin: 7px 0 0;
+
+  color: var(--muted);
+
+  font-size: 11px;
+
+  line-height: 1.5;
+}
+
+
+/* ---------------------------------------------------------
+   MESSAGE INPUT
+   --------------------------------------------------------- */
+
+.classroom-message-form {
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 8px;
+}
+
+
+.classroom-message-input {
+  flex: 1;
+
+  min-height: 44px;
+  max-height: 130px;
+
+  resize: none;
+
+  padding: 12px 13px;
+
+  border: 1px solid #303030;
+  border-radius: 12px;
+
+  outline: none;
+
+  background: #111;
+  color: #eee;
+
+  font-family: inherit;
+  font-size: 12px;
+
+  line-height: 1.45;
+
+  box-sizing: border-box;
+}
+
+
+.classroom-message-input::placeholder {
+  color: #666;
+}
+
+
+.classroom-message-input:focus {
+  border-color: #555;
+}
+
+
+/* ---------------------------------------------------------
+   SEND BUTTON
+   --------------------------------------------------------- */
+
+.send-classroom-message {
+  width: 44px;
+  height: 44px;
+
+  flex-shrink: 0;
+
+  border: 0;
+  border-radius: 12px;
+
+  background: #f1f1f1;
+  color: #111;
+
+  font-size: 18px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    transform .12s ease,
+    opacity .15s ease;
+}
+
+
+.send-classroom-message:hover {
+  opacity: .88;
+}
+
+
+.send-classroom-message:active {
+  transform: scale(.94);
+}
+
+
+.send-classroom-message:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+
+/* ---------------------------------------------------------
+   MOBILE
+   --------------------------------------------------------- */
+
+@media (max-width: 600px) {
+
+  .classroom-messages {
+    min-height: 420px;
+    max-height: 60vh;
+
+    padding: 11px;
+  }
+
+
+  .classroom-message-input {
+    font-size: 13px;
+  }
+
+}
+/* =========================================================
+   CHAT MESSAGES — STEP 4B.3
+   ========================================================= */
+
+.chat-message {
+  max-width: 78%;
+
+  margin-bottom: 13px;
+
+  padding: 9px 11px;
+
+  border: 1px solid #292929;
+  border-radius: 12px;
+
+  background: #151515;
+
+  overflow-wrap: anywhere;
+}
+
+
+.chat-message-mine {
+  margin-left: auto;
+
+  background: #202020;
+
+  border-color: #383838;
+}
+
+
+.chat-message-other {
+  margin-right: auto;
+}
+
+
+.chat-message-header {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-bottom: 5px;
+}
+
+
+.chat-sender {
+  font-size: 10px;
+
+  font-weight: 800;
+
+  color: #eee;
+}
+
+
+.chat-time {
+  font-size: 9px;
+
+  color: #666;
+}
+
+
+.chat-message-body {
+  font-size: 12px;
+
+  line-height: 1.5;
+
+  color: #ddd;
+
+  white-space: pre-wrap;
+}
+/* =========================================================
+   ACTIVE STUDENTS
+   STEP 4B.6C
+   ========================================================= */
+
+.classroom-active-count {
+  display: inline-flex;
+
+  align-items: center;
+
+  width: fit-content;
+
+  margin-top: 7px;
+
+  padding: 4px 8px;
+
+  border: 1px solid #292929;
+  border-radius: 999px;
+
+  background: #111;
+
+  color: #999;
+
+  font-size: 10px;
+
+  line-height: 1;
+}
+/* =========================================================
+   ACTIVE STUDENTS PANEL
    STEP 4B.6D
    ========================================================= */
 
-async function showActiveStudents() {
+.classroom-active-count {
+  cursor: pointer;
 
-  const panel =
-    $("activeStudentsPanel");
+  border: 1px solid #292929;
 
-  const list =
-    $("activeStudentsList");
+  font-family: inherit;
 
-  if (!panel || !list) {
-    return;
-  }
-
-
-  const activeUsers =
-    getActiveClassroomUsers();
-
-
-  if (!activeUsers.length) {
-
-    list.innerHTML = `
-      <div class="active-student-item">
-        No active students.
-      </div>
-    `;
-
-    panel.classList.remove("hidden");
-
-    return;
-  }
-
-
-  list.innerHTML = `
-    <div class="active-student-item">
-      Loading students...
-    </div>
-  `;
-
-  panel.classList.remove("hidden");
-
-
-  /* -------------------------------------------------------
-     LOAD PROFILES
-     ------------------------------------------------------- */
-
-  const {
-    data: profiles,
-    error
-  } =
-    await supabaseClient
-      .from("profiles")
-      .select(`
-        id,
-        username,
-        display_name
-      `)
-      .in(
-        "id",
-        activeUsers
-      );
-
-
-  if (error) {
-
-    console.error(
-      "[Study Squad] Failed to load active students:",
-      error
-    );
-
-    list.innerHTML = `
-      <div class="active-student-item">
-        Couldn't load students.
-      </div>
-    `;
-
-    return;
-  }
-
-
-  const profileMap =
-    new Map();
-
-  (profiles || []).forEach(
-    profile => {
-
-      profileMap.set(
-        profile.id,
-        profile
-      );
-
-    }
-  );
-
-
-  /* -------------------------------------------------------
-     RENDER
-     ------------------------------------------------------- */
-
-  list.innerHTML =
-    activeUsers
-      .map(userId => {
-
-        const profile =
-          profileMap.get(userId);
-
-
-        const isMe =
-          currentUser &&
-          userId === currentUser.id;
-
-
-        const name =
-          isMe
-            ? "You"
-            : (
-                profile?.display_name ||
-                profile?.username ||
-                "Student"
-              );
-
-
-        return `
-          <div
-            class="active-student-item"
-          >
-
-            <span
-              class="active-student-dot"
-            ></span>
-
-            <span
-              class="active-student-name"
-            >
-              ${escapeHtml(name)}
-            </span>
-
-          </div>
-        `;
-
-      })
-      .join("");
-
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
 }
 
-/* =========================================================
-   ACTIVE STUDENT PANEL CONTROLS
-   ========================================================= */
-
-$("classroomActiveCount")
-  ?.addEventListener(
-    "click",
-    () => {
-
-      showActiveStudents();
-
-    }
-  );
-
-
-$("closeActiveStudents")
-  ?.addEventListener(
-    "click",
-    () => {
-
-      $("activeStudentsPanel")
-        ?.classList
-        .add("hidden");
-
-    }
-  );
-/* =========================================================
-   SEND CLASSROOM MESSAGE
-   STEP 4B.2
-   ========================================================= */
-
-$("classroomMessageForm")
-  ?.addEventListener(
-    "submit",
-    async (event) => {
-
-      event.preventDefault();
-
-
-      /* ---------------------------------------------------
-         BASIC CHECKS
-         --------------------------------------------------- */
-
-      if (!currentUser) {
-
-        showToast(
-          "Please log in first."
-        );
-
-        return;
-      }
-
-
-      if (!activeClassroomId) {
-
-        showToast(
-          "No classroom is currently open."
-        );
-
-        return;
-      }
-
-
-      const input =
-        $("classroomMessageInput");
-
-      const sendButton =
-        $("sendClassroomMessageBtn");
-
-
-      if (!input) return;
-
-
-      const message =
-        input.value.trim();
-
-
-      /* ---------------------------------------------------
-         DON'T SEND EMPTY MESSAGES
-         --------------------------------------------------- */
-
-      if (!message) {
-
-        input.focus();
-
-        return;
-      }
-
-       /* ---------------------------------------------------
-   CHECK MENTOR LOCK
-   --------------------------------------------------- */
-
-         const {
-             data: mentorLock,
-             error: mentorLockError
-         } = await supabaseClient
-             .from("study_ai_interventions")
-             .select("id")
-             .eq("classroom_id", activeClassroomId)
-             .eq("status", "evaluating")
-             .limit(1);
-         
-         if (mentorLockError) {
-         
-             console.error(
-                 "[Study Squad] Failed to check mentor lock:",
-                 mentorLockError
-             );
-         
-         } else if (
-             mentorLock &&
-             mentorLock.length > 0
-         ) {
-         
-             showToast(
-                 "🔒 Chat paused — mentor is answering."
-             );
-         
-             input.focus();
-         
-             return;
-         }
-
-
-      /* ---------------------------------------------------
-         1000 CHARACTER LIMIT
-         --------------------------------------------------- */
-
-      if (message.length > 1000) {
-
-        showToast(
-          "Message is too long."
-        );
-
-        return;
-      }
-
-
-      /* ---------------------------------------------------
-         DISABLE SEND WHILE SAVING
-         --------------------------------------------------- */
-
-      if (sendButton) {
-
-        sendButton.disabled =
-          true;
-
-        sendButton.textContent =
-          "…";
-
-      }
-
-
-      try {
-
-        /* -----------------------------------------------
-           INSERT MESSAGE
-           ----------------------------------------------- */
-
-        const {
-          error
-        } =
-          await supabaseClient
-            .from("study_messages")
-            .insert({
-
-              classroom_id:
-                activeClassroomId,
-
-              sender_id:
-                currentUser.id,
-
-              message:
-                message,
-
-              message_type:
-                "student"
-
-            });
-
-
-        /* -----------------------------------------------
-           HANDLE ERROR
-           ----------------------------------------------- */
-
-        if (error) {
-
-          console.error(
-            "[Study Squad] Failed to send message:",
-            error
-          );
-
-          showToast(
-            "Couldn't send message."
-          );
-
-          return;
-        }
-
-
-        /* -----------------------------------------------
-           SUCCESS
-           ----------------------------------------------- */
-
-        input.value = "";
-
-
-        /*
-         * Keep the input focused so the student
-         * can immediately type another message.
-         */
-
-        input.focus();
-
-
-        console.log(
-          "[Study Squad] Message sent successfully."
-        );
-
-
-      } finally {
-
-        if (sendButton) {
-
-          sendButton.disabled =
-            false;
-
-          sendButton.textContent =
-            "➤";
-
-        }
-
-      }
-
-    }
-  );
-
-/* =========================================================
-   LOAD CLASSROOM MESSAGES
-   STEP 4B.3
-   ========================================================= */
-
-async function loadClassroomMessages() {
-
-  const messagesContainer =
-    $("classroomMessages");
-
-  if (!messagesContainer) {
-    console.error(
-      "[Study Squad] classroomMessages element not found."
-    );
-    return;
-  }
-
-  if (!activeClassroomId) {
-    console.error(
-      "[Study Squad] No active classroom."
-    );
-    return;
-  }
-
-
-  /* -------------------------------------------------------
-     LOADING STATE
-     ------------------------------------------------------- */
-
-  messagesContainer.innerHTML = `
-    <div class="chat-empty">
-      <div class="chat-empty-icon">
-        ⏳
-      </div>
-
-      <h3>
-        Loading discussion...
-      </h3>
-
-      <p>
-        Getting the classroom messages.
-      </p>
-    </div>
-  `;
-
-
-  /* -------------------------------------------------------
-     GET MESSAGES
-     ------------------------------------------------------- */
-
-  const {
-    data: messages,
-    error
-  } =
-    await supabaseClient
-      .from("study_messages")
-      .select(`
-        id,
-        classroom_id,
-        sender_id,
-        message,
-        message_type,
-        created_at
-      `)
-      .eq(
-        "classroom_id",
-        activeClassroomId
-      )
-      .order(
-        "created_at",
-        {
-          ascending: true
-        }
-      );
-
-
-  /* -------------------------------------------------------
-     ERROR
-     ------------------------------------------------------- */
-
-  if (error) {
-
-    console.error(
-      "[Study Squad] Failed to load messages:",
-      error
-    );
-
-    messagesContainer.innerHTML = `
-      <div class="chat-empty">
-
-        <div class="chat-empty-icon">
-          ⚠️
-        </div>
-
-        <h3>
-          Couldn't load messages
-        </h3>
-
-        <p>
-          Please try refreshing the classroom.
-        </p>
-
-      </div>
-    `;
-
-    return;
-  }
-
-
-  /* -------------------------------------------------------
-     NO MESSAGES
-     ------------------------------------------------------- */
-
-  if (!messages || messages.length === 0) {
-
-    messagesContainer.innerHTML = `
-      <div class="chat-empty">
-
-        <div class="chat-empty-icon">
-          💬
-        </div>
-
-        <h3>
-          Start the discussion
-        </h3>
-
-        <p>
-          Ask a question, share an explanation,
-          or help another student.
-        </p>
-
-      </div>
-    `;
-
-    return;
-  }
-
-
-  /* -------------------------------------------------------
-     GET UNIQUE SENDERS
-     ------------------------------------------------------- */
-
-  const senderIds = [
-    ...new Set(
-      messages.map(
-        message => message.sender_id
-      )
-    )
-  ];
-
-
-  /* -------------------------------------------------------
-     LOAD PROFILES
-     ------------------------------------------------------- */
-
-  const {
-    data: profiles,
-    error: profileError
-  } =
-    await supabaseClient
-      .from("profiles")
-      .select(`
-        id,
-        username,
-        display_name
-      `)
-      .in(
-        "id",
-        senderIds
-      );
-
-
-  if (profileError) {
-
-    console.error(
-      "[Study Squad] Failed to load profiles:",
-      profileError
-    );
-
-  }
-
-
-  /* -------------------------------------------------------
-     PROFILE LOOKUP
-     ------------------------------------------------------- */
-
-  const profileMap =
-    new Map();
-
-  (profiles || []).forEach(
-    profile => {
-
-      profileMap.set(
-        profile.id,
-        profile
-      );
-
-    }
-  );
-
-
-  /* -------------------------------------------------------
-     RENDER MESSAGES
-     ------------------------------------------------------- */
-
-  messagesContainer.innerHTML =
-    messages
-      .map(message => {
-
-        const profile =
-          profileMap.get(
-            message.sender_id
-          );
-
-
-        const isMine =
-          currentUser &&
-          message.sender_id ===
-            currentUser.id;
-
-
-        const senderName =
-          isMine
-            ? "You"
-            : (
-                profile?.display_name ||
-                profile?.username ||
-                "Student"
-              );
-
-
-        const messageTime =
-          formatMessageTime(
-            message.created_at
-          );
-
-
-        const messageType =
-          message.message_type ||
-          "student";
-
-
-        return `
-          <div
-            class="chat-message ${
-              isMine
-                ? "chat-message-mine"
-                : "chat-message-other"
-            }"
-            data-message-id="${escapeHtml(
-              message.id
-            )}"
-          >
-
-            <div class="chat-message-header">
-
-              <span class="chat-sender">
-                ${escapeHtml(senderName)}
-              </span>
-
-              <span class="chat-time">
-                ${escapeHtml(messageTime)}
-              </span>
-
-            </div>
-
-
-            <div class="chat-message-body">
-
-              ${escapeHtml(
-                message.message
-              )}
-
-            </div>
-
-          </div>
-        `;
-
-      })
-      .join("");
-
-
-  /* -------------------------------------------------------
-     SCROLL TO BOTTOM
-     ------------------------------------------------------- */
-
-  messagesContainer.scrollTop =
-    messagesContainer.scrollHeight;
-
-
-  console.log(
-    "[Study Squad] Loaded",
-    messages.length,
-    "messages."
-  );
-
+.classroom-active-count:hover {
+  transform: translateY(-1px);
+  border-color: #444;
 }
 
 
 /* =========================================================
-   MESSAGE TIME FORMAT
+   ACTIVE STUDENTS PANEL
+   STEP 4B.6D — FIXED POSITIONING
+   ========================================================= */
+/* =========================================================
+   ACTIVE STUDENTS DROPDOWN
    ========================================================= */
 
-function formatMessageTime(
-  timestamp
-) {
-
-  if (!timestamp) {
-    return "";
-  }
+.classroom-active-count {
+  cursor: pointer;
+  position: relative;
+}
 
 
-  const date =
-    new Date(timestamp);
+.active-students-panel {
+  position: absolute;
+
+  top: calc(100% + 6px);
+  right: 0;
+
+  width: 230px;
+  max-width: calc(100vw - 24px);
+
+  z-index: 10000;
+
+  background: #111;
+
+  border: 1px solid #333;
+  border-radius: 12px;
+
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.55);
+
+  overflow: hidden;
+}
 
 
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
+/* Header */
 
-    return "";
+.active-students-panel-header {
+  display: flex;
 
-  }
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 11px 12px;
+
+  border-bottom: 1px solid #292929;
+
+  color: #eee;
+
+  font-size: 12px;
+}
 
 
-  return date.toLocaleString(
-    [],
-    {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit"
-    }
-  );
+/* Close button */
 
+.active-students-panel-header button {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 26px;
+  height: 26px;
+
+  padding: 0;
+
+  border: 0;
+
+  border-radius: 6px;
+
+  background: transparent;
+
+  color: #888;
+
+  cursor: pointer;
+
+  font-size: 15px;
+
+  pointer-events: auto;
+}
+
+.active-students-panel-header button:hover {
+  background: #222;
+  color: #fff;
+}
+
+
+/* Student list */
+
+.active-students-list {
+  max-height: 260px;
+
+  overflow-y: auto;
+
+  padding: 6px;
+}
+
+
+.active-student-item {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 8px;
+
+  border-radius: 7px;
+
+  color: #ddd;
+
+  font-size: 11px;
+}
+
+
+.active-student-item:hover {
+  background: #1b1b1b;
+}
+
+
+.active-student-dot {
+  width: 7px;
+  height: 7px;
+
+  flex: 0 0 7px;
+
+  border-radius: 50%;
+
+  background: #4ade80;
+}
+
+
+.active-student-name {
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+
+/* IMPORTANT */
+
+.hidden {
+  display: none !important;
+}
+/* =========================================================
+   NEED MENTOR BUTTON
+   ========================================================= */
+
+.need-mentor-btn {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+
+  padding: 7px 11px;
+
+  border: 1px solid #444;
+  border-radius: 8px;
+
+  background: #171717;
+
+  color: #f1f1f1;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.need-mentor-btn:hover {
+  background: #222;
+  border-color: #666;
+}
+
+.need-mentor-btn:active {
+  transform: scale(0.97);
+}
+
+.need-mentor-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /* =========================================================
-   CLASSROOM REALTIME
-   STEP 4B.4
+   NEED MENTOR BUTTON
    ========================================================= */
 
-function subscribeToClassroomMessages() {
+.need-mentor-btn {
+  display: inline-flex;
 
-  if (!activeClassroomId) {
-    return;
-  }
+  align-items: center;
+  justify-content: center;
 
+  gap: 6px;
 
-  /* Remove previous subscription */
+  padding: 7px 11px;
 
-  if (classroomRealtimeChannel) {
+  border: 1px solid #444;
+  border-radius: 8px;
 
-    supabaseClient
-      .removeChannel(
-        classroomRealtimeChannel
-      );
+  background: #171717;
 
-    classroomRealtimeChannel = null;
-  }
+  color: #f1f1f1;
 
+  font-size: 12px;
+  font-weight: 600;
 
-  console.log(
-    "[Study Squad] Starting realtime for:",
-    activeClassroomId
-  );
+  cursor: pointer;
 
-
-  classroomRealtimeChannel =
-    supabaseClient
-      .channel(
-        `study-classroom-${activeClassroomId}`
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "study_messages",
-          filter:
-            `classroom_id=eq.${activeClassroomId}`
-        },
-        payload => {
-
-          console.log(
-            "[Study Squad] New realtime message:",
-            payload.new
-          );
-
-
-          /*
-           * Add only the newly inserted message.
-           * We don't reload the entire conversation.
-           */
-
-          renderRealtimeMessage(
-            payload.new
-          );
-
-        }
-      )
-      .subscribe(
-        status => {
-
-          console.log(
-            "[Study Squad] Realtime status:",
-            status
-          );
-
-        }
-      );
-
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
 }
 
-/* =========================================================
-   RENDER REALTIME MESSAGE
-   ========================================================= */
-
-async function renderRealtimeMessage(
-  message
-) {
-
-  const messagesContainer =
-    $("classroomMessages");
-
-
-  if (!messagesContainer) {
-    return;
-  }
-
-
-  /*
-   * Ignore messages belonging to another classroom.
-   */
-
-  if (
-    message.classroom_id !==
-    activeClassroomId
-  ) {
-    return;
-  }
-
-
-  /*
-   * If this message already exists in the DOM,
-   * don't add it twice.
-   */
-
-  if (
-    messagesContainer.querySelector(
-      `[data-message-id="${message.id}"]`
-    )
-  ) {
-    return;
-  }
-
-
-  /* -------------------------------------------------------
-     GET SENDER PROFILE
-     ------------------------------------------------------- */
-
-  const {
-    data: profile
-  } =
-    await supabaseClient
-      .from("profiles")
-      .select(`
-        id,
-        username,
-        display_name
-      `)
-      .eq(
-        "id",
-        message.sender_id
-      )
-      .maybeSingle();
-
-
-  const isMine =
-    currentUser &&
-    message.sender_id ===
-      currentUser.id;
-
-
-  const senderName =
-    isMine
-      ? "You"
-      : (
-          profile?.display_name ||
-          profile?.username ||
-          "Student"
-        );
-
-
-  const messageTime =
-    formatMessageTime(
-      message.created_at
-    );
-
-
-  /* -------------------------------------------------------
-     REMOVE EMPTY STATE
-     ------------------------------------------------------- */
-
-  const emptyState =
-    messagesContainer.querySelector(
-      ".chat-empty"
-    );
-
-
-  if (emptyState) {
-    emptyState.remove();
-  }
-
-
-  /* -------------------------------------------------------
-     CREATE MESSAGE
-     ------------------------------------------------------- */
-
-  const messageElement =
-    document.createElement("div");
-
-
-  messageElement.className =
-    `chat-message ${
-      isMine
-        ? "chat-message-mine"
-        : "chat-message-other"
-    }`;
-
-
-  messageElement.dataset.messageId =
-    message.id;
-
-
-  messageElement.innerHTML = `
-
-    <div class="chat-message-header">
-
-      <span class="chat-sender">
-        ${escapeHtml(senderName)}
-      </span>
-
-      <span class="chat-time">
-        ${escapeHtml(messageTime)}
-      </span>
-
-    </div>
-
-    <div class="chat-message-body">
-      ${escapeHtml(message.message)}
-    </div>
-
-  `;
-
-
-  messagesContainer.appendChild(
-    messageElement
-  );
-
-
-  /* -------------------------------------------------------
-     SCROLL TO NEW MESSAGE
-     ------------------------------------------------------- */
-
-  messagesContainer.scrollTo({
-    top:
-      messagesContainer.scrollHeight,
-    behavior:
-      "smooth"
-  });
-
+.need-mentor-btn:hover {
+  background: #222;
+  border-color: #666;
 }
 
-/* =========================================================
-   INITIALIZATION
-   ========================================================= */
-
-document.addEventListener(
-  "DOMContentLoaded",
-  async () => {
-
-    console.log(
-      "[Study Squad] Initializing..."
-    );
-
-
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .auth
-        .getSession();
-
-
-    if (error) {
-
-      console.error(
-        "[Study Squad] Session error:",
-        error
-      );
-
-      showToast(
-        "Couldn't check your login."
-      );
-
-      return;
-    }
-
-
-    if (!data?.session) {
-
-      console.log(
-        "[Study Squad] No active session."
-      );
-
-      window.location.href =
-        "index.html";
-
-      return;
-    }
-
-
-    currentUser =
-      data.session.user;
-
-
-    console.log(
-      "[Study Squad] Logged in:",
-      currentUser.id
-    );
-
-
-    await loadClassrooms();
-
-  }
-);
-
-
-/* =========================================================
-   STUDY SQUAD — NEED MENTOR BUTTON
-   STEP 4C.4E
-   ========================================================= */
-
-const needMentorBtn =
-  document.getElementById("needMentorBtn");
-
-if (needMentorBtn) {
-
-  needMentorBtn.addEventListener(
-    "click",
-    async () => {
-
-      /* ---------------------------------------------------
-         Make sure a classroom is open
-         --------------------------------------------------- */
-
-      if (!activeClassroomId) {
-
-        showToast(
-          "Please open a classroom first."
-        );
-
-        return;
-      }
-
-
-      /* ---------------------------------------------------
-         Prevent rapid clicking
-         --------------------------------------------------- */
-
-      if (needMentorBtn.disabled) {
-        return;
-      }
-
-
-      needMentorBtn.disabled = true;
-
-      const originalText =
-        needMentorBtn.innerHTML;
-
-      needMentorBtn.innerHTML =
-        "⏳ Requesting...";
-
-
-      try {
-
-        const {
-          data,
-          error
-        } =
-          await supabaseClient.rpc(
-            "request_study_mentor",
-            {
-              p_classroom_id:
-                activeClassroomId
-            }
-          );
-
-
-        if (error) {
-          throw error;
-        }
-
-
-        console.log(
-          "[Study Squad] Mentor request:",
-          data
-        );
-
-
-        needMentorBtn.innerHTML =
-          "✅ Mentor requested";
-
-
-        showToast(
-          "Mentor requested! 🤖"
-        );
-
-        await updateMentorRequestCount();
-
-
-        /* -------------------------------------------------
-           Re-enable after 5 seconds.
-           Database has its own 2-minute protection.
-           ------------------------------------------------- */
-
-        setTimeout(() => {
-
-          needMentorBtn.disabled =
-            false;
-
-          needMentorBtn.innerHTML =
-            originalText;
-
-        }, 5000);
-
-
-      } catch (error) {
-
-        console.error(
-          "[Study Squad] Need Mentor failed:",
-          error
-        );
-
-
-        needMentorBtn.disabled =
-          false;
-
-        needMentorBtn.innerHTML =
-          originalText;
-
-
-        showToast(
-          "Couldn't request the mentor."
-        );
-
-      }
-
-    }
-  );
+.need-mentor-btn:active {
+  transform: scale(0.97);
 }
-/* =========================================================
-   MENTOR REQUEST COUNT
-   STEP 4C.4F
-   ========================================================= */
 
-async function updateMentorRequestCount() {
-
-  const countEl =
-    document.getElementById(
-      "mentorRequestCount"
-    );
-
-  if (!countEl || !activeClassroomId) {
-    return;
-  }
-
-  try {
-
-    const {
-      count,
-      error
-    } = await supabaseClient
-      .from("study_mentor_requests")
-      .select("id", {
-        count: "exact",
-        head: true
-      })
-      .eq(
-        "classroom_id",
-        activeClassroomId
-      )
-      .gte(
-        "created_at",
-        new Date(
-          Date.now() - 2 * 60 * 1000
-        ).toISOString()
-      );
-
-    if (error) {
-      throw error;
-    }
-
-    if (count && count > 0) {
-
-      countEl.textContent =
-        count;
-
-      countEl.style.display =
-        "inline-flex";
-
-    } else {
-
-      countEl.textContent = "";
-
-      countEl.style.display =
-        "none";
-    }
-
-  } catch (error) {
-
-    console.error(
-      "[Study Squad] Mentor count error:",
-      error
-    );
-
-  }
-
+.need-mentor-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
-setInterval(
-  updateMentorRequestCount,
-  15000
-);
+
+#mentorRequestCount {
+  display: none;
+
+  min-width: 18px;
+  height: 18px;
+
+  padding: 0 5px;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  background: #333;
+
+  color: #fff;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+#mentorRequestCount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 18px;
+    height: 18px;
+
+    padding: 0 5px;
+    margin-left: 4px;
+
+    border-radius: 50%;
+
+    background: #ff4d4d;
+    color: white;
+
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
 /* =========================================================
    MENTOR DASHBOARD
    ========================================================= */
 
-let mentorDashboardTimer = null;
+.mentor-dashboard {
+    margin: 18px 0;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 18px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,0.055),
+            rgba(255,255,255,0.025)
+        );
+    box-shadow:
+        0 12px 35px rgba(0,0,0,0.20);
+}
+
+.mentor-dashboard.hidden {
+    display: none !important;
+}
+
+.mentor-dashboard-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.mentor-dashboard-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    opacity: 0.65;
+    margin-bottom: 5px;
+}
+
+.mentor-dashboard-header h3 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.mentor-dashboard-header p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+    opacity: 0.65;
+    max-width: 520px;
+}
+
+.mentor-pending-badge {
+    flex-shrink: 0;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.07);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.mentor-pending-badge span {
+    font-size: 15px;
+    margin-right: 3px;
+}
+
+.mentor-interventions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mentor-intervention-card {
+    padding: 16px;
+    border-radius: 15px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.16);
+}
+
+.mentor-intervention-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.mentor-intervention-type {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.mentor-priority {
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.mentor-priority.high {
+    background: rgba(255, 90, 90, 0.14);
+}
+
+.mentor-priority.medium {
+    background: rgba(255, 190, 70, 0.14);
+}
+
+.mentor-priority.normal {
+    background: rgba(255,255,255,0.08);
+}
+
+.mentor-intervention-message {
+    padding: 12px;
+    border-radius: 11px;
+    background: rgba(255,255,255,0.045);
+    font-size: 14px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.mentor-intervention-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+    font-size: 11px;
+    opacity: 0.55;
+}
+
+.mentor-intervention-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 13px;
+}
+
+.mentor-resolve-btn {
+    border: 0;
+    border-radius: 9px;
+    padding: 8px 13px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 12px;
+    background: rgba(255,255,255,0.09);
+}
+
+.mentor-resolve-btn:hover {
+    background: rgba(255,255,255,0.15);
+}
+
+.mentor-resolve-btn:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.mentor-empty-state {
+    text-align: center;
+    padding: 28px 15px;
+    opacity: 0.65;
+}
+
+.mentor-empty-icon {
+    font-size: 30px;
+    margin-bottom: 8px;
+}
+
+.mentor-empty-state strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.mentor-empty-state p {
+    margin: 0;
+    font-size: 12px;
+}
 
 
-/* ---------------------------------------------------------
-   Helpers
-   --------------------------------------------------------- */
+/* Mobile */
 
-function mentorTypeLabel(type) {
+@media (max-width: 600px) {
 
-    switch (type) {
+    .mentor-dashboard {
+        padding: 15px;
+        border-radius: 15px;
+    }
 
-        case "explicit_mentor":
-            return "🙋 MENTOR REQUEST";
+    .mentor-dashboard-header {
+        flex-direction: column;
+    }
 
-        case "unresolved_doubt":
-            return "🤔 UNRESOLVED DOUBT";
+    .mentor-pending-badge {
+        align-self: flex-start;
+    }
 
-        case "conflicting_answers":
-            return "⚠️ CONFLICTING ANSWERS";
+    .mentor-intervention-actions {
+        justify-content: stretch;
+    }
 
-        case "multiple_requests":
-            return "🆘 MULTIPLE REQUESTS";
-
-        default:
-            return "📌 STUDY REQUEST";
+    .mentor-resolve-btn {
+        width: 100%;
     }
 
 }
 
-
-function mentorPriorityClass(priority) {
-
-    if (Number(priority) >= 80) {
-        return "high";
-    }
-
-    if (Number(priority) >= 50) {
-        return "medium";
-    }
-
-    return "normal";
+.mentor-student-label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    opacity: 0.55;
+    margin-bottom: 6px;
 }
 
-
-function mentorPriorityLabel(priority) {
-
-    if (Number(priority) >= 80) {
-        return "HIGH";
-    }
-
-    if (Number(priority) >= 50) {
-        return "MEDIUM";
-    }
-
-    return "NORMAL";
+.mentor-reply-area {
+    margin-top: 14px;
 }
 
-
-function mentorTimeAgo(dateString) {
-
-    if (!dateString) {
-        return "";
-    }
-
-    const date = new Date(dateString);
-
-    if (Number.isNaN(date.getTime())) {
-        return "";
-    }
-
-    const seconds =
-        Math.floor(
-            (Date.now() - date.getTime()) / 1000
-        );
-
-    if (seconds < 60) {
-        return "just now";
-    }
-
-    const minutes =
-        Math.floor(seconds / 60);
-
-    if (minutes < 60) {
-        return `${minutes} min ago`;
-    }
-
-    const hours =
-        Math.floor(minutes / 60);
-
-    if (hours < 24) {
-        return `${hours} hr ago`;
-    }
-
-    const days =
-        Math.floor(hours / 24);
-
-    return `${days} day${days === 1 ? "" : "s"} ago`;
+.mentor-reply-input {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 75px;
+    padding: 11px 12px;
+    border-radius: 11px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(0,0,0,0.18);
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.45;
+    outline: none;
 }
 
-
-/* ---------------------------------------------------------
-   Check whether current user owns classroom
-   --------------------------------------------------------- */
-
-async function isCurrentUserMentor(classroomId) {
-
-    if (!currentUser || !classroomId) {
-        return false;
-    }
-
-    const {
-        data,
-        error
-    } = await supabaseClient
-
-        .from("study_classrooms")
-
-        .select("created_by")
-
-        .eq("id", classroomId)
-
-        .maybeSingle();
-
-
-    if (error) {
-
-        console.error(
-            "[Study Squad] Mentor check failed:",
-            error
-        );
-
-        return false;
-    }
-
-
-    return Boolean(
-        data &&
-        data.created_by === currentUser.id
-    );
+.mentor-reply-input:focus {
+    border-color: rgba(255,255,255,0.25);
 }
 
-
-/* ---------------------------------------------------------
-   Show / hide mentor dashboard
-   --------------------------------------------------------- */
-
-async function setupMentorDashboard() {
-
-    const dashboard =
-        $("mentorDashboard");
-
-    if (!dashboard) {
-        return;
-    }
-
-    const isMentor =
-        await isCurrentUserMentor(
-            activeClassroomId
-        );
-
-
-    if (!isMentor) {
-
-        dashboard.classList.add(
-            "hidden"
-        );
-
-        stopMentorDashboardPolling();
-
-        return;
-    }
-
-
-    dashboard.classList.remove(
-        "hidden"
-    );
-
-
-    await loadMentorInterventions();
-
-    startMentorDashboardPolling();
+.mentor-reply-input::placeholder {
+    opacity: 0.45;
 }
 
-
-/* ---------------------------------------------------------
-   Load interventions
-   --------------------------------------------------------- */
-
-async function loadMentorInterventions() {
-
-    if (!activeClassroomId) {
-        return;
-    }
-
-    const dashboard =
-        $("mentorDashboard");
-
-    if (
-        !dashboard ||
-        dashboard.classList.contains("hidden")
-    ) {
-        return;
-    }
-
-
-    const list =
-        $("mentorInterventionsList");
-
-    if (!list) {
-        return;
-    }
-
-
-    const {
-        data,
-        error
-    } = await supabaseClient.rpc(
-        "get_study_mentor_interventions",
-        {
-            p_classroom_id:
-                activeClassroomId
-        }
-    );
-
-
-    if (error) {
-
-        console.error(
-            "[Study Squad] Failed to load mentor interventions:",
-            error
-        );
-
-        list.innerHTML = `
-            <div class="mentor-empty-state">
-                <div class="mentor-empty-icon">
-                    ⚠️
-                </div>
-
-                <strong>
-                    Couldn't load mentor requests
-                </strong>
-
-                <p>
-                    ${escapeHtml(error.message)}
-                </p>
-            </div>
-        `;
-
-        return;
-    }
-
-
-    const interventions =
-        Array.isArray(data)
-            ? data
-            : [];
-
-
-    const pendingCount =
-        interventions.length;
-
-
-    if ($("mentorPendingCount")) {
-
-        $("mentorPendingCount")
-            .textContent =
-            pendingCount;
-    }
-
-
-    if (
-        $("mentorRequestCount")
-    ) {
-
-        $("mentorRequestCount")
-            .textContent =
-            pendingCount;
-    }
-
-
-    if (interventions.length === 0) {
-
-        list.innerHTML = `
-            <div class="mentor-empty-state">
-
-                <div class="mentor-empty-icon">
-                    🧑‍🏫
-                </div>
-
-                <strong>
-                    No pending requests
-                </strong>
-
-                <p>
-                    Everything is under control.
-                </p>
-
-            </div>
-        `;
-
-        return;
-    }
-
-
-    list.innerHTML =
-        interventions
-            .map(renderMentorIntervention)
-            .join("");
-
-
-    list
-        .querySelectorAll(
-            ".mentor-resolve-btn"
-        )
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    resolveMentorIntervention(
-                        button.dataset.interventionId
-                    );
-
-                }
-            );
-
-        });
-
-         list
-             .querySelectorAll(
-                 ".mentor-send-btn"
-             )
-             .forEach(button => {
-         
-                 button.addEventListener(
-                     "click",
-                     () => {
-         
-                         sendMentorReply(
-                             button.dataset.interventionId
-                         );
-         
-                     }
-                 );
-         
-             });
+.mentor-send-btn {
+    border: 0;
+    border-radius: 9px;
+    padding: 8px 13px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 12px;
+    background: rgba(255,255,255,0.12);
 }
 
-
-/* ---------------------------------------------------------
-   Render intervention
-   --------------------------------------------------------- */
-
-function renderMentorIntervention(intervention) {
-
-    const priorityClass =
-        mentorPriorityClass(
-            intervention.priority
-        );
-
-    const priorityLabel =
-        mentorPriorityLabel(
-            intervention.priority
-        );
-
-    const typeLabel =
-        mentorTypeLabel(
-            intervention.trigger_type
-        );
-
-    const message =
-        intervention.message ||
-        "No message is attached to this request.";
-
-    const requestCount =
-        Number(
-            intervention.mentor_request_count || 1
-        );
-
-    return `
-
-        <article
-            class="mentor-intervention-card"
-            data-intervention-card="${escapeHtml(
-                intervention.id
-            )}"
-        >
-
-            <div
-                class="mentor-intervention-top"
-            >
-
-                <div
-                    class="mentor-intervention-type"
-                >
-                    ${typeLabel}
-                </div>
-
-                <span
-                    class="mentor-priority ${priorityClass}"
-                >
-                    ${priorityLabel}
-                    · ${Number(intervention.priority || 0)}
-                </span>
-
-            </div>
-
-
-            <div class="mentor-student-label">
-                Student message
-            </div>
-
-
-            <div
-                class="mentor-intervention-message"
-            >
-                ${escapeHtml(message)}
-            </div>
-
-
-            <div
-                class="mentor-intervention-meta"
-            >
-
-                <span>
-                    👥 ${requestCount}
-                    request${requestCount === 1 ? "" : "s"}
-                </span>
-
-                <span>
-                    🕒 ${mentorTimeAgo(
-                        intervention.created_at
-                    )}
-                </span>
-
-                ${
-                    intervention.trigger_message_id
-                        ? `
-                            <span>
-                                💬 Message #${escapeHtml(
-                                    String(
-                                        intervention.trigger_message_id
-                                    )
-                                )}
-                            </span>
-                          `
-                        : ""
-                }
-
-            </div>
-
-
-            <!-- Mentor reply -->
-
-            <div
-                class="mentor-reply-area"
-            >
-
-                <textarea
-                    class="mentor-reply-input"
-                    data-intervention-id="${escapeHtml(
-                        intervention.id
-                    )}"
-                    placeholder="Write your reply to the student..."
-                    rows="3"
-                ></textarea>
-
-
-                <div
-                    class="mentor-intervention-actions"
-                >
-
-                    <button
-                        type="button"
-                        class="mentor-send-btn"
-                        data-intervention-id="${escapeHtml(
-                            intervention.id
-                        )}"
-                    >
-                        🧑‍🏫 Send Reply
-                    </button>
-
-                    <button
-                        type="button"
-                        class="mentor-resolve-btn"
-                        data-intervention-id="${escapeHtml(
-                            intervention.id
-                        )}"
-                    >
-                        ✓ Resolve
-                    </button>
-
-                </div>
-
-            </div>
-
-        </article>
-
-    `;
+.mentor-send-btn:hover {
+    background: rgba(255,255,255,0.18);
 }
 
-
-async function sendMentorReply(interventionId) {
-
-    if (!interventionId) {
-        return;
-    }
-
-
-    const textarea =
-        document.querySelector(
-            `.mentor-reply-input[data-intervention-id="${CSS.escape(interventionId)}"]`
-        );
-
-
-    if (!textarea) {
-        return;
-    }
-
-
-    const message =
-        textarea.value.trim();
-
-
-    if (!message) {
-
-        showToast(
-            "Please write a reply first."
-        );
-
-        textarea.focus();
-
-        return;
-    }
-
-
-    const card =
-        document.querySelector(
-            `.mentor-intervention-card[data-intervention-card="${CSS.escape(interventionId)}"]`
-        );
-
-
-    const sendButton =
-        card?.querySelector(
-            ".mentor-send-btn"
-        );
-
-
-    if (sendButton) {
-
-        sendButton.disabled = true;
-
-        sendButton.textContent =
-            "Sending...";
-
-    }
-
-
-    const {
-        data,
-        error
-    } = await supabaseClient.rpc(
-        "send_study_mentor_reply",
-        {
-            p_intervention_id:
-                interventionId,
-
-            p_message:
-                message
-        }
-    );
-
-
-    if (error) {
-
-        console.error(
-            "[Study Squad] Mentor reply failed:",
-            error
-        );
-
-
-        showToast(
-            error.message ||
-            "Couldn't send mentor reply."
-        );
-
-
-        if (sendButton) {
-
-            sendButton.disabled =
-                false;
-
-            sendButton.textContent =
-                "🧑‍🏫 Send Reply";
-        }
-
-        return;
-    }
-
-
-    console.log(
-        "[Study Squad] Mentor reply sent:",
-        data
-    );
-
-
-    showToast(
-        "Mentor reply sent ✓"
-    );
-
-
-    /*
-     * Reload the discussion so the mentor
-     * message appears immediately.
-     */
-
-    await loadClassroomMessages();
-
-
-    /*
-     * Reload mentor queue.
-     * The intervention was automatically
-     * marked resolved by the RPC.
-     */
-
-    await loadMentorInterventions();
-
-}
-
-
-/* ---------------------------------------------------------
-   Resolve intervention
-   --------------------------------------------------------- */
-
-async function resolveMentorIntervention(
-    interventionId
-) {
-
-    if (!interventionId) {
-        return;
-    }
-
-
-    const button =
-        document.querySelector(
-            `.mentor-resolve-btn[data-intervention-id="${CSS.escape(interventionId)}"]`
-        );
-
-
-    if (button) {
-
-        button.disabled = true;
-
-        button.textContent =
-            "Resolving...";
-    }
-
-
-    const {
-        data,
-        error
-    } = await supabaseClient.rpc(
-        "resolve_study_mentor_intervention",
-        {
-            p_intervention_id:
-                interventionId
-        }
-    );
-
-
-    if (error) {
-
-        console.error(
-            "[Study Squad] Failed to resolve intervention:",
-            error
-        );
-
-        showToast(
-            "Couldn't resolve this request."
-        );
-
-        if (button) {
-
-            button.disabled =
-                false;
-
-            button.textContent =
-                "✓ Mark Resolved";
-        }
-
-        return;
-    }
-
-
-    if (data === true) {
-
-        showToast(
-            "Mentor request resolved ✓"
-        );
-
-        await loadMentorInterventions();
-
-    }
-
-}
-
-
-/* ---------------------------------------------------------
-   Polling
-   --------------------------------------------------------- */
-
-function startMentorDashboardPolling() {
-
-    stopMentorDashboardPolling();
-
-
-    mentorDashboardTimer =
-        setInterval(
-            () => {
-
-                loadMentorInterventions();
-
-            },
-            10000
-        );
-}
-
-
-function stopMentorDashboardPolling() {
-
-    if (
-        mentorDashboardTimer
-    ) {
-
-        clearInterval(
-            mentorDashboardTimer
-        );
-
-        mentorDashboardTimer =
-            null;
-    }
+.mentor-send-btn:disabled {
+    opacity: 0.5;
+    cursor: wait;
 }
 
 /* =========================================================
-   STUDY HELP PANEL
+   STUDY HELP — 3 DOT PANEL
    ========================================================= */
 
-function setupStudyHelpPanel() {
-
-    const button =
-        document.getElementById("studyHelpBtn");
-
-    const panel =
-        document.getElementById("studyHelpPanel");
-
-    const closeButton =
-        document.getElementById("closeStudyHelp");
+.study-help-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    z-index: 100;
+}
 
 
-    if (!button || !panel) {
-        return;
+/* Three-dot button */
+
+.study-help-btn {
+    width: 42px;
+    height: 42px;
+
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 12px;
+
+    background: rgba(255,255,255,0.06);
+    color: inherit;
+
+    font-size: 25px;
+    line-height: 1;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.study-help-btn:hover {
+    background: rgba(255,255,255,0.12);
+}
+
+.study-help-btn:active {
+    transform: scale(0.94);
+}
+
+
+/* =========================================================
+   PANEL
+   ========================================================= */
+
+.study-help-panel {
+    position: absolute;
+
+    top: calc(100% + 10px);
+    right: 0;
+
+    width: min(390px, calc(100vw - 30px));
+    max-height: min(600px, calc(100vh - 120px));
+
+    background: rgba(18,18,22,0.98);
+
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 18px;
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,0.45);
+
+    overflow: hidden;
+
+    z-index: 1000;
+
+    animation:
+        studyHelpOpen 0.18s ease;
+}
+
+
+@keyframes studyHelpOpen {
+
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.97);
     }
 
-
-    function openStudyHelp() {
-
-        panel.classList.remove("hidden");
-
-        button.setAttribute(
-            "aria-expanded",
-            "true"
-        );
-
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
     }
-
-
-    function closeStudyHelp() {
-
-        panel.classList.add("hidden");
-
-        button.setAttribute(
-            "aria-expanded",
-            "false"
-        );
-
-    }
-
-
-    button.addEventListener(
-        "click",
-        function(event) {
-
-            event.stopPropagation();
-
-            if (
-                panel.classList.contains("hidden")
-            ) {
-
-                openStudyHelp();
-
-            } else {
-
-                closeStudyHelp();
-
-            }
-
-        }
-    );
-
-
-    if (closeButton) {
-
-        closeButton.addEventListener(
-            "click",
-            function(event) {
-
-                event.stopPropagation();
-
-                closeStudyHelp();
-
-            }
-        );
-
-    }
-
-
-    document.addEventListener(
-        "click",
-        function(event) {
-
-            if (
-                !panel.contains(event.target) &&
-                !button.contains(event.target)
-            ) {
-
-                closeStudyHelp();
-
-            }
-
-        }
-    );
 
 }
 
-loadStudyHelpRequests();
 
-setInterval(
-    loadStudyHelpRequests,
-    10000
-);
+/* =========================================================
+   HEADER
+   ========================================================= */
 
+.study-help-header {
+    display: flex;
 
-async function loadStudyHelpRequests() {
+    align-items: center;
+    justify-content: space-between;
 
-    if (!activeClassroomId) {
-        return;
-    }
+    padding: 15px 16px;
 
-    const list =
-        document.getElementById("studyHelpList");
-
-    const count =
-        document.getElementById("studyHelpCount");
-
-    if (!list) {
-        return;
-    }
-
-    const {
-        data,
-        error
-    } = await supabaseClient.rpc(
-        "get_study_help_requests",
-        {
-            p_classroom_id: activeClassroomId
-        }
-    );
-
-    if (error) {
-
-        console.error(
-            "[Study Help] Failed to load requests:",
-            error
-        );
-
-        list.innerHTML = `
-            <div class="study-help-empty">
-                <div>⚠️</div>
-                <strong>Couldn't load Study Help</strong>
-                <p>
-                    Please try again.
-                </p>
-            </div>
-        `;
-
-        return;
-    }
-
-    const requests = data || [];
-
-    /*
-     * Update count
-     */
-
-    if (count) {
-
-        count.textContent =
-            `${requests.length} active request${
-                requests.length === 1 ? "" : "s"
-            }`;
-
-    }
-
-
-    /*
-     * Empty state
-     */
-
-    if (requests.length === 0) {
-
-        list.innerHTML = `
-            <div class="study-help-empty">
-                <div>✨</div>
-                <strong>No active requests</strong>
-                <p>
-                    Doubts and answer conflicts will appear here.
-                </p>
-            </div>
-        `;
-
-        return;
-    }
-
-
-    /*
-     * Render requests
-     */
-
-    list.innerHTML =
-        requests
-            .map(renderStudyHelpRequest)
-            .join("");
-
-
-    /*
-     * Only the classroom host gets
-     * mentor controls.
-     */
-
-    setupStudyHelpActions(requests);
+    border-bottom:
+        1px solid rgba(255,255,255,0.08);
 }
 
-function renderStudyHelpRequest(request) {
 
-    const typeMap = {
-
-        unresolved_doubt: {
-            icon: "🤔",
-            label: "Unresolved Doubt"
-        },
-
-        explicit_mentor: {
-            icon: "🧑‍🏫",
-            label: "Mentor Requested"
-        },
-
-        conflicting_answers: {
-            icon: "⚠️",
-            label: "Conflicting Answers"
-        },
-
-        multiple_requests: {
-            icon: "👥",
-            label: "Multiple Requests"
-        }
-
-    };
-
-
-    const type =
-        typeMap[request.trigger_type] ||
-        {
-            icon: "🧭",
-            label: "Study Help"
-        };
-
-
-    const priority =
-        Number(request.priority || 0);
-
-
-    const sender =
-        request.sender_name ||
-        "Student";
-
-
-    const message =
-        request.message ||
-        "No message available.";
-
-
-    const requestCount =
-        Number(
-            request.mentor_request_count || 1
-        );
-
-
-    const status =
-        request.status || "pending";
-
-
-    let controls = "";
-
-
-    /* =====================================================
-       HOST CONTROLS
-       ===================================================== */
-
-    if (request.is_host) {
-
-
-        /* -------------------------------------------------
-           PENDING
-
-           Mentor has not taken the request yet.
-           ------------------------------------------------- */
-
-
-
-        /* -------------------------------------------------
-           EVALUATING
-
-           Mentor has taken control.
-           Chat is paused.
-           ------------------------------------------------- */
-
-        else if (status === "evaluating") {
-
-            controls = `
-
-                <div class="study-help-host-controls study-help-active">
-
-                    <div class="study-help-mentor-lock">
-
-                        🔒
-                        <strong> You are answering this request</strong>
-
-                        <p>
-                            The classroom chat is temporarily paused.
-                        </p>
-
-                    </div>
-
-
-                    <textarea
-                        class="study-help-reply"
-                        data-intervention-id="${escapeHtml(
-                            request.id
-                        )}"
-                        placeholder="Write your mentor explanation..."
-                        rows="4"
-                    ></textarea>
-
-
-                    <div class="study-help-actions">
-
-                        <button
-                            type="button"
-                            class="study-help-reply-send"
-                            data-intervention-id="${escapeHtml(
-                                request.id
-                            )}"
-                        >
-                            🧑‍🏫 Send Explanation
-                        </button>
-
-
-                        <button
-                            type="button"
-                            class="study-help-finish"
-                            data-intervention-id="${escapeHtml(
-                                request.id
-                            )}"
-                        >
-                            🔓 Finish & Resume Chat
-                        </button>
-
-                    </div>
-
-                </div>
-
-            `;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       NON-HOST CONTROLS
-       ===================================================== */
-
-    else {
-
-        if (status === "evaluating") {
-
-            controls = `
-
-                <div class="study-help-waiting study-help-locked">
-
-                    <div>
-                        🔒
-                        <strong>Mentor is answering...</strong>
-                    </div>
-
-                    <p>
-                        Chat is temporarily paused while
-                        the mentor responds.
-                    </p>
-
-                </div>
-
-            `;
-
-        } else {
-
-            controls = `
-
-                <div class="study-help-waiting">
-
-                    🧑‍🏫
-                    Waiting for mentor...
-
-                </div>
-
-            `;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       REQUEST CARD
-       ===================================================== */
-
-    return `
-
-        <article
-            class="study-help-card ${
-                status === "evaluating"
-                    ? "study-help-card-active"
-                    : ""
-            }"
-            data-intervention-card="${escapeHtml(
-                request.id
-            )}"
-        >
-
-            <div class="study-help-card-top">
-
-                <div class="study-help-type">
-
-                    ${type.icon}
-
-                    ${type.label}
-
-                </div>
-
-
-                <span class="study-help-priority">
-
-                    ${priority}
-
-                </span>
-
-            </div>
-
-
-            <div class="study-help-message">
-
-                ${escapeHtml(message)}
-
-            </div>
-
-
-            <div class="study-help-meta">
-
-                <span>
-
-                    👤
-                    ${escapeHtml(sender)}
-
-                </span>
-
-
-                <span>
-
-                    👥
-                    ${requestCount}
-
-                </span>
-
-            </div>
-
-
-            ${controls}
-
-        </article>
-
-    `;
+.study-help-header > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
 }
 
-function setupStudyHelpActions(requests) {
 
-    /*
-     * ================================================
-     * MENTOR TAKEOVER
-     * ================================================
-     */
+.study-help-header strong {
+    font-size: 15px;
+}
 
-    document
-        .querySelectorAll(".study-help-send")
-        .forEach(button => {
 
-            button.addEventListener(
-                "click",
-                async function () {
+.study-help-header span {
+    font-size: 11px;
+    opacity: 0.5;
+}
 
-                    const interventionId =
-                        this.dataset.interventionId;
 
-                    if (!interventionId) {
-                        return;
-                    }
+.study-help-close {
+    width: 32px;
+    height: 32px;
 
+    border: 0;
+    border-radius: 9px;
 
-                    this.disabled = true;
+    background: rgba(255,255,255,0.06);
+    color: inherit;
 
-                    this.textContent =
-                        "Starting...";
+    font-size: 20px;
 
+    cursor: pointer;
+}
 
-                    const {
-                        data,
-                        error
-                    } =
-                        await supabaseClient.rpc(
-                            "start_study_mentor_response",
-                            {
-                                p_intervention_id:
-                                    interventionId
-                            }
-                        );
 
+/* =========================================================
+   REQUEST LIST
+   ========================================================= */
 
-                    if (error) {
+.study-help-list {
+    padding: 10px;
 
-                        console.error(
-                            "[Study Help] Failed to start mentor response:",
-                            error
-                        );
+    max-height:
+        calc(min(600px, 100vh - 120px) - 70px);
 
-                        showToast(
-                            error.message ||
-                            "Couldn't start mentor response."
-                        );
+    overflow-y: auto;
+}
 
-                        this.disabled = false;
 
-                        this.textContent =
-                            "🧑‍🏫 Answer";
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
 
-                        return;
-                    }
+.study-help-empty {
+    text-align: center;
 
+    padding: 35px 20px;
 
-                    console.log(
-                        "[Study Help] Mentor response started:",
-                        interventionId
-                    );
+    opacity: 0.65;
+}
 
 
-                    showToast(
-                        "🔒 Chat paused. You can now answer."
-                    );
+.study-help-empty > div {
+    font-size: 30px;
+    margin-bottom: 8px;
+}
 
 
-                    /*
-                     * Refresh panel so the request
-                     * changes from pending → evaluating.
-                     */
+.study-help-empty strong {
+    display: block;
+    font-size: 14px;
+}
 
-                    await loadStudyHelpRequests();
 
-                }
-            );
+.study-help-empty p {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+}
 
-        });
 
+/* =========================================================
+   INTERVENTION CARD
+   ========================================================= */
 
-    /*
-     * ================================================
-     * SEND MENTOR REPLY
-     * ================================================
-     */
+.study-help-card {
+    padding: 13px;
 
-    document
-        .querySelectorAll(".study-help-reply-send")
-        .forEach(button => {
+    margin-bottom: 9px;
 
-            button.addEventListener(
-                "click",
-                async function () {
+    border-radius: 13px;
 
-                    const interventionId =
-                        this.dataset.interventionId;
+    background:
+        rgba(255,255,255,0.045);
 
+    border:
+        1px solid rgba(255,255,255,0.07);
+}
 
-                    const textarea =
-                        document.querySelector(
-                            `.study-help-reply[data-intervention-id="${CSS.escape(interventionId)}"]`
-                        );
 
+.study-help-card:last-child {
+    margin-bottom: 0;
+}
 
-                    if (!textarea) {
-                        return;
-                    }
 
+.study-help-card-top {
+    display: flex;
 
-                    const message =
-                        textarea.value.trim();
+    align-items: center;
+    justify-content: space-between;
 
+    gap: 8px;
 
-                    if (!message) {
+    margin-bottom: 8px;
+}
 
-                        showToast(
-                            "Write your explanation first."
-                        );
 
-                        textarea.focus();
+.study-help-type {
+    font-size: 11px;
 
-                        return;
-                    }
+    font-weight: 800;
 
+    letter-spacing: 0.5px;
 
-                    this.disabled = true;
+    text-transform: uppercase;
+}
 
-                    this.textContent =
-                        "Sending...";
 
+.study-help-priority {
+    font-size: 10px;
 
-                    const {
-                        error
-                    } =
-                        await supabaseClient.rpc(
-                            "send_study_mentor_reply",
-                            {
-                                p_intervention_id:
-                                    interventionId,
+    padding: 4px 7px;
 
-                                p_message:
-                                    message
-                            }
-                        );
+    border-radius: 7px;
 
+    background:
+        rgba(255,255,255,0.08);
+}
 
-                    if (error) {
 
-                        console.error(
-                            "[Study Help] Mentor reply error:",
-                            error
-                        );
+.study-help-message {
+    font-size: 13px;
 
-                        showToast(
-                            error.message ||
-                            "Couldn't send mentor reply."
-                        );
+    line-height: 1.5;
 
-                        this.disabled = false;
+    word-break: break-word;
 
-                        this.textContent =
-                            "🧑‍🏫 Send Explanation";
+    padding: 9px 10px;
 
-                        return;
-                    }
+    border-radius: 9px;
 
+    background:
+        rgba(0,0,0,0.16);
+}
 
-                    textarea.value = "";
 
+.study-help-meta {
+    display: flex;
 
-                    showToast(
-                        "🧑‍🏫 Mentor explanation sent."
-                    );
+    gap: 10px;
 
+    margin-top: 8px;
 
-                    /*
-                     * Refresh classroom messages.
-                     */
+    font-size: 10px;
 
-                    if (
-                        typeof loadClassroomMessages ===
-                        "function"
-                    ) {
+    opacity: 0.45;
+}
 
-                        await loadClassroomMessages();
 
-                    }
+/* =========================================================
+   MENTOR CONTROLS
+   ========================================================= */
 
-                }
-            );
+.study-help-actions {
+    display: flex;
 
-        });
+    gap: 7px;
 
+    margin-top: 11px;
+}
 
-    /*
-     * ================================================
-     * FINISH / RESUME CHAT
-     * ================================================
-     */
 
-    document
-        .querySelectorAll(".study-help-finish")
-        .forEach(button => {
+.study-help-reply {
+    flex: 1;
 
-            button.addEventListener(
-                "click",
-                async function () {
+    min-width: 0;
 
-                    const interventionId =
-                        this.dataset.interventionId;
+    padding: 8px 10px;
 
+    border-radius: 9px;
 
-                    if (!interventionId) {
-                        return;
-                    }
+    border:
+        1px solid rgba(255,255,255,0.08);
 
+    background:
+        rgba(255,255,255,0.04);
 
-                    this.disabled = true;
+    color: inherit;
 
-                    this.textContent =
-                        "Resuming...";
+    font: inherit;
 
+    font-size: 12px;
 
-                    const {
-                        error
-                    } =
-                        await supabaseClient.rpc(
-                            "resolve_study_intervention",
-                            {
-                                p_intervention_id:
-                                    interventionId
-                            }
-                        );
+    resize: vertical;
+}
 
 
-                    if (error) {
+.study-help-send,
+.study-help-resolve {
+    border: 0;
 
-                        console.error(
-                            "[Study Help] Failed to resolve:",
-                            error
-                        );
+    border-radius: 9px;
 
-                        showToast(
-                            error.message ||
-                            "Couldn't resume chat."
-                        );
+    padding: 8px 10px;
 
-                        this.disabled = false;
+    font-size: 11px;
 
-                        this.textContent =
-                            "🔓 Finish & Resume Chat";
+    font-weight: 700;
 
-                        return;
-                    }
+    cursor: pointer;
+}
 
 
-                    showToast(
-                        "🔓 Chat resumed."
-                    );
+.study-help-send {
+    background:
+        rgba(255,255,255,0.12);
 
+    color: inherit;
+}
 
-                    await loadStudyHelpRequests();
 
-                }
-            );
+.study-help-resolve {
+    background:
+        rgba(255,255,255,0.06);
 
-        });
+    color: inherit;
+}
 
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .study-help-panel {
+        position: fixed;
+
+        top: 70px;
+        right: 12px;
+        left: 12px;
+
+        width: auto;
+
+        max-height:
+            calc(100vh - 90px);
+    }
+
+    .study-help-list {
+        max-height:
+            calc(100vh - 160px);
+    }
+
+}
+
+
+/* =========================================================
+   CLASSROOM MESSAGES
+   ========================================================= */
+
+#classroomMessages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  min-height: 180px;
+  max-height: 520px;
+
+  overflow-y: auto;
+
+  padding: 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 13px;
+
+  background: #0f0f0f;
+
+  scroll-behavior: smooth;
+}
+
+
+/* Individual message */
+
+.study-message {
+  width: fit-content;
+  max-width: 82%;
+
+  padding: 9px 12px;
+
+  border: 1px solid #2d2d2d;
+  border-radius: 12px;
+
+  background: #181818;
+
+  color: var(--text);
+
+  align-self: flex-start;
+
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+
+/* Your own messages */
+
+.study-message.mine {
+  align-self: flex-end;
+
+  background: #222;
+
+  border-color: #3b3b3b;
+}
+
+
+/* AI Mentor */
+
+.study-message.ai-message {
+  width: 100%;
+  max-width: 100%;
+
+  background: #17131f;
+
+  border-color: #40334f;
+}
+
+
+/* Message header */
+
+.study-message-meta {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-bottom: 4px;
+}
+
+
+/* Sender */
+
+.study-message-author {
+  color: var(--soft);
+
+  font-size: 10px;
+
+  font-weight: 800;
+}
+
+
+/* Time */
+
+.study-message-time {
+  color: var(--muted);
+
+  font-size: 9px;
+}
+
+
+/* Message text */
+
+.study-message-body {
+  color: var(--text);
+
+  font-size: 13px;
+
+  line-height: 1.55;
+
+  white-space: normal;
+}
+
+
+/* Empty messages */
+
+.study-message-empty {
+  min-height: 160px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  text-align: center;
+
+  color: var(--muted);
+}
+
+
+.study-message-empty > div {
+  margin-bottom: 8px;
+
+  font-size: 28px;
+}
+
+
+.study-message-empty strong {
+  color: var(--soft);
+
+  font-size: 13px;
+}
+
+
+.study-message-empty p {
+  margin: 5px 0 0;
+
+  font-size: 11px;
+}
+
+
+/* Error */
+
+.study-message-error {
+  padding: 25px;
+
+  text-align: center;
+
+  color: #999;
+
+  font-size: 12px;
+}
+
+
+/* Message scrollbar */
+
+#classroomMessages::-webkit-scrollbar {
+  width: 6px;
+}
+
+
+#classroomMessages::-webkit-scrollbar-track {
+  background: #101010;
+}
+
+
+#classroomMessages::-webkit-scrollbar-thumb {
+  background: #333;
+
+  border-radius: 999px;
+}
+
+
+#classroomMessages::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+
+/* Mobile */
+
+@media (max-width: 560px) {
+
+  #classroomMessages {
+    max-height: 450px;
+
+    padding: 9px;
+  }
+
+
+  .study-message {
+    max-width: 90%;
+
+    padding: 8px 10px;
+  }
+
+
+  .study-message-body {
+    font-size: 12px;
+  }
+
+}
+
+
+/* =========================================================
+   ACTIVE STUDENTS
+   ========================================================= */
+
+.classroom-active-count {
+    cursor: pointer;
+    user-select: none;
+}
+
+
+.classroom-active-count:hover {
+    opacity: 0.8;
+}
+
+
+.active-students-panel {
+    margin-top: 10px;
+
+    padding: 12px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    background: #151515;
+}
+
+
+.active-students-panel-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 10px;
+}
+
+
+.active-students-panel-header button {
+    border: 0;
+
+    background: transparent;
+
+    color: var(--muted);
+
+    cursor: pointer;
+
+    font-size: 16px;
+}
+
+
+.active-students-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+}
+
+
+.active-student-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 7px 9px;
+
+    border-radius: 8px;
+
+    background: #1b1b1b;
+}
+
+
+.active-student-name {
+    font-size: 12px;
+
+    color: var(--text);
+}
+
+
+.active-student-dot {
+    font-size: 9px;
+}
+
+
+.active-student-empty {
+    padding: 12px;
+
+    text-align: center;
+
+    color: var(--muted);
+
+    font-size: 11px;
 }
