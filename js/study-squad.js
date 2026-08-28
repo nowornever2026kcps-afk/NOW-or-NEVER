@@ -639,6 +639,9 @@ async function openClassroom(
    setupStudyHelpPanel();
    subscribeToClassroomMessages();
    startClassroomPresence();
+
+   /* Automatic AI Mentor voting system */
+   startAIMentorPollSystem();
    
 
 
@@ -720,6 +723,8 @@ $("backToClassroomsBtn")
           .remove("hidden");
 
       }
+
+      stopAIMentorPollSystem();
 
 
       /* Show hero */
@@ -3534,31 +3539,6 @@ function renderStudyHelpRequest(request) {
            Mentor has not taken the request yet.
            ------------------------------------------------- */
 
-        if (status === "pending") {
-
-            controls = `
-
-                <div class="study-help-host-controls">
-
-                    <div class="study-help-actions">
-
-                        <button
-                            type="button"
-                            class="study-help-send"
-                            data-intervention-id="${escapeHtml(
-                                request.id
-                            )}"
-                        >
-                            🧑‍🏫 Answer
-                        </button>
-
-                    </div>
-
-                </div>
-
-            `;
-
-        }
 
 
         /* -------------------------------------------------
