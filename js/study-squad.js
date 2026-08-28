@@ -3514,73 +3514,178 @@ function renderStudyHelpRequest(request) {
         );
 
 
-    /*
-     * Host controls
-     */
+    const status =
+        request.status || "pending";
+
 
     let controls = "";
 
 
+    /* =====================================================
+       HOST CONTROLS
+       ===================================================== */
+
     if (request.is_host) {
 
-        controls = `
 
-            <div class="study-help-host-controls">
+        /* -------------------------------------------------
+           PENDING
 
-                <textarea
-                    class="study-help-reply"
-                    data-intervention-id="${escapeHtml(
-                        request.id
-                    )}"
-                    placeholder="Write a mentor reply..."
-                    rows="2"
-                ></textarea>
+           Mentor has not taken the request yet.
+           ------------------------------------------------- */
 
-                <div class="study-help-actions">
+        if (status === "pending") {
 
-                    <button
-                        type="button"
-                        class="study-help-send"
-                        data-intervention-id="${escapeHtml(
-                            request.id
-                        )}"
-                    >
-                        🧑‍🏫 Reply
-                    </button>
+            controls = `
 
-                    <button
-                        type="button"
-                        class="study-help-resolve"
-                        data-intervention-id="${escapeHtml(
-                            request.id
-                        )}"
-                    >
-                        ✓ Resolve
-                    </button>
+                <div class="study-help-host-controls">
+
+                    <div class="study-help-actions">
+
+                        <button
+                            type="button"
+                            class="study-help-send"
+                            data-intervention-id="${escapeHtml(
+                                request.id
+                            )}"
+                        >
+                            🧑‍🏫 Answer
+                        </button>
+
+                    </div>
 
                 </div>
 
-            </div>
+            `;
 
-        `;
+        }
 
-    } else {
 
-        controls = `
+        /* -------------------------------------------------
+           EVALUATING
 
-            <div class="study-help-waiting">
-                🧑‍🏫 Waiting for mentor...
-            </div>
+           Mentor has taken control.
+           Chat is paused.
+           ------------------------------------------------- */
 
-        `;
+        else if (status === "evaluating") {
+
+            controls = `
+
+                <div class="study-help-host-controls study-help-active">
+
+                    <div class="study-help-mentor-lock">
+
+                        🔒
+                        <strong> You are answering this request</strong>
+
+                        <p>
+                            The classroom chat is temporarily paused.
+                        </p>
+
+                    </div>
+
+
+                    <textarea
+                        class="study-help-reply"
+                        data-intervention-id="${escapeHtml(
+                            request.id
+                        )}"
+                        placeholder="Write your mentor explanation..."
+                        rows="4"
+                    ></textarea>
+
+
+                    <div class="study-help-actions">
+
+                        <button
+                            type="button"
+                            class="study-help-reply-send"
+                            data-intervention-id="${escapeHtml(
+                                request.id
+                            )}"
+                        >
+                            🧑‍🏫 Send Explanation
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="study-help-finish"
+                            data-intervention-id="${escapeHtml(
+                                request.id
+                            )}"
+                        >
+                            🔓 Finish & Resume Chat
+                        </button>
+
+                    </div>
+
+                </div>
+
+            `;
+
+        }
 
     }
 
 
+    /* =====================================================
+       NON-HOST CONTROLS
+       ===================================================== */
+
+    else {
+
+        if (status === "evaluating") {
+
+            controls = `
+
+                <div class="study-help-waiting study-help-locked">
+
+                    <div>
+                        🔒
+                        <strong>Mentor is answering...</strong>
+                    </div>
+
+                    <p>
+                        Chat is temporarily paused while
+                        the mentor responds.
+                    </p>
+
+                </div>
+
+            `;
+
+        } else {
+
+            controls = `
+
+                <div class="study-help-waiting">
+
+                    🧑‍🏫
+                    Waiting for mentor...
+
+                </div>
+
+            `;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       REQUEST CARD
+       ===================================================== */
+
     return `
 
         <article
-            class="study-help-card"
+            class="study-help-card ${
+                status === "evaluating"
+                    ? "study-help-card-active"
+                    : ""
+            }"
             data-intervention-card="${escapeHtml(
                 request.id
             )}"
@@ -3589,30 +3694,45 @@ function renderStudyHelpRequest(request) {
             <div class="study-help-card-top">
 
                 <div class="study-help-type">
+
                     ${type.icon}
+
                     ${type.label}
+
                 </div>
 
+
                 <span class="study-help-priority">
+
                     ${priority}
+
                 </span>
 
             </div>
 
 
             <div class="study-help-message">
+
                 ${escapeHtml(message)}
+
             </div>
 
 
             <div class="study-help-meta">
 
                 <span>
-                    👤 ${escapeHtml(sender)}
+
+                    👤
+                    ${escapeHtml(sender)}
+
                 </span>
 
+
                 <span>
-                    👥 ${requestCount}
+
+                    👥
+                    ${requestCount}
+
                 </span>
 
             </div>
@@ -3628,44 +3748,135 @@ function renderStudyHelpRequest(request) {
 function setupStudyHelpActions(requests) {
 
     /*
-     * Send mentor reply
+     * ================================================
+     * MENTOR TAKEOVER
+     * ================================================
      */
 
     document
-        .querySelectorAll(
-            ".study-help-send"
-        )
+        .querySelectorAll(".study-help-send")
         .forEach(button => {
 
             button.addEventListener(
                 "click",
-                async function() {
+                async function () {
 
-                    const id =
+                    const interventionId =
                         this.dataset.interventionId;
+
+                    if (!interventionId) {
+                        return;
+                    }
+
+
+                    this.disabled = true;
+
+                    this.textContent =
+                        "Starting...";
+
+
+                    const {
+                        data,
+                        error
+                    } =
+                        await supabaseClient.rpc(
+                            "start_study_mentor_response",
+                            {
+                                p_intervention_id:
+                                    interventionId
+                            }
+                        );
+
+
+                    if (error) {
+
+                        console.error(
+                            "[Study Help] Failed to start mentor response:",
+                            error
+                        );
+
+                        showToast(
+                            error.message ||
+                            "Couldn't start mentor response."
+                        );
+
+                        this.disabled = false;
+
+                        this.textContent =
+                            "🧑‍🏫 Answer";
+
+                        return;
+                    }
+
+
+                    console.log(
+                        "[Study Help] Mentor response started:",
+                        interventionId
+                    );
+
+
+                    showToast(
+                        "🔒 Chat paused. You can now answer."
+                    );
+
+
+                    /*
+                     * Refresh panel so the request
+                     * changes from pending → evaluating.
+                     */
+
+                    await loadStudyHelpRequests();
+
+                }
+            );
+
+        });
+
+
+    /*
+     * ================================================
+     * SEND MENTOR REPLY
+     * ================================================
+     */
+
+    document
+        .querySelectorAll(".study-help-reply-send")
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                async function () {
+
+                    const interventionId =
+                        this.dataset.interventionId;
+
 
                     const textarea =
                         document.querySelector(
-                            `.study-help-reply[data-intervention-id="${CSS.escape(id)}"]`
+                            `.study-help-reply[data-intervention-id="${CSS.escape(interventionId)}"]`
                         );
+
 
                     if (!textarea) {
                         return;
                     }
 
+
                     const message =
                         textarea.value.trim();
+
 
                     if (!message) {
 
                         showToast(
-                            "Write a reply first."
+                            "Write your explanation first."
                         );
 
                         textarea.focus();
 
                         return;
                     }
+
 
                     this.disabled = true;
 
@@ -3674,14 +3885,13 @@ function setupStudyHelpActions(requests) {
 
 
                     const {
-                        data,
                         error
                     } =
                         await supabaseClient.rpc(
                             "send_study_mentor_reply",
                             {
                                 p_intervention_id:
-                                    id,
+                                    interventionId,
 
                                 p_message:
                                     message
@@ -3692,19 +3902,19 @@ function setupStudyHelpActions(requests) {
                     if (error) {
 
                         console.error(
-                            "[Study Help] Reply error:",
+                            "[Study Help] Mentor reply error:",
                             error
                         );
 
                         showToast(
                             error.message ||
-                            "Couldn't send reply."
+                            "Couldn't send mentor reply."
                         );
 
                         this.disabled = false;
 
                         this.textContent =
-                            "🧑‍🏫 Reply";
+                            "🧑‍🏫 Send Explanation";
 
                         return;
                     }
@@ -3712,12 +3922,11 @@ function setupStudyHelpActions(requests) {
 
                     textarea.value = "";
 
+
                     showToast(
-                        "Mentor reply sent ✓"
+                        "🧑‍🏫 Mentor explanation sent."
                     );
 
-
-                    await loadStudyHelpRequests();
 
                     /*
                      * Refresh classroom messages.
@@ -3739,27 +3948,32 @@ function setupStudyHelpActions(requests) {
 
 
     /*
-     * Resolve request
+     * ================================================
+     * FINISH / RESUME CHAT
+     * ================================================
      */
 
     document
-        .querySelectorAll(
-            ".study-help-resolve"
-        )
+        .querySelectorAll(".study-help-finish")
         .forEach(button => {
 
             button.addEventListener(
                 "click",
-                async function() {
+                async function () {
 
-                    const id =
+                    const interventionId =
                         this.dataset.interventionId;
+
+
+                    if (!interventionId) {
+                        return;
+                    }
 
 
                     this.disabled = true;
 
                     this.textContent =
-                        "Resolving...";
+                        "Resuming...";
 
 
                     const {
@@ -3769,7 +3983,7 @@ function setupStudyHelpActions(requests) {
                             "resolve_study_intervention",
                             {
                                 p_intervention_id:
-                                    id
+                                    interventionId
                             }
                         );
 
@@ -3777,26 +3991,26 @@ function setupStudyHelpActions(requests) {
                     if (error) {
 
                         console.error(
-                            "[Study Help] Resolve error:",
+                            "[Study Help] Failed to resolve:",
                             error
                         );
 
                         showToast(
                             error.message ||
-                            "Couldn't resolve request."
+                            "Couldn't resume chat."
                         );
 
                         this.disabled = false;
 
                         this.textContent =
-                            "✓ Resolve";
+                            "🔓 Finish & Resume Chat";
 
                         return;
                     }
 
 
                     showToast(
-                        "Request resolved ✓"
+                        "🔓 Chat resumed."
                     );
 
 
