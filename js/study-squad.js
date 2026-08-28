@@ -1126,13 +1126,27 @@ function escapeHtml(
 
 
 /* =========================================================
-   LOAD CURRENT USER
+   STUDY SQUAD INITIALIZATION
    ========================================================= */
+
+let studySquadInitialized = false;
+let studySquadLoadingClassrooms = false;
+
+
+/* ---------------------------------------------------------
+   LOAD CURRENT USER
+   --------------------------------------------------------- */
 
 async function loadCurrentUser() {
 
+  console.log(
+    "[Study Squad] Loading current user..."
+  );
+
   const {
-    data,
+    data: {
+      user
+    } = {},
     error
   } =
     await supabaseClient
@@ -1147,18 +1161,19 @@ async function loadCurrentUser() {
       error
     );
 
+    currentUser = null;
+
     return;
 
   }
 
 
-  currentUser =
-    data?.user || null;
+  currentUser = user || null;
 
 
   console.log(
     "[Study Squad] Current user:",
-    currentUser?.id
+    currentUser?.id || "No user"
   );
 
 
@@ -1166,14 +1181,149 @@ async function loadCurrentUser() {
 
     await loadClassrooms();
 
+  } else {
+
+    console.warn(
+      "[Study Squad] No authenticated user."
+    );
+
   }
 
 }
 
 
-/* =========================================================
+/* ---------------------------------------------------------
+   SAFE CLASSROOM LOADER
+   --------------------------------------------------------- */
+
+async function initializeStudySquadClassrooms() {
+
+  /*
+   * Prevent multiple simultaneous classroom loads.
+   */
+
+  if (studySquadLoadingClassrooms) {
+
+    console.log(
+      "[Study Squad] Classroom load already running."
+    );
+
+    return;
+
+  }
+
+
+  /*
+   * Make sure the DOM is actually ready.
+   */
+
+  const classroomList =
+    $("classroomList");
+
+
+  if (!classroomList) {
+
+    console.warn(
+      "[Study Squad] classroomList not available yet."
+    );
+
+    return;
+
+  }
+
+
+  studySquadLoadingClassrooms = true;
+
+
+  try {
+
+    /*
+     * Get the currently authenticated user.
+     */
+
+    const {
+      data: {
+        user
+      } = {},
+      error
+    } =
+      await supabaseClient
+        .auth
+        .getUser();
+
+
+    if (error) {
+
+      console.error(
+        "[Study Squad] User lookup failed:",
+        error
+      );
+
+      return;
+
+    }
+
+
+    currentUser =
+      user || null;
+
+
+    console.log(
+      "[Study Squad] Initialization user:",
+      currentUser?.id || "No user"
+    );
+
+
+    /*
+     * Only load classrooms for authenticated users.
+     */
+
+    if (!currentUser) {
+
+      console.warn(
+        "[Study Squad] No authenticated user. Classroom loading skipped."
+      );
+
+      return;
+
+    }
+
+
+    /*
+     * Finally load classrooms.
+     */
+
+    console.log(
+      "[Study Squad] Loading classrooms..."
+    );
+
+    await loadClassrooms();
+
+
+    console.log(
+      "[Study Squad] Classroom loading completed."
+    );
+
+  } catch (error) {
+
+    console.error(
+      "[Study Squad] Classroom initialization failed:",
+      error
+    );
+
+  } finally {
+
+    studySquadLoadingClassrooms =
+      false;
+
+  }
+
+}
+
+
+/* ---------------------------------------------------------
    AUTH STATE
-   ========================================================= */
+   --------------------------------------------------------- */
 
 supabaseClient
   .auth
@@ -1183,19 +1333,63 @@ supabaseClient
       session
     ) => {
 
-      currentUser =
-        session?.user || null;
-
-
       console.log(
         "[Study Squad] Auth event:",
         event
       );
 
 
-      if (currentUser) {
+      currentUser =
+        session?.user || null;
 
-        await loadClassrooms();
+
+      /*
+       * Only reload when a real authenticated
+       * session exists.
+       */
+
+      if (
+        currentUser &&
+        (
+          event === "INITIAL_SESSION" ||
+          event === "SIGNED_IN" ||
+          event === "TOKEN_REFRESHED" ||
+          event === "USER_UPDATED"
+        )
+      ) {
+
+        /*
+         * Wait until the current event has finished
+         * before querying classrooms.
+         *
+         * This avoids racing with Supabase auth.
+         */
+
+        setTimeout(
+          () => {
+
+            initializeStudySquadClassrooms();
+
+          },
+          0
+        );
+
+      }
+
+
+      /*
+       * User logged out.
+       */
+
+      if (
+        event === "SIGNED_OUT"
+      ) {
+
+        currentUser = null;
+
+        console.log(
+          "[Study Squad] User signed out."
+        );
 
       }
 
@@ -1203,11 +1397,64 @@ supabaseClient
   );
 
 
-/* =========================================================
-   INITIALIZE
-   ========================================================= */
+/* ---------------------------------------------------------
+   DOM READY INITIALIZATION
+   --------------------------------------------------------- */
 
-loadCurrentUser();
+function initializeStudySquad() {
+
+  if (studySquadInitialized) {
+
+    return;
+
+  }
+
+
+  studySquadInitialized = true;
+
+
+  console.log(
+    "[Study Squad] DOM ready."
+  );
+
+
+  /*
+   * Give the DOM one tick to finish rendering.
+   */
+
+  setTimeout(
+    () => {
+
+      initializeStudySquadClassrooms();
+
+    },
+    0
+  );
+
+}
+
+
+/*
+ * If the DOM is already ready, initialize immediately.
+ */
+
+if (
+  document.readyState === "loading"
+) {
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializeStudySquad,
+    {
+      once: true
+    }
+  );
+
+} else {
+
+  initializeStudySquad();
+
+}
 
 
 /* =========================================================
