@@ -1516,6 +1516,41 @@ $("classroomMessageForm")
         return;
       }
 
+       /* ---------------------------------------------------
+   CHECK MENTOR LOCK
+   --------------------------------------------------- */
+
+         const {
+             data: mentorLock,
+             error: mentorLockError
+         } = await supabaseClient
+             .from("study_ai_interventions")
+             .select("id")
+             .eq("classroom_id", activeClassroomId)
+             .eq("status", "evaluating")
+             .limit(1);
+         
+         if (mentorLockError) {
+         
+             console.error(
+                 "[Study Squad] Failed to check mentor lock:",
+                 mentorLockError
+             );
+         
+         } else if (
+             mentorLock &&
+             mentorLock.length > 0
+         ) {
+         
+             showToast(
+                 "🔒 Chat paused — mentor is answering."
+             );
+         
+             input.focus();
+         
+             return;
+         }
+
 
       /* ---------------------------------------------------
          1000 CHARACTER LIMIT
