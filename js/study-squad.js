@@ -2799,6 +2799,25 @@ async function loadMentorInterventions() {
             );
 
         });
+
+         list
+             .querySelectorAll(
+                 ".mentor-send-btn"
+             )
+             .forEach(button => {
+         
+                 button.addEventListener(
+                     "click",
+                     () => {
+         
+                         sendMentorReply(
+                             button.dataset.interventionId
+                         );
+         
+                     }
+                 );
+         
+             });
 }
 
 
@@ -2806,9 +2825,7 @@ async function loadMentorInterventions() {
    Render intervention
    --------------------------------------------------------- */
 
-function renderMentorIntervention(
-    intervention
-) {
+function renderMentorIntervention(intervention) {
 
     const priorityClass =
         mentorPriorityClass(
@@ -2825,22 +2842,22 @@ function renderMentorIntervention(
             intervention.trigger_type
         );
 
-
     const message =
         intervention.message ||
         "No message is attached to this request.";
-
 
     const requestCount =
         Number(
             intervention.mentor_request_count || 1
         );
 
-
     return `
 
         <article
             class="mentor-intervention-card"
+            data-intervention-card="${escapeHtml(
+                intervention.id
+            )}"
         >
 
             <div
@@ -2860,6 +2877,11 @@ function renderMentorIntervention(
                     · ${Number(intervention.priority || 0)}
                 </span>
 
+            </div>
+
+
+            <div class="mentor-student-label">
+                Student message
             </div>
 
 
@@ -2902,25 +2924,181 @@ function renderMentorIntervention(
             </div>
 
 
+            <!-- Mentor reply -->
+
             <div
-                class="mentor-intervention-actions"
+                class="mentor-reply-area"
             >
 
-                <button
-                    type="button"
-                    class="mentor-resolve-btn"
+                <textarea
+                    class="mentor-reply-input"
                     data-intervention-id="${escapeHtml(
                         intervention.id
                     )}"
+                    placeholder="Write your reply to the student..."
+                    rows="3"
+                ></textarea>
+
+
+                <div
+                    class="mentor-intervention-actions"
                 >
-                    ✓ Mark Resolved
-                </button>
+
+                    <button
+                        type="button"
+                        class="mentor-send-btn"
+                        data-intervention-id="${escapeHtml(
+                            intervention.id
+                        )}"
+                    >
+                        🧑‍🏫 Send Reply
+                    </button>
+
+                    <button
+                        type="button"
+                        class="mentor-resolve-btn"
+                        data-intervention-id="${escapeHtml(
+                            intervention.id
+                        )}"
+                    >
+                        ✓ Resolve
+                    </button>
+
+                </div>
 
             </div>
 
         </article>
 
     `;
+}
+
+
+async function sendMentorReply(interventionId) {
+
+    if (!interventionId) {
+        return;
+    }
+
+
+    const textarea =
+        document.querySelector(
+            `.mentor-reply-input[data-intervention-id="${CSS.escape(interventionId)}"]`
+        );
+
+
+    if (!textarea) {
+        return;
+    }
+
+
+    const message =
+        textarea.value.trim();
+
+
+    if (!message) {
+
+        showToast(
+            "Please write a reply first."
+        );
+
+        textarea.focus();
+
+        return;
+    }
+
+
+    const card =
+        document.querySelector(
+            `.mentor-intervention-card[data-intervention-card="${CSS.escape(interventionId)}"]`
+        );
+
+
+    const sendButton =
+        card?.querySelector(
+            ".mentor-send-btn"
+        );
+
+
+    if (sendButton) {
+
+        sendButton.disabled = true;
+
+        sendButton.textContent =
+            "Sending...";
+
+    }
+
+
+    const {
+        data,
+        error
+    } = await supabaseClient.rpc(
+        "send_study_mentor_reply",
+        {
+            p_intervention_id:
+                interventionId,
+
+            p_message:
+                message
+        }
+    );
+
+
+    if (error) {
+
+        console.error(
+            "[Study Squad] Mentor reply failed:",
+            error
+        );
+
+
+        showToast(
+            error.message ||
+            "Couldn't send mentor reply."
+        );
+
+
+        if (sendButton) {
+
+            sendButton.disabled =
+                false;
+
+            sendButton.textContent =
+                "🧑‍🏫 Send Reply";
+        }
+
+        return;
+    }
+
+
+    console.log(
+        "[Study Squad] Mentor reply sent:",
+        data
+    );
+
+
+    showToast(
+        "Mentor reply sent ✓"
+    );
+
+
+    /*
+     * Reload the discussion so the mentor
+     * message appears immediately.
+     */
+
+    await loadClassroomMessages();
+
+
+    /*
+     * Reload mentor queue.
+     * The intervention was automatically
+     * marked resolved by the RPC.
+     */
+
+    await loadMentorInterventions();
+
 }
 
 
