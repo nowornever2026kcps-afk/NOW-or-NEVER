@@ -3658,9 +3658,8 @@ async function checkAutomaticAIMentorInterventions() {
          */
 
         if (
-           aiMentorProcessedInterventions.has(
-                      poll.intervention_id
-                  )
+            aiMentorProcessedInterventions.has(
+                poll.intervention_id
             )
         ) {
             continue;
