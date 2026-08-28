@@ -2484,3 +2484,102 @@ a {
   }
 
 }
+
+
+/* =========================================================
+   ACTIVE STUDENTS
+   ========================================================= */
+
+.classroom-active-count {
+    cursor: pointer;
+    user-select: none;
+}
+
+
+.classroom-active-count:hover {
+    opacity: 0.8;
+}
+
+
+.active-students-panel {
+    margin-top: 10px;
+
+    padding: 12px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    background: #151515;
+}
+
+
+.active-students-panel-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 10px;
+}
+
+
+.active-students-panel-header button {
+    border: 0;
+
+    background: transparent;
+
+    color: var(--muted);
+
+    cursor: pointer;
+
+    font-size: 16px;
+}
+
+
+.active-students-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+}
+
+
+.active-student-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 7px 9px;
+
+    border-radius: 8px;
+
+    background: #1b1b1b;
+}
+
+
+.active-student-name {
+    font-size: 12px;
+
+    color: var(--text);
+}
+
+
+.active-student-dot {
+    font-size: 9px;
+}
+
+
+.active-student-empty {
+    padding: 12px;
+
+    text-align: center;
+
+    color: var(--muted);
+
+    font-size: 11px;
+}
