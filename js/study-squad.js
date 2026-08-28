@@ -3342,17 +3342,15 @@ async function submitAIPollVote(
    AI POLL SYSTEM TIMER
    ========================================================= */
 
-let aiMentorPollTimer =
-    null;
-
-
 /*
- * Prevent the same intervention from
- * being processed multiple times.
+ * IMPORTANT:
+ * aiMentorPollTimer is already declared by the
+ * original AI Mentor system above.
+ *
+ * aiMentorProcessing is also already declared above.
+ *
+ * Do NOT redeclare either variable here.
  */
-
-const aiMentorProcessing =
-    new Set();
 
 
 /* =========================================================
