@@ -235,7 +235,65 @@
         🆘 Need Mentor
         <span id="mentorRequestCount">0</span>
       </button>
-      
+      <!-- =====================================================
+     MENTOR DASHBOARD
+     Visible only to classroom creator
+     ===================================================== -->
+        
+        <section
+            id="mentorDashboard"
+            class="mentor-dashboard hidden"
+        >
+        
+            <div class="mentor-dashboard-header">
+        
+                <div>
+                    <div class="mentor-dashboard-label">
+                        🧭 MENTOR CENTER
+                    </div>
+        
+                    <h3>
+                        Student Requests
+                    </h3>
+        
+                    <p>
+                        Review doubts, conflicting answers, and direct
+                        mentor requests from your classroom.
+                    </p>
+                </div>
+        
+                <div class="mentor-pending-badge">
+                    <span id="mentorPendingCount">0</span>
+                    pending
+                </div>
+        
+            </div>
+        
+        
+            <div
+                id="mentorInterventionsList"
+                class="mentor-interventions-list"
+            >
+        
+                <div class="mentor-empty-state">
+        
+                    <div class="mentor-empty-icon">
+                        🧑‍🏫
+                    </div>
+        
+                    <strong>
+                        No pending requests
+                    </strong>
+        
+                    <p>
+                        Everything is under control.
+                    </p>
+        
+                </div>
+        
+            </div>
+        
+        </section>
 
 
       <div class="classroom-chat">
