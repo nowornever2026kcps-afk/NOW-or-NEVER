@@ -3327,7 +3327,7 @@ setInterval(
 
 async function loadStudyHelpRequests() {
 
-    if (!currentClassroomId) {
+    if (!activeClassroomId) {
         return;
     }
 
@@ -3347,7 +3347,7 @@ async function loadStudyHelpRequests() {
     } = await supabaseClient.rpc(
         "get_study_help_requests",
         {
-            p_classroom_id: currentClassroomId
+            p_classroom_id: activeClassroomId
         }
     );
 
