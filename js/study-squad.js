@@ -1475,7 +1475,7 @@ async function loadClassroomMessages() {
 
 
   const messageList =
-    $("studyMessageList");
+    $("classroomMessages");
 
 
   if (!messageList) {
@@ -1552,7 +1552,7 @@ function renderClassroomMessages(
 ) {
 
   const messageList =
-    $("studyMessageList");
+    $("classroomMessages");
 
 
   if (!messageList) return;
@@ -1919,7 +1919,7 @@ function appendStudyMessage(
 ) {
 
   const messageList =
-    $("studyMessageList");
+    $("classroomMessages");
 
   if (!messageList)
     return;
