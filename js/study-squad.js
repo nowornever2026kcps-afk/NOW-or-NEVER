@@ -135,6 +135,7 @@ async function loadClassrooms() {
 
   if (!list) return;
 
+
   list.innerHTML = `
     <div class="classroom-empty">
 
@@ -633,41 +634,15 @@ async function openClassroom(
   classroomRoom
     .classList
     .remove("hidden");
-    await loadClassroomMessages();
+    
+   await loadClassroomMessages();
+   setupStudyHelpPanel();
+   subscribeToClassroomMessages();
+   startClassroomPresence();
 
-/*
- * Classroom message realtime
- */
-subscribeToClassroomMessages();
-
-/*
- * Online student presence
- */
-startClassroomPresence();
-
-/*
- * Study Help menu
- */
-setupStudyHelpPanel();
-
-/*
- * Need Mentor
- */
-setupNeedMentorButton();
-
-/*
- * Active student list
- */
-setupActiveStudentsPanel();
-
-/*
- * Complete AI Mentor
- *
- * This starts BOTH:
- * 1. AI poll monitoring
- * 2. realtime AI message watcher
- */
-startCompleteAIMentorSystem();
+   /* Automatic AI Mentor voting system */
+   startAIMentorPollSystem();
+   
 
 
   /* -------------------------------------------------------
@@ -696,8 +671,6 @@ $("backToClassroomsBtn")
   ?.addEventListener(
     "click",
     () => {
-
-      stopAIMentorPollSystem();
 
       if (classroomPresenceChannel) {
 
@@ -738,8 +711,6 @@ $("backToClassroomsBtn")
           .classList
           .add("hidden");
 
-         setupNeedMentorButton();
-
       }
 
 
@@ -753,7 +724,7 @@ $("backToClassroomsBtn")
 
       }
 
-      
+      stopAIMentorPollSystem();
 
 
       /* Show hero */
@@ -785,155 +756,6 @@ $("backToClassroomsBtn")
   );
 
 
-/* =========================================================
-   NEED MENTOR BUTTON
-   ========================================================= */
-
-function setupNeedMentorButton() {
-
-    const button =
-        $("needMentorBtn");
-
-
-    if (!button) {
-
-        console.warn(
-            "[Study Squad] Need Mentor button not found."
-        );
-
-        return;
-
-    }
-
-
-    if (
-        button.dataset
-            .listenerAttached ===
-        "true"
-    ) {
-
-        return;
-
-    }
-
-
-    button.dataset
-        .listenerAttached =
-        "true";
-
-
-    button.addEventListener(
-        "click",
-        async () => {
-
-            if (!currentUser) {
-
-                showToast(
-                    "Please log in first."
-                );
-
-                return;
-
-            }
-
-
-            if (!activeClassroomId) {
-
-                showToast(
-                    "Open a classroom first."
-                );
-
-                return;
-
-            }
-
-
-            button.disabled = true;
-
-
-            try {
-
-                const {
-                    data,
-                    error
-                } =
-                    await supabaseClient
-                        .rpc(
-                            "request_study_mentor",
-                            {
-                                p_classroom_id:
-                                    activeClassroomId,
-
-                                p_message:
-                                    "Student requested mentor help."
-                            }
-                        );
-
-
-                if (error) {
-
-                    console.error(
-                        "[Study Squad] Need Mentor failed:",
-                        error
-                    );
-
-                    showToast(
-                        error.message ||
-                        "Couldn't request a mentor."
-                    );
-
-                    return;
-
-                }
-
-
-                console.log(
-                    "[Study Squad] Mentor request created:",
-                    data
-                );
-
-
-                showToast(
-                    "🧑‍🏫 Mentor requested!"
-                );
-
-
-                /*
-                 * Refresh mentor-related UI.
-                 */
-
-                if (
-                    typeof loadMentorRequests ===
-                    "function"
-                ) {
-
-                    await loadMentorRequests();
-
-                }
-
-
-            } catch (error) {
-
-                console.error(
-                    "[Study Squad] Mentor request error:",
-                    error
-                );
-
-                showToast(
-                    "Couldn't request a mentor."
-                );
-
-            } finally {
-
-                button.disabled =
-                    false;
-
-            }
-
-        }
-    );
-
-}
 /* =========================================================
    CREATE CLASSROOM
    ========================================================= */
@@ -1191,24 +1013,8 @@ function clearCreateClassroomForm() {
 
 
 /* =========================================================
-   RESTORE BUTTONS
+   RESTORE SAVE BUTTON
    ========================================================= */
-
-function restoreJoinButton(
-  button,
-  text = "Join"
-) {
-
-  if (!button) return;
-
-  button.disabled =
-    false;
-
-  button.textContent =
-    text;
-
-}
-
 
 function restoreSaveButton() {
 
@@ -1227,73 +1033,89 @@ function restoreSaveButton() {
 
 
 /* =========================================================
-   FORMAT EXAM TYPE
+   RESTORE JOIN BUTTON
    ========================================================= */
 
-function formatExamType(
-  value
+function restoreJoinButton(
+  button,
+  text = "Join"
 ) {
 
-  if (!value) return "";
+  if (!button) return;
 
-  const map = {
+  button.disabled =
+    false;
 
-    neet:
-      "NEET",
-
-    boards:
-      "Board Exams",
-
-    jee:
-      "JEE",
-
-    other:
-      "Other"
-
-  };
-
-  return (
-    map[value] ||
-    value
-  );
+  button.textContent =
+    text;
 
 }
 
 
 /* =========================================================
-   ESCAPE HTML
+   FORMAT EXAM TYPE
+   ========================================================= */
+
+function formatExamType(
+  examType
+) {
+
+  switch (examType) {
+
+    case "NEET":
+      return "NEET";
+
+    case "BOARD":
+      return "Board";
+
+    case "BOTH":
+      return "NEET + Board";
+
+    default:
+      return examType || "Exam";
+
+  }
+
+}
+
+
+/* =========================================================
+   HTML ESCAPE
    ========================================================= */
 
 function escapeHtml(
   value
 ) {
 
-  if (value === null ||
-      value === undefined) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
 
     return "";
 
   }
 
+
   return String(value)
-    .replace(
-      /&/g,
+    .replaceAll(
+      "&",
       "&amp;"
     )
-    .replace(
-      /</g,
+    .replaceAll(
+      "<",
       "&lt;"
     )
-    .replace(
-      />/g,
+    .replaceAll(
+      ">",
       "&gt;"
     )
-    .replace(
-      /"/g,
+    .replaceAll(
+      '"',
       "&quot;"
     )
-    .replace(
-      /'/g,
+    .replaceAll(
+      "'",
       "&#039;"
     );
 
@@ -1301,378 +1123,605 @@ function escapeHtml(
 
 
 /* =========================================================
-   STUDY SQUAD INITIALIZATION
+   CLASSROOM PRESENCE
+   STEP 4B.6A
    ========================================================= */
 
-let studySquadInitialized = false;
-let studySquadLoadingClassrooms = false;
+function startClassroomPresence() {
+
+  if (!activeClassroomId || !currentUser) {
+    return;
+  }
 
 
-/* ---------------------------------------------------------
-   LOAD CURRENT USER
-   --------------------------------------------------------- */
+  /* Remove an old presence channel if one exists */
 
-async function loadCurrentUser() {
+  if (classroomPresenceChannel) {
 
-  console.log(
-    "[Study Squad] Loading current user..."
+    supabaseClient.removeChannel(
+      classroomPresenceChannel
+    );
+
+    classroomPresenceChannel = null;
+  }
+
+
+  const channelName =
+    `study-presence-${activeClassroomId}`;
+
+
+  classroomPresenceChannel =
+    supabaseClient
+      .channel(channelName);
+
+   classroomPresenceChannel.on(
+        "presence",
+        {
+          event: "sync"
+        },
+        () => {
+      
+          const activeUsers =
+            getActiveClassroomUsers();
+      
+          console.log(
+            "[Study Squad] Active students:",
+            activeUsers
+          );
+      
+          console.log(
+            "[Study Squad] Active student count:",
+            activeUsers.length
+          );
+         const activeCount =
+              $("classroomActiveCount");
+            
+            if (activeCount) {
+            
+              const count =
+                activeUsers.length;
+            
+              activeCount.textContent =
+                `🟢 ${count} ${
+                  count === 1
+                    ? "student"
+                    : "students"
+                } active`;
+
+               const activePanel =
+                 $("activeStudentsPanel");
+               
+               if (
+                 activePanel &&
+                 !activePanel.classList.contains("hidden")
+               ) {
+               
+                 showActiveStudents();
+               
+               }
+            
+            }
+      
+        }
+      );
+
+
+  classroomPresenceChannel
+    .subscribe(async (status) => {
+
+      console.log(
+        "[Study Squad] Presence status:",
+        status
+      );
+
+
+      if (status === "SUBSCRIBED") {
+
+        const trackStatus =
+          await classroomPresenceChannel.track({
+
+            user_id:
+              currentUser.id,
+
+            joined_at:
+              new Date().toISOString()
+
+          });
+
+
+        console.log(
+          "[Study Squad] Presence tracked:",
+          trackStatus
+        );
+
+      }
+
+    });
+
+}
+
+/* =========================================================
+   GET ACTIVE CLASSROOM USERS
+   STEP 4B.6B
+   ========================================================= */
+
+function getActiveClassroomUsers() {
+
+  if (!classroomPresenceChannel) {
+    return [];
+  }
+
+  const state =
+    classroomPresenceChannel.presenceState();
+
+  const users = [];
+
+  Object.values(state).forEach(
+    presences => {
+
+      presences.forEach(
+        presence => {
+
+          if (
+            presence.user_id &&
+            !users.includes(
+              presence.user_id
+            )
+          ) {
+
+            users.push(
+              presence.user_id
+            );
+
+          }
+
+        }
+      );
+
+    }
   );
 
+  return users;
+
+}
+
+/* =========================================================
+   ACTIVE STUDENT LIST
+   STEP 4B.6D
+   ========================================================= */
+
+async function showActiveStudents() {
+
+  const panel =
+    $("activeStudentsPanel");
+
+  const list =
+    $("activeStudentsList");
+
+  if (!panel || !list) {
+    return;
+  }
+
+
+  const activeUsers =
+    getActiveClassroomUsers();
+
+
+  if (!activeUsers.length) {
+
+    list.innerHTML = `
+      <div class="active-student-item">
+        No active students.
+      </div>
+    `;
+
+    panel.classList.remove("hidden");
+
+    return;
+  }
+
+
+  list.innerHTML = `
+    <div class="active-student-item">
+      Loading students...
+    </div>
+  `;
+
+  panel.classList.remove("hidden");
+
+
+  /* -------------------------------------------------------
+     LOAD PROFILES
+     ------------------------------------------------------- */
+
   const {
-    data: {
-      user
-    } = {},
+    data: profiles,
     error
   } =
     await supabaseClient
-      .auth
-      .getUser();
+      .from("profiles")
+      .select(`
+        id,
+        username,
+        display_name
+      `)
+      .in(
+        "id",
+        activeUsers
+      );
 
 
   if (error) {
 
     console.error(
-      "[Study Squad] Failed to get user:",
+      "[Study Squad] Failed to load active students:",
       error
     );
 
-    currentUser = null;
+    list.innerHTML = `
+      <div class="active-student-item">
+        Couldn't load students.
+      </div>
+    `;
 
     return;
-
   }
 
 
-  currentUser = user || null;
+  const profileMap =
+    new Map();
 
+  (profiles || []).forEach(
+    profile => {
 
-  console.log(
-    "[Study Squad] Current user:",
-    currentUser?.id || "No user"
-  );
-
-
-  if (currentUser) {
-
-    await loadClassrooms();
-
-  } else {
-
-    console.warn(
-      "[Study Squad] No authenticated user."
-    );
-
-  }
-
-}
-
-
-/* ---------------------------------------------------------
-   SAFE CLASSROOM LOADER
-   --------------------------------------------------------- */
-
-async function initializeStudySquadClassrooms() {
-
-  /*
-   * Prevent multiple simultaneous classroom loads.
-   */
-
-  if (studySquadLoadingClassrooms) {
-
-    console.log(
-      "[Study Squad] Classroom load already running."
-    );
-
-    return;
-
-  }
-
-
-  /*
-   * Make sure the DOM is actually ready.
-   */
-
-  const classroomList =
-    $("classroomList");
-
-
-  if (!classroomList) {
-
-    console.warn(
-      "[Study Squad] classroomList not available yet."
-    );
-
-    return;
-
-  }
-
-
-  studySquadLoadingClassrooms = true;
-
-
-  try {
-
-    /*
-     * Get the currently authenticated user.
-     */
-
-    const {
-      data: {
-        user
-      } = {},
-      error
-    } =
-      await supabaseClient
-        .auth
-        .getUser();
-
-
-    if (error) {
-
-      console.error(
-        "[Study Squad] User lookup failed:",
-        error
+      profileMap.set(
+        profile.id,
+        profile
       );
 
-      return;
-
     }
+  );
 
 
-    currentUser =
-      user || null;
+  /* -------------------------------------------------------
+     RENDER
+     ------------------------------------------------------- */
+
+  list.innerHTML =
+    activeUsers
+      .map(userId => {
+
+        const profile =
+          profileMap.get(userId);
 
 
-    console.log(
-      "[Study Squad] Initialization user:",
-      currentUser?.id || "No user"
-    );
+        const isMe =
+          currentUser &&
+          userId === currentUser.id;
 
 
-    /*
-     * Only load classrooms for authenticated users.
-     */
-
-    if (!currentUser) {
-
-      console.warn(
-        "[Study Squad] No authenticated user. Classroom loading skipped."
-      );
-
-      return;
-
-    }
+        const name =
+          isMe
+            ? "You"
+            : (
+                profile?.display_name ||
+                profile?.username ||
+                "Student"
+              );
 
 
-    /*
-     * Finally load classrooms.
-     */
+        return `
+          <div
+            class="active-student-item"
+          >
 
-    console.log(
-      "[Study Squad] Loading classrooms..."
-    );
+            <span
+              class="active-student-dot"
+            ></span>
 
-    await loadClassrooms();
+            <span
+              class="active-student-name"
+            >
+              ${escapeHtml(name)}
+            </span>
 
+          </div>
+        `;
 
-    console.log(
-      "[Study Squad] Classroom loading completed."
-    );
-
-  } catch (error) {
-
-    console.error(
-      "[Study Squad] Classroom initialization failed:",
-      error
-    );
-
-  } finally {
-
-    studySquadLoadingClassrooms =
-      false;
-
-  }
+      })
+      .join("");
 
 }
-
-
-/* ---------------------------------------------------------
-   AUTH STATE
-   --------------------------------------------------------- */
-
-supabaseClient
-  .auth
-  .onAuthStateChange(
-    async (
-      event,
-      session
-    ) => {
-
-      console.log(
-        "[Study Squad] Auth event:",
-        event
-      );
-
-
-      currentUser =
-        session?.user || null;
-
-
-      /*
-       * Only reload when a real authenticated
-       * session exists.
-       */
-
-      if (
-        currentUser &&
-        (
-          event === "INITIAL_SESSION" ||
-          event === "SIGNED_IN" ||
-          event === "TOKEN_REFRESHED" ||
-          event === "USER_UPDATED"
-        )
-      ) {
-
-        /*
-         * Wait until the current event has finished
-         * before querying classrooms.
-         *
-         * This avoids racing with Supabase auth.
-         */
-
-        setTimeout(
-          () => {
-
-            initializeStudySquadClassrooms();
-
-          },
-          0
-        );
-
-      }
-
-
-      /*
-       * User logged out.
-       */
-
-      if (
-        event === "SIGNED_OUT"
-      ) {
-
-        currentUser = null;
-
-        console.log(
-          "[Study Squad] User signed out."
-        );
-
-      }
-
-    }
-  );
-
-
-/* ---------------------------------------------------------
-   DOM READY INITIALIZATION
-   --------------------------------------------------------- */
-
-function initializeStudySquad() {
-
-  if (studySquadInitialized) {
-
-    return;
-
-  }
-
-
-  studySquadInitialized = true;
-
-
-  console.log(
-    "[Study Squad] DOM ready."
-  );
-
-
-  /*
-   * Give the DOM one tick to finish rendering.
-   */
-
-  setTimeout(
-    () => {
-
-      initializeStudySquadClassrooms();
-
-    },
-    0
-  );
-
-}
-
-
-/*
- * If the DOM is already ready, initialize immediately.
- */
-
-if (
-  document.readyState === "loading"
-) {
-
-  document.addEventListener(
-    "DOMContentLoaded",
-    initializeStudySquad,
-    {
-      once: true
-    }
-  );
-
-} else {
-
-  initializeStudySquad();
-
-}
-
 
 /* =========================================================
-   STUDY CLASSROOM MESSAGES
+   ACTIVE STUDENT PANEL CONTROLS
+   ========================================================= */
+
+$("classroomActiveCount")
+  ?.addEventListener(
+    "click",
+    () => {
+
+      showActiveStudents();
+
+    }
+  );
+
+
+$("closeActiveStudents")
+  ?.addEventListener(
+    "click",
+    () => {
+
+      $("activeStudentsPanel")
+        ?.classList
+        .add("hidden");
+
+    }
+  );
+/* =========================================================
+   SEND CLASSROOM MESSAGE
+   STEP 4B.2
+   ========================================================= */
+
+$("classroomMessageForm")
+  ?.addEventListener(
+    "submit",
+    async (event) => {
+
+      event.preventDefault();
+
+
+      /* ---------------------------------------------------
+         BASIC CHECKS
+         --------------------------------------------------- */
+
+      if (!currentUser) {
+
+        showToast(
+          "Please log in first."
+        );
+
+        return;
+      }
+
+
+      if (!activeClassroomId) {
+
+        showToast(
+          "No classroom is currently open."
+        );
+
+        return;
+      }
+
+
+      const input =
+        $("classroomMessageInput");
+
+      const sendButton =
+        $("sendClassroomMessageBtn");
+
+
+      if (!input) return;
+
+
+      const message =
+        input.value.trim();
+
+
+      /* ---------------------------------------------------
+         DON'T SEND EMPTY MESSAGES
+         --------------------------------------------------- */
+
+      if (!message) {
+
+        input.focus();
+
+        return;
+      }
+
+       /* ---------------------------------------------------
+   CHECK MENTOR LOCK
+   --------------------------------------------------- */
+
+         const {
+             data: mentorLock,
+             error: mentorLockError
+         } = await supabaseClient
+             .from("study_ai_interventions")
+             .select("id")
+             .eq("classroom_id", activeClassroomId)
+             .eq("status", "evaluating")
+             .limit(1);
+         
+         if (mentorLockError) {
+         
+             console.error(
+                 "[Study Squad] Failed to check mentor lock:",
+                 mentorLockError
+             );
+         
+         } else if (
+             mentorLock &&
+             mentorLock.length > 0
+         ) {
+         
+             showToast(
+                 "🔒 Chat paused — mentor is answering."
+             );
+         
+             input.focus();
+         
+             return;
+         }
+
+
+      /* ---------------------------------------------------
+         1000 CHARACTER LIMIT
+         --------------------------------------------------- */
+
+      if (message.length > 1000) {
+
+        showToast(
+          "Message is too long."
+        );
+
+        return;
+      }
+
+
+      /* ---------------------------------------------------
+         DISABLE SEND WHILE SAVING
+         --------------------------------------------------- */
+
+      if (sendButton) {
+
+        sendButton.disabled =
+          true;
+
+        sendButton.textContent =
+          "…";
+
+      }
+
+
+      try {
+
+        /* -----------------------------------------------
+           INSERT MESSAGE
+           ----------------------------------------------- */
+
+        const {
+          error
+        } =
+          await supabaseClient
+            .from("study_messages")
+            .insert({
+
+              classroom_id:
+                activeClassroomId,
+
+              sender_id:
+                currentUser.id,
+
+              message:
+                message,
+
+              message_type:
+                "student"
+
+            });
+
+
+        /* -----------------------------------------------
+           HANDLE ERROR
+           ----------------------------------------------- */
+
+        if (error) {
+
+          console.error(
+            "[Study Squad] Failed to send message:",
+            error
+          );
+
+          showToast(
+            "Couldn't send message."
+          );
+
+          return;
+        }
+
+
+        /* -----------------------------------------------
+           SUCCESS
+           ----------------------------------------------- */
+
+        input.value = "";
+
+
+        /*
+         * Keep the input focused so the student
+         * can immediately type another message.
+         */
+
+        input.focus();
+
+
+        console.log(
+          "[Study Squad] Message sent successfully."
+        );
+
+
+      } finally {
+
+        if (sendButton) {
+
+          sendButton.disabled =
+            false;
+
+          sendButton.textContent =
+            "➤";
+
+        }
+
+      }
+
+    }
+  );
+
+/* =========================================================
+   LOAD CLASSROOM MESSAGES
+   STEP 4B.3
    ========================================================= */
 
 async function loadClassroomMessages() {
 
-  if (!activeClassroomId) {
-
-    console.warn(
-      "[Study Squad] No active classroom."
-    );
-
-    return;
-
-  }
-
-
-  const messageList =
+  const messagesContainer =
     $("classroomMessages");
 
-
-  if (!messageList) {
-
-    console.warn(
-      "[Study Squad] studyMessageList not found."
+  if (!messagesContainer) {
+    console.error(
+      "[Study Squad] classroomMessages element not found."
     );
-
     return;
+  }
 
+  if (!activeClassroomId) {
+    console.error(
+      "[Study Squad] No active classroom."
+    );
+    return;
   }
 
 
-  messageList.innerHTML = `
-    <div class="study-message-loading">
-      Loading messages...
+  /* -------------------------------------------------------
+     LOADING STATE
+     ------------------------------------------------------- */
+
+  messagesContainer.innerHTML = `
+    <div class="chat-empty">
+      <div class="chat-empty-icon">
+        ⏳
+      </div>
+
+      <h3>
+        Loading discussion...
+      </h3>
+
+      <p>
+        Getting the classroom messages.
+      </p>
     </div>
   `;
 
 
+  /* -------------------------------------------------------
+     GET MESSAGES
+     ------------------------------------------------------- */
+
   const {
-    data,
+    data: messages,
     error
   } =
     await supabaseClient
@@ -1697,6 +1746,10 @@ async function loadClassroomMessages() {
       );
 
 
+  /* -------------------------------------------------------
+     ERROR
+     ------------------------------------------------------- */
+
   if (error) {
 
     console.error(
@@ -1704,162 +1757,234 @@ async function loadClassroomMessages() {
       error
     );
 
-    messageList.innerHTML = `
-      <div class="study-message-error">
-        Couldn't load messages.
+    messagesContainer.innerHTML = `
+      <div class="chat-empty">
+
+        <div class="chat-empty-icon">
+          ⚠️
+        </div>
+
+        <h3>
+          Couldn't load messages
+        </h3>
+
+        <p>
+          Please try refreshing the classroom.
+        </p>
+
       </div>
     `;
 
     return;
+  }
+
+
+  /* -------------------------------------------------------
+     NO MESSAGES
+     ------------------------------------------------------- */
+
+  if (!messages || messages.length === 0) {
+
+    messagesContainer.innerHTML = `
+      <div class="chat-empty">
+
+        <div class="chat-empty-icon">
+          💬
+        </div>
+
+        <h3>
+          Start the discussion
+        </h3>
+
+        <p>
+          Ask a question, share an explanation,
+          or help another student.
+        </p>
+
+      </div>
+    `;
+
+    return;
+  }
+
+
+  /* -------------------------------------------------------
+     GET UNIQUE SENDERS
+     ------------------------------------------------------- */
+
+  const senderIds = [
+    ...new Set(
+      messages.map(
+        message => message.sender_id
+      )
+    )
+  ];
+
+
+  /* -------------------------------------------------------
+     LOAD PROFILES
+     ------------------------------------------------------- */
+
+  const {
+    data: profiles,
+    error: profileError
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select(`
+        id,
+        username,
+        display_name
+      `)
+      .in(
+        "id",
+        senderIds
+      );
+
+
+  if (profileError) {
+
+    console.error(
+      "[Study Squad] Failed to load profiles:",
+      profileError
+    );
 
   }
 
 
-  renderClassroomMessages(
-    data || []
+  /* -------------------------------------------------------
+     PROFILE LOOKUP
+     ------------------------------------------------------- */
+
+  const profileMap =
+    new Map();
+
+  (profiles || []).forEach(
+    profile => {
+
+      profileMap.set(
+        profile.id,
+        profile
+      );
+
+    }
+  );
+
+
+  /* -------------------------------------------------------
+     RENDER MESSAGES
+     ------------------------------------------------------- */
+
+  messagesContainer.innerHTML =
+    messages
+      .map(message => {
+
+        const profile =
+          profileMap.get(
+            message.sender_id
+          );
+
+
+        const isMine =
+          currentUser &&
+          message.sender_id ===
+            currentUser.id;
+
+
+        const senderName =
+          isMine
+            ? "You"
+            : (
+                profile?.display_name ||
+                profile?.username ||
+                "Student"
+              );
+
+
+        const messageTime =
+          formatMessageTime(
+            message.created_at
+          );
+
+
+        const messageType =
+          message.message_type ||
+          "student";
+
+
+        return `
+          <div
+            class="chat-message ${
+              isMine
+                ? "chat-message-mine"
+                : "chat-message-other"
+            }"
+            data-message-id="${escapeHtml(
+              message.id
+            )}"
+          >
+
+            <div class="chat-message-header">
+
+              <span class="chat-sender">
+                ${escapeHtml(senderName)}
+              </span>
+
+              <span class="chat-time">
+                ${escapeHtml(messageTime)}
+              </span>
+
+            </div>
+
+
+            <div class="chat-message-body">
+
+              ${escapeHtml(
+                message.message
+              )}
+
+            </div>
+
+          </div>
+        `;
+
+      })
+      .join("");
+
+
+  /* -------------------------------------------------------
+     SCROLL TO BOTTOM
+     ------------------------------------------------------- */
+
+  messagesContainer.scrollTop =
+    messagesContainer.scrollHeight;
+
+
+  console.log(
+    "[Study Squad] Loaded",
+    messages.length,
+    "messages."
   );
 
 }
 
 
-function renderClassroomMessages(
-  messages
-) {
-
-  const messageList =
-    $("classroomMessages");
-
-
-  if (!messageList) return;
-
-
-  if (!messages.length) {
-
-    messageList.innerHTML = `
-      <div class="study-message-empty">
-        <div>💬</div>
-        <strong>No messages yet</strong>
-        <p>Start the Study Squad discussion.</p>
-      </div>
-    `;
-
-    return;
-
-  }
-
-
-  messageList.innerHTML =
-    messages
-      .map(
-        renderStudyMessage
-      )
-      .join("");
-
-
-  messageList.scrollTop =
-    messageList.scrollHeight;
-
-}
-
-
-function renderStudyMessage(
-  item
-) {
-
-  const mine =
-    currentUser &&
-    item.sender_id ===
-      currentUser.id;
-
-
-  const messageType =
-    item.message_type ||
-    "student";
-
-
-  const isAI =
-    messageType === "ai" ||
-    messageType === "mentor";
-
-
-  return `
-    <div
-      class="study-message ${
-        mine
-          ? "mine"
-          : ""
-      } ${
-        isAI
-          ? "ai-message"
-          : ""
-      }"
-      data-message-id="${escapeHtml(
-        item.id
-      )}"
-    >
-
-      <div class="study-message-meta">
-
-        <span class="study-message-author">
-          ${
-            isAI
-              ? "🤖 NOW AI Mentor"
-              : mine
-                ? "You"
-                : "Student"
-          }
-        </span>
-
-        <span class="study-message-time">
-          ${formatMessageTime(
-            item.created_at
-          )}
-        </span>
-
-      </div>
-
-      <div class="study-message-body">
-        ${formatStudyMessage(
-          item.message
-        )}
-      </div>
-
-    </div>
-  `;
-
-}
-
-
-function formatStudyMessage(
-  message
-) {
-
-  if (!message) return "";
-
-  return escapeHtml(
-    message
-  )
-    .replace(
-      /\*\*(.*?)\*\*/g,
-      "<strong>$1</strong>"
-    )
-    .replace(
-      /\n/g,
-      "<br>"
-    );
-
-}
-
+/* =========================================================
+   MESSAGE TIME FORMAT
+   ========================================================= */
 
 function formatMessageTime(
   timestamp
 ) {
 
-  if (!timestamp)
+  if (!timestamp) {
     return "";
+  }
+
 
   const date =
     new Date(timestamp);
+
 
   if (
     Number.isNaN(
@@ -1871,9 +1996,12 @@ function formatMessageTime(
 
   }
 
-  return date.toLocaleTimeString(
+
+  return date.toLocaleString(
     [],
     {
+      day: "numeric",
+      month: "short",
       hour: "2-digit",
       minute: "2-digit"
     }
@@ -1881,181 +2009,19 @@ function formatMessageTime(
 
 }
 
-
 /* =========================================================
-   SEND STUDY MESSAGE
-   ========================================================= */
-
-async function sendStudyMessage() {
-
-    if (!currentUser) {
-
-        showToast(
-            "Please log in first."
-        );
-
-        return;
-    }
-
-
-    if (!activeClassroomId) {
-
-        showToast(
-            "Open a classroom first."
-        );
-
-        return;
-    }
-
-
-    const input =
-        $("classroomMessageInput");
-
-
-    if (!input) {
-
-        console.error(
-            "[Study Squad] classroomMessageInput not found."
-        );
-
-        return;
-    }
-
-
-    const message =
-        input.value.trim();
-
-
-    if (!message) return;
-
-
-    const sendButton =
-        $("sendClassroomMessageBtn");
-
-
-    if (sendButton) {
-
-        sendButton.disabled = true;
-
-    }
-
-
-    try {
-
-        const {
-            error
-        } =
-            await supabaseClient
-                .from("study_messages")
-                .insert({
-                    classroom_id:
-                        activeClassroomId,
-
-                    sender_id:
-                        currentUser.id,
-
-                    message,
-
-                    message_type:
-                        "student"
-                });
-
-
-        if (error) {
-
-            console.error(
-                "[Study Squad] Failed to send message:",
-                error
-            );
-
-            showToast(
-                "Couldn't send message."
-            );
-
-            return;
-        }
-
-
-        input.value = "";
-
-
-    } finally {
-
-        if (sendButton) {
-
-            sendButton.disabled =
-                false;
-
-        }
-
-    }
-
-}
-
-
-/* =========================================================
-   SEND BUTTON
-   ========================================================= */
-
-/* =========================================================
-   CLASSROOM MESSAGE INPUT
-   ========================================================= */
-
-const classroomMessageForm =
-    $("classroomMessageForm");
-
-const classroomMessageInput =
-    $("classroomMessageInput");
-
-
-if (classroomMessageForm) {
-
-    classroomMessageForm.addEventListener(
-        "submit",
-        event => {
-
-            event.preventDefault();
-
-            sendStudyMessage();
-
-        }
-    );
-
-}
-
-
-if (classroomMessageInput) {
-
-    classroomMessageInput.addEventListener(
-        "keydown",
-        event => {
-
-            if (
-                event.key === "Enter" &&
-                !event.shiftKey
-            ) {
-
-                event.preventDefault();
-
-                sendStudyMessage();
-
-            }
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   REALTIME MESSAGES
+   CLASSROOM REALTIME
+   STEP 4B.4
    ========================================================= */
 
 function subscribeToClassroomMessages() {
 
-  if (!activeClassroomId)
+  if (!activeClassroomId) {
     return;
+  }
 
+
+  /* Remove previous subscription */
 
   if (classroomRealtimeChannel) {
 
@@ -2064,13 +2030,20 @@ function subscribeToClassroomMessages() {
         classroomRealtimeChannel
       );
 
+    classroomRealtimeChannel = null;
   }
+
+
+  console.log(
+    "[Study Squad] Starting realtime for:",
+    activeClassroomId
+  );
 
 
   classroomRealtimeChannel =
     supabaseClient
       .channel(
-        `study-messages-${activeClassroomId}`
+        `study-classroom-${activeClassroomId}`
       )
       .on(
         "postgres_changes",
@@ -2084,24 +2057,17 @@ function subscribeToClassroomMessages() {
         payload => {
 
           console.log(
-            "[Study Squad] New message:",
+            "[Study Squad] New realtime message:",
             payload.new
           );
 
-          appendStudyMessage(
-            payload.new
-          );
 
           /*
-           * IMPORTANT:
-           * AI detection is handled by the
-           * AI mentor system below.
-           *
-           * A normal student message MUST NOT
-           * directly trigger an AI reply.
+           * Add only the newly inserted message.
+           * We don't reload the entire conversation.
            */
 
-          handleAIMentorMessage(
+          renderRealtimeMessage(
             payload.new
           );
 
@@ -2120,1653 +2086,927 @@ function subscribeToClassroomMessages() {
 
 }
 
+/* =========================================================
+   RENDER REALTIME MESSAGE
+   ========================================================= */
 
-function appendStudyMessage(
+async function renderRealtimeMessage(
   message
 ) {
 
-  const messageList =
+  const messagesContainer =
     $("classroomMessages");
 
-  if (!messageList)
+
+  if (!messagesContainer) {
     return;
-
-
-  const empty =
-    messageList
-      .querySelector(
-        ".study-message-empty"
-      );
-
-
-  if (empty) {
-
-    messageList.innerHTML =
-      "";
-
-  }
-
-
-  if (
-    messageList
-      .querySelector(
-        `[data-message-id="${message.id}"]`
-      )
-  ) {
-
-    return;
-
-  }
-
-
-  messageList.insertAdjacentHTML(
-    "beforeend",
-    renderStudyMessage(
-      message
-    )
-  );
-
-
-  messageList.scrollTop =
-    messageList.scrollHeight;
-
-}
-
-
-/* =========================================================
-   STUDY HELP PANEL
-   ========================================================= */
-
-function setupStudyHelpPanel() {
-
-  const panel =
-    $("studyHelpPanel");
-
-  if (!panel) return;
-
-
-  const closeButton =
-    $("closeStudyHelp");
-
-
-  closeButton?.addEventListener(
-    "click",
-    () => {
-
-      panel.classList.add(
-        "hidden"
-      );
-
-    }
-  );
-
-}
-function setupStudyHelpPanel() {
-
-    const button =
-        $("studyHelpBtn");
-
-    const panel =
-        $("studyHelpPanel");
-
-    const closeButton =
-        $("closeStudyHelp");
-
-
-    if (!button || !panel) {
-
-        console.warn(
-            "[Study Squad] Study Help elements not found."
-        );
-
-        return;
-
-    }
-
-
-    if (
-        button.dataset
-            .listenerAttached ===
-        "true"
-    ) {
-
-        return;
-
-    }
-
-
-    button.dataset
-        .listenerAttached =
-        "true";
-
-
-    button.addEventListener(
-        "click",
-        event => {
-
-            event.stopPropagation();
-
-            const isHidden =
-                panel.classList.contains(
-                    "hidden"
-                );
-
-
-            if (isHidden) {
-
-                panel.classList.remove(
-                    "hidden"
-                );
-
-                button.setAttribute(
-                    "aria-expanded",
-                    "true"
-                );
-
-            } else {
-
-                panel.classList.add(
-                    "hidden"
-                );
-
-                button.setAttribute(
-                    "aria-expanded",
-                    "false"
-                );
-
-            }
-
-        }
-    );
-
-
-    closeButton?.addEventListener(
-        "click",
-        event => {
-
-            event.stopPropagation();
-
-            panel.classList.add(
-                "hidden"
-            );
-
-            button.setAttribute(
-                "aria-expanded",
-                "false"
-            );
-
-        }
-    );
-
-}
-
-function openStudyHelpPanel() {
-
-  const panel =
-    $("studyHelpPanel");
-
-  if (!panel) return;
-
-  panel.classList.remove(
-    "hidden"
-  );
-
-}
-
-
-/* =========================================================
-   CLASSROOM PRESENCE
-   ========================================================= */
-
-function startClassroomPresence() {
-
-  if (!activeClassroomId ||
-      !currentUser) {
-
-    return;
-
-  }
-
-
-  if (classroomPresenceChannel) {
-
-    supabaseClient
-      .removeChannel(
-        classroomPresenceChannel
-      );
-
-  }
-
-
-  classroomPresenceChannel =
-    supabaseClient
-      .channel(
-        `study-presence-${activeClassroomId}`
-      );
-
-
-  classroomPresenceChannel
-    .on(
-      "presence",
-      {
-        event: "sync"
-      },
-      () => {
-
-        updateClassroomOnlineCount();
-
-      }
-    )
-    .on(
-      "presence",
-      {
-        event: "join"
-      },
-      () => {
-
-        updateClassroomOnlineCount();
-
-      }
-    )
-    .on(
-      "presence",
-      {
-        event: "leave"
-      },
-      () => {
-
-        updateClassroomOnlineCount();
-
-      }
-    )
-    .subscribe(
-      async status => {
-
-        if (
-          status ===
-          "SUBSCRIBED"
-        ) {
-
-          await classroomPresenceChannel
-            .track({
-              user_id:
-                currentUser.id,
-
-              online_at:
-                new Date()
-                  .toISOString()
-            });
-
-          updateClassroomOnlineCount();
-
-        }
-
-      }
-    );
-
-}
-
-
-async function updateClassroomOnlineCount() {
-
-    if (!classroomPresenceChannel) {
-        return;
-    }
-
-
-    const state =
-        classroomPresenceChannel
-            .presenceState();
-
-
-    const activeUserIds = [];
-
-
-    Object
-        .values(state)
-        .forEach(presences => {
-
-            presences.forEach(presence => {
-
-                const userId =
-                    presence?.user_id;
-
-                if (
-                    userId &&
-                    !activeUserIds.includes(userId)
-                ) {
-
-                    activeUserIds.push(
-                        userId
-                    );
-
-                }
-
-            });
-
-        });
-
-
-    /*
-     * Update visible count
-     */
-
-    const onlineCount =
-        $("classroomActiveCount");
-
-
-    if (onlineCount) {
-
-        onlineCount.textContent =
-            `🟢 ${activeUserIds.length} students active`;
-
-    }
-
-
-    /*
-     * Render active students
-     */
-
-    await renderActiveStudents(
-        activeUserIds
-    );
-
-}
-
-
-async function renderActiveStudents(
-    userIds
-) {
-
-    const list =
-        $("activeStudentsList");
-
-
-    if (!list) {
-        return;
-    }
-
-
-    if (!userIds.length) {
-
-        list.innerHTML = `
-            <div class="active-student-empty">
-                No students are currently active.
-            </div>
-        `;
-
-        return;
-    }
-
-
-    const {
-        data: profiles,
-        error
-    } =
-        await supabaseClient
-            .from("profiles")
-            .select(`
-                id,
-                username,
-                display_name
-            `)
-            .in(
-                "id",
-                userIds
-            );
-
-
-    if (error) {
-
-        console.error(
-            "[Study Squad] Failed to load active students:",
-            error
-        );
-
-        list.innerHTML = `
-            <div class="active-student-empty">
-                Couldn't load active students.
-            </div>
-        `;
-
-        return;
-    }
-
-
-    const profileMap =
-        new Map(
-            (profiles || [])
-                .map(profile => [
-                    profile.id,
-                    profile
-                ])
-        );
-
-
-    list.innerHTML =
-        userIds
-            .map(userId => {
-
-                const profile =
-                    profileMap.get(userId);
-
-
-                const name =
-                    profile?.display_name ||
-                    profile?.username ||
-                    "Student";
-
-
-                const isCurrentUser =
-                    currentUser &&
-                    userId === currentUser.id;
-
-
-                return `
-                    <div
-                        class="active-student-item"
-                        data-student-id="${escapeHtml(userId)}"
-                    >
-
-                        <span class="active-student-dot">
-                            🟢
-                        </span>
-
-                        <span class="active-student-name">
-                            ${escapeHtml(name)}
-                            ${
-                                isCurrentUser
-                                    ? " (You)"
-                                    : ""
-                            }
-                        </span>
-
-                    </div>
-                `;
-
-            })
-            .join("");
-
-}
-/* =========================================================
-   INITIALIZE AI MENTOR SYSTEM
-   ========================================================= */
-
-function initializeAIMentorSystem() {
-
-  if (
-    aiMentorInitialized
-  ) {
-
-    /*
-     * The classroom may be reopened.
-     * Make sure the poll monitor is still running.
-     */
-
-    startAIMentorPollSystem();
-
-    return;
-
-  }
-
-
-  aiMentorInitialized =
-    true;
-
-
-  console.log(
-    "[AI Mentor] Initializing..."
-  );
-
-
-  startAIMentorPollSystem();
-
-}
-
-
-/* =========================================================
-   STOP AI MENTOR SYSTEM
-   ========================================================= */
-
-function stopAIMentorPollSystem() {
-
-  if (aiMentorPollTimer) {
-
-    clearInterval(
-      aiMentorPollTimer
-    );
-
-    aiMentorPollTimer =
-      null;
-
-  }
-
-
-  aiMentorInitialized =
-    false;
-
-  aiMentorProcessing =
-    false;
-
-  aiMentorLastMessageId =
-    null;
-
-}
-
-
-/* =========================================================
-   POLL SYSTEM MONITOR
-   ========================================================= */
-
-function startAIMentorPollSystem() {
-
-  if (aiMentorPollTimer) {
-
-    clearInterval(
-      aiMentorPollTimer
-    );
-
   }
 
 
   /*
-   * Check polls immediately.
-   */
-
-  loadAIPolls();
-
-
-  /*
-   * Then refresh periodically.
-   */
-
-  aiMentorPollTimer =
-    setInterval(
-      () => {
-
-        if (
-          activeClassroomId
-        ) {
-
-          loadAIPolls();
-
-        }
-
-      },
-      5000
-    );
-
-}
-
-
-/* =========================================================
-   LOAD AI POLLS
-   ========================================================= */
-
-async function loadAIPolls() {
-
-  if (
-    !activeClassroomId ||
-    !currentUser
-  ) {
-
-    return;
-
-  }
-
-
-  const {
-    data,
-    error
-  } =
-    await supabaseClient
-      .rpc(
-        "get_study_ai_polls",
-        {
-          p_classroom_id:
-            activeClassroomId
-        }
-      );
-
-
-  if (error) {
-
-    /*
-     * Do not spam the user with a toast.
-     * Log the actual RPC error for debugging.
-     */
-
-    console.error(
-      "[AI Poll] Failed to load polls:",
-      error
-    );
-
-    return;
-
-  }
-
-
-  renderAIPolls(
-    data || []
-  );
-
-}
-
-
-/* =========================================================
-   RENDER AI POLLS
-   ========================================================= */
-
-function renderAIPolls(
-  polls
-) {
-
-  const container =
-    $("studyAIPollContainer");
-
-
-  if (!container) {
-
-    return;
-
-  }
-
-
-  if (!polls.length) {
-
-    container.innerHTML =
-      "";
-
-    return;
-
-  }
-
-
-  container.innerHTML =
-    polls
-      .map(
-        renderAIPoll
-      )
-      .join("");
-
-
-  container
-    .querySelectorAll(
-      "[data-ai-poll-id]"
-    )
-    .forEach(
-      pollElement => {
-
-        const pollId =
-          pollElement
-            .dataset
-            .aiPollId;
-
-
-        pollElement
-          .querySelectorAll(
-            "[data-ai-vote]"
-          )
-          .forEach(
-            button => {
-
-              button.addEventListener(
-                "click",
-                () => {
-
-                  voteOnAIPoll(
-                    pollId,
-                    button.dataset.aiVote
-                  );
-
-                }
-              );
-
-            }
-          );
-
-      }
-    );
-
-}
-
-
-function renderAIPoll(
-  poll
-) {
-
-  const yes =
-    Number(
-      poll.yes_votes || 0
-    );
-
-
-  const no =
-    Number(
-      poll.no_votes || 0
-    );
-
-
-  const total =
-    yes + no;
-
-
-  const percentage =
-    total > 0
-      ? Math.round(
-          (yes / total) * 100
-        )
-      : 0;
-
-
-  const userVote =
-    poll.user_vote ||
-    "";
-
-
-  return `
-    <div
-      class="study-ai-poll"
-      data-ai-poll-id="${escapeHtml(
-        poll.id
-      )}"
-    >
-
-      <div class="study-ai-poll-header">
-        <span>
-          🤖 AI wants to help
-        </span>
-
-        <span>
-          ${escapeHtml(
-            `${percentage}% YES`
-          )}
-        </span>
-      </div>
-
-
-      <div class="study-ai-poll-question">
-        Some students may benefit from an
-        AI intervention here.
-        Should NOW AI step in?
-      </div>
-
-
-      <div class="study-ai-poll-stats">
-
-        <span>
-          👍 Yes: ${yes}
-        </span>
-
-        <span>
-          👎 No: ${no}
-        </span>
-
-        <span>
-          ${escapeHtml(
-            `${poll.total_eligible || 0} eligible`
-          )}
-        </span>
-
-      </div>
-
-
-      <div class="study-ai-poll-actions">
-
-        <button
-          type="button"
-          data-ai-vote="yes"
-          class="${
-            userVote === "yes"
-              ? "selected"
-              : ""
-          }"
-        >
-          👍 Let AI help
-        </button>
-
-
-        <button
-          type="button"
-          data-ai-vote="no"
-          class="${
-            userVote === "no"
-              ? "selected"
-              : ""
-          }"
-        >
-          👎 Not now
-        </button>
-
-      </div>
-
-
-      <div class="study-ai-poll-note">
-        AI joins only if more than 50% vote YES.
-      </div>
-
-    </div>
-  `;
-
-}
-
-
-/* =========================================================
-   VOTE AI POLL
-   ========================================================= */
-
-async function voteOnAIPoll(
-  pollId,
-  vote
-) {
-
-  if (
-    !currentUser ||
-    !pollId
-  ) {
-
-    return;
-
-  }
-
-
-  const {
-    data,
-    error
-  } =
-    await supabaseClient
-      .rpc(
-        "vote_study_ai_poll",
-        {
-          p_poll_id:
-            pollId,
-
-          p_vote:
-            vote
-        }
-      );
-
-
-  if (error) {
-
-    console.error(
-      "[AI Poll] Vote failed:",
-      error
-    );
-
-    showToast(
-      error.message ||
-      "Couldn't submit vote."
-    );
-
-    return;
-
-  }
-
-
-  console.log(
-    "[AI Poll] Vote result:",
-    data
-  );
-
-
-  await loadAIPolls();
-
-
-  /*
-   * If the backend reports that the poll
-   * has passed, the AI intervention is
-   * now allowed.
-   */
-
-  if (
-    data &&
-    data.status ===
-      "approved"
-  ) {
-
-    await processApprovedAIPoll(
-      data
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   PROCESS APPROVED POLL
-   ========================================================= */
-
-async function processApprovedAIPoll(
-  pollResult
-) {
-
-  if (
-    !pollResult ||
-    !pollResult.poll_id
-  ) {
-
-    return;
-
-  }
-
-
-  console.log(
-    "[AI Poll] Poll approved:",
-    pollResult
-  );
-
-
-  /*
-   * The actual intervention is resolved
-   * by the backend intervention system.
-   *
-   * Refreshing the polls removes the
-   * completed poll from the classroom UI.
-   */
-
-  await loadAIPolls();
-
-}
-
-
-/* =========================================================
-   HANDLE NEW CLASSROOM MESSAGE
-   ========================================================= */
-
-async function handleAIMentorMessage(
-  message
-) {
-
-  if (!message) return;
-
-
-  /*
-   * AI messages must never recursively
-   * trigger another AI intervention.
-   */
-
-  if (
-    message.message_type ===
-      "ai" ||
-    message.message_type ===
-      "mentor"
-  ) {
-
-    return;
-
-  }
-
-
-  /*
-   * Ignore messages from other classrooms.
+   * Ignore messages belonging to another classroom.
    */
 
   if (
     message.classroom_id !==
     activeClassroomId
   ) {
-
     return;
-
   }
 
 
   /*
-   * Prevent duplicate processing.
+   * If this message already exists in the DOM,
+   * don't add it twice.
    */
 
   if (
-    aiMentorLastMessageId ===
-    message.id
+    messagesContainer.querySelector(
+      `[data-message-id="${message.id}"]`
+    )
   ) {
-
     return;
-
   }
 
 
-  aiMentorLastMessageId =
+  /* -------------------------------------------------------
+     GET SENDER PROFILE
+     ------------------------------------------------------- */
+
+  const {
+    data: profile
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select(`
+        id,
+        username,
+        display_name
+      `)
+      .eq(
+        "id",
+        message.sender_id
+      )
+      .maybeSingle();
+
+
+  const isMine =
+    currentUser &&
+    message.sender_id ===
+      currentUser.id;
+
+
+  const senderName =
+    isMine
+      ? "You"
+      : (
+          profile?.display_name ||
+          profile?.username ||
+          "Student"
+        );
+
+
+  const messageTime =
+    formatMessageTime(
+      message.created_at
+    );
+
+
+  /* -------------------------------------------------------
+     REMOVE EMPTY STATE
+     ------------------------------------------------------- */
+
+  const emptyState =
+    messagesContainer.querySelector(
+      ".chat-empty"
+    );
+
+
+  if (emptyState) {
+    emptyState.remove();
+  }
+
+
+  /* -------------------------------------------------------
+     CREATE MESSAGE
+     ------------------------------------------------------- */
+
+  const messageElement =
+    document.createElement("div");
+
+
+  messageElement.className =
+    `chat-message ${
+      isMine
+        ? "chat-message-mine"
+        : "chat-message-other"
+    }`;
+
+
+  messageElement.dataset.messageId =
     message.id;
 
 
-  const text =
-    String(
-      message.message ||
-      ""
-    ).trim();
+  messageElement.innerHTML = `
+
+    <div class="chat-message-header">
+
+      <span class="chat-sender">
+        ${escapeHtml(senderName)}
+      </span>
+
+      <span class="chat-time">
+        ${escapeHtml(messageTime)}
+      </span>
+
+    </div>
+
+    <div class="chat-message-body">
+      ${escapeHtml(message.message)}
+    </div>
+
+  `;
 
 
-  if (!text) return;
-
-
-  /*
-   * =======================================================
-   * @mentor — DIRECT BYPASS
-   * =======================================================
-   *
-   * This is intentionally checked BEFORE
-   * conflict/doubt detection.
-   *
-   * Therefore:
-   *
-   *   "@mentor explain this"
-   *
-   * immediately goes to the AI mentor.
-   *
-   * No poll is created.
-   */
-
-  if (
-    hasMentorTrigger(
-      text
-    )
-  ) {
-
-    console.log(
-      "[AI Mentor] Direct @mentor trigger."
-    );
-
-    await triggerDirectAIMentor(
-      message
-    );
-
-    return;
-
-  }
-
-
-  /*
-   * =======================================================
-   * NORMAL STUDENT MESSAGE
-   * =======================================================
-   *
-   * A normal message must NOT directly
-   * cause an AI response.
-   *
-   * Instead we ask the backend detector
-   * whether this message represents a
-   * conflict/doubt/intervention situation.
-   */
-
-  await detectAutomaticAIIntervention(
-    message
+  messagesContainer.appendChild(
+    messageElement
   );
 
+
+  /* -------------------------------------------------------
+     SCROLL TO NEW MESSAGE
+     ------------------------------------------------------- */
+
+  messagesContainer.scrollTo({
+    top:
+      messagesContainer.scrollHeight,
+    behavior:
+      "smooth"
+  });
+
 }
 
-
 /* =========================================================
-   @MENTOR DETECTION
+   INITIALIZATION
    ========================================================= */
 
-function hasMentorTrigger(
-  text
-) {
+document.addEventListener(
+  "DOMContentLoaded",
+  async () => {
 
-  return /(^|\s)@mentor\b/i
-    .test(
-      text
+    console.log(
+      "[Study Squad] Initializing..."
     );
 
-}
-
-
-/* =========================================================
-   DIRECT AI MENTOR
-   ========================================================= */
-
-async function triggerDirectAIMentor(
-  message
-) {
-
-  if (
-    aiMentorProcessing
-  ) {
-
-    return;
-
-  }
-
-
-  aiMentorProcessing =
-    true;
-
-
-  try {
 
     const {
       data,
       error
     } =
       await supabaseClient
-        .rpc(
-          "send_study_ai_mentor_reply",
-          {
-            p_classroom_id:
-              message.classroom_id,
-
-            p_message:
-              message.message
-          }
-        );
+        .auth
+        .getSession();
 
 
     if (error) {
 
       console.error(
-        "[AI Mentor] Direct reply failed:",
+        "[Study Squad] Session error:",
         error
       );
 
       showToast(
-        "AI mentor couldn't respond."
+        "Couldn't check your login."
       );
 
       return;
-
     }
+
+
+    if (!data?.session) {
+
+      console.log(
+        "[Study Squad] No active session."
+      );
+
+      window.location.href =
+        "index.html";
+
+      return;
+    }
+
+
+    currentUser =
+      data.session.user;
 
 
     console.log(
-      "[AI Mentor] Direct response:",
-      data
+      "[Study Squad] Logged in:",
+      currentUser.id
     );
 
 
-  } finally {
-
-    aiMentorProcessing =
-      false;
+    await loadClassrooms();
 
   }
-
-}
+);
 
 
 /* =========================================================
-   AUTOMATIC AI INTERVENTION DETECTION
+   STUDY SQUAD — NEED MENTOR BUTTON
+   STEP 4C.4E
    ========================================================= */
 
-async function detectAutomaticAIIntervention(
-  message
-) {
+const needMentorBtn =
+  document.getElementById("needMentorBtn");
 
-  if (
-    aiMentorProcessing
-  ) {
+if (needMentorBtn) {
 
-    return;
+  needMentorBtn.addEventListener(
+    "click",
+    async () => {
 
-  }
+      /* ---------------------------------------------------
+         Make sure a classroom is open
+         --------------------------------------------------- */
+
+      if (!activeClassroomId) {
+
+        showToast(
+          "Please open a classroom first."
+        );
+
+        return;
+      }
 
 
-  /*
-   * First ask the conflict detector.
-   *
-   * The detector itself should NOT send an
-   * AI answer. It should only identify whether
-   * an intervention is appropriate.
-   */
+      /* ---------------------------------------------------
+         Prevent rapid clicking
+         --------------------------------------------------- */
 
-  const {
-    data: conflictResult,
-    error: conflictError
-  } =
-    await supabaseClient
-      .rpc(
-        "detect_study_conflicting_answers",
-        {
-          p_message_id:
-            message.id,
+      if (needMentorBtn.disabled) {
+        return;
+      }
 
-          p_sender_id:
-            message.sender_id,
 
-          p_message:
-            message.message
+      needMentorBtn.disabled = true;
+
+      const originalText =
+        needMentorBtn.innerHTML;
+
+      needMentorBtn.innerHTML =
+        "⏳ Requesting...";
+
+
+      try {
+
+        const {
+          data,
+          error
+        } =
+          await supabaseClient.rpc(
+            "request_study_mentor",
+            {
+              p_classroom_id:
+                activeClassroomId
+            }
+          );
+
+
+        if (error) {
+          throw error;
         }
-      );
 
 
-  if (conflictError) {
-
-    console.error(
-      "[AI Mentor] Conflict detector error:",
-      conflictError
-    );
-
-    return;
-
-  }
+        console.log(
+          "[Study Squad] Mentor request:",
+          data
+        );
 
 
-  console.log(
-    "[AI Mentor] Conflict detector:",
-    conflictResult
+        needMentorBtn.innerHTML =
+          "✅ Mentor requested";
+
+
+        showToast(
+          "Mentor requested! 🤖"
+        );
+
+        await updateMentorRequestCount();
+
+
+        /* -------------------------------------------------
+           Re-enable after 5 seconds.
+           Database has its own 2-minute protection.
+           ------------------------------------------------- */
+
+        setTimeout(() => {
+
+          needMentorBtn.disabled =
+            false;
+
+          needMentorBtn.innerHTML =
+            originalText;
+
+        }, 5000);
+
+
+      } catch (error) {
+
+        console.error(
+          "[Study Squad] Need Mentor failed:",
+          error
+        );
+
+
+        needMentorBtn.disabled =
+          false;
+
+        needMentorBtn.innerHTML =
+          originalText;
+
+
+        showToast(
+          "Couldn't request the mentor."
+        );
+
+      }
+
+    }
   );
-
-
-  /*
-   * If there is a conflict, the backend
-   * should create the AI intervention/poll.
-   *
-   * The browser does NOT directly answer.
-   */
-
-  if (
-    isInterventionDetected(
-      conflictResult
-    )
-  ) {
-
-    await ensureAIPollExists(
-      message,
-      conflictResult
-    );
-
-    return;
-
-  }
-
-
-  /*
-   * If not conflict, check whether the
-   * message is a study doubt that warrants
-   * a possible intervention.
-   */
-
-  const {
-    data: doubtResult,
-    error: doubtError
-  } =
-    await supabaseClient
-      .rpc(
-        "detect_study_doubt_trigger",
-        {
-          p_message_id:
-            message.id,
-
-          p_sender_id:
-            message.sender_id,
-
-          p_message:
-            message.message
-        }
-      );
-
-
-  if (doubtError) {
-
-    console.error(
-      "[AI Mentor] Doubt detector error:",
-      doubtError
-    );
-
-    return;
-
-  }
-
-
-  console.log(
-    "[AI Mentor] Doubt detector:",
-    doubtResult
-  );
-
-
-  if (
-    isInterventionDetected(
-      doubtResult
-    )
-  ) {
-
-    await ensureAIPollExists(
-      message,
-      doubtResult
-    );
-
-  }
-
 }
-
-
 /* =========================================================
-   DETECTOR RESULT HELPER
+   MENTOR REQUEST COUNT
+   STEP 4C.4F
    ========================================================= */
 
-function isInterventionDetected(
-  result
-) {
+async function updateMentorRequestCount() {
 
-  if (!result) {
-
-    return false;
-
-  }
-
-
-  if (
-    typeof result ===
-    "boolean"
-  ) {
-
-    return result;
-
-  }
-
-
-  if (
-    typeof result ===
-    "object"
-  ) {
-
-    return Boolean(
-      result.triggered ??
-      result.detected ??
-      result.conflict ??
-      result.should_intervene ??
-      result.needs_intervention ??
-      result.is_conflict
+  const countEl =
+    document.getElementById(
+      "mentorRequestCount"
     );
 
-  }
-
-
-  return false;
-
-}
-
-
-/* =========================================================
-   ENSURE AI POLL
-   ========================================================= */
-
-async function ensureAIPollExists(
-  message,
-  detectorResult
-) {
-
-  if (
-    !message ||
-    !activeClassroomId
-  ) {
-
+  if (!countEl || !activeClassroomId) {
     return;
-
   }
 
+  try {
 
-  console.log(
-    "[AI Poll] Intervention detected. Creating/checking poll..."
-  );
-
-
-  /*
-   * Poll creation is intentionally delegated
-   * to the database.
-   *
-   * This prevents multiple clients from
-   * creating duplicate polls for the same
-   * intervention.
-   */
-
-  const {
-    data,
-    error
-  } =
-    await supabaseClient
-      .rpc(
-        "create_study_ai_poll_for_message",
-        {
-          p_message_id:
-            message.id,
-
-          p_classroom_id:
-            message.classroom_id
-        }
+    const {
+      count,
+      error
+    } = await supabaseClient
+      .from("study_mentor_requests")
+      .select("id", {
+        count: "exact",
+        head: true
+      })
+      .eq(
+        "classroom_id",
+        activeClassroomId
+      )
+      .gte(
+        "created_at",
+        new Date(
+          Date.now() - 2 * 60 * 1000
+        ).toISOString()
       );
 
+    if (error) {
+      throw error;
+    }
 
-  if (error) {
+    if (count && count > 0) {
+
+      countEl.textContent =
+        count;
+
+      countEl.style.display =
+        "inline-flex";
+
+    } else {
+
+      countEl.textContent = "";
+
+      countEl.style.display =
+        "none";
+    }
+
+  } catch (error) {
 
     console.error(
-      "[AI Poll] Failed to create poll:",
+      "[Study Squad] Mentor count error:",
       error
     );
 
-    return;
-
   }
 
+}
+setInterval(
+  updateMentorRequestCount,
+  15000
+);
+/* =========================================================
+   MENTOR DASHBOARD
+   ========================================================= */
 
-  console.log(
-    "[AI Poll] Poll creation result:",
-    data
-  );
+let mentorDashboardTimer = null;
 
 
-  await loadAIPolls();
+/* ---------------------------------------------------------
+   Helpers
+   --------------------------------------------------------- */
+
+function mentorTypeLabel(type) {
+
+    switch (type) {
+
+        case "explicit_mentor":
+            return "🙋 MENTOR REQUEST";
+
+        case "unresolved_doubt":
+            return "🤔 UNRESOLVED DOUBT";
+
+        case "conflicting_answers":
+            return "⚠️ CONFLICTING ANSWERS";
+
+        case "multiple_requests":
+            return "🆘 MULTIPLE REQUESTS";
+
+        default:
+            return "📌 STUDY REQUEST";
+    }
 
 }
 
 
-/* =========================================================
-   END PART 1
-   ========================================================= */
+function mentorPriorityClass(priority) {
 
-/* =========================================================
-   NOW-or-NEVER — STUDY SQUAD
-   STUDY-SQUAD.JS
-   PART 2 / 5
-   ========================================================= */
+    if (Number(priority) >= 80) {
+        return "high";
+    }
 
-/* =========================================================
-   RENDER AI POLL
-   ========================================================= */
+    if (Number(priority) >= 50) {
+        return "medium";
+    }
 
-function renderAIMentorPoll(poll) {
+    return "normal";
+}
 
-    const total =
-        Number(
-            poll.total_eligible ??
-            poll.total_students ??
-            0
+
+function mentorPriorityLabel(priority) {
+
+    if (Number(priority) >= 80) {
+        return "HIGH";
+    }
+
+    if (Number(priority) >= 50) {
+        return "MEDIUM";
+    }
+
+    return "NORMAL";
+}
+
+
+function mentorTimeAgo(dateString) {
+
+    if (!dateString) {
+        return "";
+    }
+
+    const date = new Date(dateString);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    const seconds =
+        Math.floor(
+            (Date.now() - date.getTime()) / 1000
         );
 
-    const yes =
-        Number(
-            poll.yes_votes || 0
+    if (seconds < 60) {
+        return "just now";
+    }
+
+    const minutes =
+        Math.floor(seconds / 60);
+
+    if (minutes < 60) {
+        return `${minutes} min ago`;
+    }
+
+    const hours =
+        Math.floor(minutes / 60);
+
+    if (hours < 24) {
+        return `${hours} hr ago`;
+    }
+
+    const days =
+        Math.floor(hours / 24);
+
+    return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
+
+/* ---------------------------------------------------------
+   Check whether current user owns classroom
+   --------------------------------------------------------- */
+
+async function isCurrentUserMentor(classroomId) {
+
+    if (!currentUser || !classroomId) {
+        return false;
+    }
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("study_classrooms")
+
+        .select("created_by")
+
+        .eq("id", classroomId)
+
+        .maybeSingle();
+
+
+    if (error) {
+
+        console.error(
+            "[Study Squad] Mentor check failed:",
+            error
         );
 
-    const no =
-        Number(
-            poll.no_votes || 0
-        );
-
-    const myVote =
-        poll.user_vote ??
-        poll.my_vote ??
-        null;
-
-    const approvalPercent =
-        total > 0
-            ? Math.round(
-                (yes / total) * 100
-            )
-            : 0;
-
-    let voteStatus = "";
-
-    if (myVote === "yes" || myVote === true) {
-
-        voteStatus =
-            "You voted YES";
-
-    } else if (
-        myVote === "no" ||
-        myVote === false
-    ) {
-
-        voteStatus =
-            "You voted NO";
+        return false;
     }
 
 
-    const typeLabel = {
-
-        unresolved_doubt:
-            "🤔 Unresolved Doubt",
-
-        conflicting_answers:
-            "⚠️ Conflicting Answers",
-
-        multiple_requests:
-            "👥 Multiple Students",
-
-        explicit_mentor:
-            "🧑‍🏫 Mentor Requested"
-
-    }[
-        poll.trigger_type
-    ] || "📚 Study Help";
+    return Boolean(
+        data &&
+        data.created_by === currentUser.id
+    );
+}
 
 
-    const pollId =
-        poll.id;
+/* ---------------------------------------------------------
+   Show / hide mentor dashboard
+   --------------------------------------------------------- */
 
+async function setupMentorDashboard() {
+
+    const dashboard =
+        $("mentorDashboard");
+
+    if (!dashboard) {
+        return;
+    }
+
+    const isMentor =
+        await isCurrentUserMentor(
+            activeClassroomId
+        );
+
+
+    if (!isMentor) {
+
+        dashboard.classList.add(
+            "hidden"
+        );
+
+        stopMentorDashboardPolling();
+
+        return;
+    }
+
+
+    dashboard.classList.remove(
+        "hidden"
+    );
+
+
+    await loadMentorInterventions();
+
+    startMentorDashboardPolling();
+}
+
+
+/* ---------------------------------------------------------
+   Load interventions
+   --------------------------------------------------------- */
+
+async function loadMentorInterventions() {
+
+    if (!activeClassroomId) {
+        return;
+    }
+
+    const dashboard =
+        $("mentorDashboard");
+
+    if (
+        !dashboard ||
+        dashboard.classList.contains("hidden")
+    ) {
+        return;
+    }
+
+
+    const list =
+        $("mentorInterventionsList");
+
+    if (!list) {
+        return;
+    }
+
+
+    const {
+        data,
+        error
+    } = await supabaseClient.rpc(
+        "get_study_mentor_interventions",
+        {
+            p_classroom_id:
+                activeClassroomId
+        }
+    );
+
+
+    if (error) {
+
+        console.error(
+            "[Study Squad] Failed to load mentor interventions:",
+            error
+        );
+
+        list.innerHTML = `
+            <div class="mentor-empty-state">
+                <div class="mentor-empty-icon">
+                    ⚠️
+                </div>
+
+                <strong>
+                    Couldn't load mentor requests
+                </strong>
+
+                <p>
+                    ${escapeHtml(error.message)}
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+
+    const interventions =
+        Array.isArray(data)
+            ? data
+            : [];
+
+
+    const pendingCount =
+        interventions.length;
+
+
+    if ($("mentorPendingCount")) {
+
+        $("mentorPendingCount")
+            .textContent =
+            pendingCount;
+    }
+
+
+    if (
+        $("mentorRequestCount")
+    ) {
+
+        $("mentorRequestCount")
+            .textContent =
+            pendingCount;
+    }
+
+
+    if (interventions.length === 0) {
+
+        list.innerHTML = `
+            <div class="mentor-empty-state">
+
+                <div class="mentor-empty-icon">
+                    🧑‍🏫
+                </div>
+
+                <strong>
+                    No pending requests
+                </strong>
+
+                <p>
+                    Everything is under control.
+                </p>
+
+            </div>
+        `;
+
+        return;
+    }
+
+
+    list.innerHTML =
+        interventions
+            .map(renderMentorIntervention)
+            .join("");
+
+
+    list
+        .querySelectorAll(
+            ".mentor-resolve-btn"
+        )
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    resolveMentorIntervention(
+                        button.dataset.interventionId
+                    );
+
+                }
+            );
+
+        });
+
+         list
+             .querySelectorAll(
+                 ".mentor-send-btn"
+             )
+             .forEach(button => {
+         
+                 button.addEventListener(
+                     "click",
+                     () => {
+         
+                         sendMentorReply(
+                             button.dataset.interventionId
+                         );
+         
+                     }
+                 );
+         
+             });
+}
+
+
+/* ---------------------------------------------------------
+   Render intervention
+   --------------------------------------------------------- */
+
+function renderMentorIntervention(intervention) {
+
+    const priorityClass =
+        mentorPriorityClass(
+            intervention.priority
+        );
+
+    const priorityLabel =
+        mentorPriorityLabel(
+            intervention.priority
+        );
+
+    const typeLabel =
+        mentorTypeLabel(
+            intervention.trigger_type
+        );
+
+    const message =
+        intervention.message ||
+        "No message is attached to this request.";
+
+    const requestCount =
+        Number(
+            intervention.mentor_request_count || 1
+        );
 
     return `
 
         <article
-            class="study-help-card ai-mentor-poll-card"
-            data-ai-poll-id="${escapeHtml(
-                pollId
+            class="mentor-intervention-card"
+            data-intervention-card="${escapeHtml(
+                intervention.id
             )}"
         >
 
-            <div class="study-help-card-top">
+            <div
+                class="mentor-intervention-top"
+            >
 
-                <div class="study-help-type">
+                <div
+                    class="mentor-intervention-type"
+                >
                     ${typeLabel}
                 </div>
 
-                <span class="study-help-priority">
-                    ${Number(
-                        poll.priority || 0
+                <span
+                    class="mentor-priority ${priorityClass}"
+                >
+                    ${priorityLabel}
+                    · ${Number(intervention.priority || 0)}
+                </span>
+
+            </div>
+
+
+            <div class="mentor-student-label">
+                Student message
+            </div>
+
+
+            <div
+                class="mentor-intervention-message"
+            >
+                ${escapeHtml(message)}
+            </div>
+
+
+            <div
+                class="mentor-intervention-meta"
+            >
+
+                <span>
+                    👥 ${requestCount}
+                    request${requestCount === 1 ? "" : "s"}
+                </span>
+
+                <span>
+                    🕒 ${mentorTimeAgo(
+                        intervention.created_at
                     )}
                 </span>
 
-            </div>
-
-
-            <div class="study-help-message">
-
-                ${escapeHtml(
-                    poll.message ||
-                    "The classroom may need AI help."
-                )}
-
-            </div>
-
-
-            <div class="study-help-meta">
-
-                <span>
-                    🗳️
-                    ${yes} yes /
-                    ${no} no
-                </span>
-
-                <span>
-                    ${approvalPercent}% YES
-                </span>
+                ${
+                    intervention.trigger_message_id
+                        ? `
+                            <span>
+                                💬 Message #${escapeHtml(
+                                    String(
+                                        intervention.trigger_message_id
+                                    )
+                                )}
+                            </span>
+                          `
+                        : ""
+                }
 
             </div>
 
 
-            <div class="ai-poll-question">
+            <!-- Mentor reply -->
 
-                <strong>
-                    🤖 Should the AI Mentor step in?
-                </strong>
+            <div
+                class="mentor-reply-area"
+            >
 
-                <p>
-                    AI involvement requires
-                    <strong>more than 50% YES</strong>
-                    votes.
-                </p>
+                <textarea
+                    class="mentor-reply-input"
+                    data-intervention-id="${escapeHtml(
+                        intervention.id
+                    )}"
+                    placeholder="Write your reply to the student..."
+                    rows="3"
+                ></textarea>
 
-            </div>
-
-
-            <div class="ai-poll-progress">
 
                 <div
-                    class="ai-poll-progress-bar"
-                    style="
-                        width:${Math.min(
-                            approvalPercent,
-                            100
-                        )}%;
-                    "
-                ></div>
-
-            </div>
-
-
-            <div class="ai-poll-votes">
-
-                ${yes} / ${total}
-                eligible students currently support
-                AI help.
-
-            </div>
-
-
-            <div class="ai-poll-buttons">
-
-                <button
-                    type="button"
-                    class="ai-poll-yes"
-                    data-poll-id="${escapeHtml(
-                        pollId
-                    )}"
-                    ${myVote !== null
-                        ? "disabled"
-                        : ""}
+                    class="mentor-intervention-actions"
                 >
-                    🤖 Yes, let AI help
-                </button>
 
+                    <button
+                        type="button"
+                        class="mentor-send-btn"
+                        data-intervention-id="${escapeHtml(
+                            intervention.id
+                        )}"
+                    >
+                        🧑‍🏫 Send Reply
+                    </button>
 
-                <button
-                    type="button"
-                    class="ai-poll-no"
-                    data-poll-id="${escapeHtml(
-                        pollId
-                    )}"
-                    ${myVote !== null
-                        ? "disabled"
-                        : ""}
-                >
-                    ✋ No, not yet
-                </button>
+                    <button
+                        type="button"
+                        class="mentor-resolve-btn"
+                        data-intervention-id="${escapeHtml(
+                            intervention.id
+                        )}"
+                    >
+                        ✓ Resolve
+                    </button>
+
+                </div>
 
             </div>
-
-
-            ${
-                voteStatus
-                    ? `
-                        <div class="ai-poll-vote-status">
-                            ${escapeHtml(
-                                voteStatus
-                            )}
-                        </div>
-                    `
-                    : ""
-            }
 
         </article>
 
@@ -3774,2051 +3014,991 @@ function renderAIMentorPoll(poll) {
 }
 
 
-/* =========================================================
-   SETUP POLL BUTTONS
-   ========================================================= */
+async function sendMentorReply(interventionId) {
 
-function setupAIMentorPollButtons() {
+    if (!interventionId) {
+        return;
+    }
 
-    const yesButtons =
-        document.querySelectorAll(
-            ".ai-poll-yes"
-        );
 
-    const noButtons =
-        document.querySelectorAll(
-            ".ai-poll-no"
+    const textarea =
+        document.querySelector(
+            `.mentor-reply-input[data-intervention-id="${CSS.escape(interventionId)}"]`
         );
 
 
-    yesButtons.forEach(button => {
+    if (!textarea) {
+        return;
+    }
 
-        if (
-            button.dataset.pollReady ===
-            "true"
-        ) {
-            return;
+
+    const message =
+        textarea.value.trim();
+
+
+    if (!message) {
+
+        showToast(
+            "Please write a reply first."
+        );
+
+        textarea.focus();
+
+        return;
+    }
+
+
+    const card =
+        document.querySelector(
+            `.mentor-intervention-card[data-intervention-card="${CSS.escape(interventionId)}"]`
+        );
+
+
+    const sendButton =
+        card?.querySelector(
+            ".mentor-send-btn"
+        );
+
+
+    if (sendButton) {
+
+        sendButton.disabled = true;
+
+        sendButton.textContent =
+            "Sending...";
+
+    }
+
+
+    const {
+        data,
+        error
+    } = await supabaseClient.rpc(
+        "send_study_mentor_reply",
+        {
+            p_intervention_id:
+                interventionId,
+
+            p_message:
+                message
+        }
+    );
+
+
+    if (error) {
+
+        console.error(
+            "[Study Squad] Mentor reply failed:",
+            error
+        );
+
+
+        showToast(
+            error.message ||
+            "Couldn't send mentor reply."
+        );
+
+
+        if (sendButton) {
+
+            sendButton.disabled =
+                false;
+
+            sendButton.textContent =
+                "🧑‍🏫 Send Reply";
         }
 
-        button.dataset.pollReady =
-            "true";
+        return;
+    }
 
 
-        button.addEventListener(
-            "click",
-            async event => {
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                const pollId =
-                    button.dataset.pollId;
-
-                if (!pollId) {
-                    return;
-                }
-
-                await submitAIPollVote(
-                    pollId,
-                    "yes"
-                );
-
-            }
-        );
-
-    });
+    console.log(
+        "[Study Squad] Mentor reply sent:",
+        data
+    );
 
 
-    noButtons.forEach(button => {
-
-        if (
-            button.dataset.pollReady ===
-            "true"
-        ) {
-            return;
-        }
-
-        button.dataset.pollReady =
-            "true";
+    showToast(
+        "Mentor reply sent ✓"
+    );
 
 
-        button.addEventListener(
-            "click",
-            async event => {
+    /*
+     * Reload the discussion so the mentor
+     * message appears immediately.
+     */
 
-                event.preventDefault();
-                event.stopPropagation();
+    await loadClassroomMessages();
 
-                const pollId =
-                    button.dataset.pollId;
 
-                if (!pollId) {
-                    return;
-                }
+    /*
+     * Reload mentor queue.
+     * The intervention was automatically
+     * marked resolved by the RPC.
+     */
 
-                await submitAIPollVote(
-                    pollId,
-                    "no"
-                );
-
-            }
-        );
-
-    });
+    await loadMentorInterventions();
 
 }
 
 
-/* =========================================================
-   SUBMIT AI POLL VOTE
-   ========================================================= */
+/* ---------------------------------------------------------
+   Resolve intervention
+   --------------------------------------------------------- */
 
-async function submitAIPollVote(
-    pollId,
-    vote
+async function resolveMentorIntervention(
+    interventionId
 ) {
 
-    if (!pollId) {
+    if (!interventionId) {
         return;
     }
 
 
-    if (
-        vote !== "yes" &&
-        vote !== "no"
-    ) {
-        return;
+    const button =
+        document.querySelector(
+            `.mentor-resolve-btn[data-intervention-id="${CSS.escape(interventionId)}"]`
+        );
+
+
+    if (button) {
+
+        button.disabled = true;
+
+        button.textContent =
+            "Resolving...";
     }
 
 
-    try {
-
-        console.log(
-            "[AI Poll] Voting:",
-            pollId,
-            vote
-        );
-
-
-        const {
-            data,
-            error
-        } =
-            await supabaseClient.rpc(
-                "vote_study_ai_poll",
-                {
-                    p_poll_id:
-                        pollId,
-
-                    p_vote:
-                        vote
-                }
-            );
-
-
-        if (error) {
-
-            console.error(
-                "[AI Poll] Vote failed:",
-                error
-            );
-
-            showToast(
-                "⚠️ " +
-                (
-                    error.message ||
-                    "Unable to submit vote."
-                )
-            );
-
-            return;
+    const {
+        data,
+        error
+    } = await supabaseClient.rpc(
+        "resolve_study_mentor_intervention",
+        {
+            p_intervention_id:
+                interventionId
         }
+    );
 
 
-        console.log(
-            "[AI Poll] Vote result:",
-            data
-        );
-
-
-        if (
-            data &&
-            data.status === "approved"
-        ) {
-
-            showToast(
-                "🤖 More than 50% voted YES. AI Mentor will step in."
-            );
-
-        } else if (
-            data &&
-            data.status === "rejected"
-        ) {
-
-            showToast(
-                "✋ The classroom voted not to involve the AI."
-            );
-
-        } else {
-
-            showToast(
-                vote === "yes"
-                    ? "🤖 Your YES vote was recorded."
-                    : "✋ Your NO vote was recorded."
-            );
-
-        }
-
-
-        await loadAIMentorPolls();
-
-        await loadClassroomMessages();
-
-    } catch (error) {
+    if (error) {
 
         console.error(
-            "[AI Poll] Unexpected voting error:",
+            "[Study Squad] Failed to resolve intervention:",
             error
         );
 
         showToast(
-            "⚠️ Failed to submit your vote."
+            "Couldn't resolve this request."
         );
 
-    }
+        if (button) {
 
-}
+            button.disabled =
+                false;
 
-
-/* =========================================================
-   AI POLL SYSTEM TIMER
-   ========================================================= */
-
-/*
- * IMPORTANT:
- * aiMentorPollTimer is already declared by the
- * original AI Mentor system above.
- *
- * aiMentorProcessing is also already declared above.
- *
- * Do NOT redeclare either variable here.
- */
-
-
-/* =========================================================
-   START AUTOMATIC AI POLL SYSTEM
-   ========================================================= */
-
-function startAIMentorPollSystem() {
-
-    if (!activeClassroomId) {
-
-        console.warn(
-            "[AI Mentor] Cannot start poll system — no classroom."
-        );
+            button.textContent =
+                "✓ Mark Resolved";
+        }
 
         return;
     }
 
 
-    stopAIMentorPollSystem();
+    if (data === true) {
 
-
-    console.log(
-        "[AI Mentor] Automatic poll system started:",
-        activeClassroomId
-    );
-
-
-    loadAIMentorPolls();
-
-
-    /*
-     * Check every 5 seconds.
-     *
-     * IMPORTANT:
-     *
-     * This does NOT automatically make the AI answer.
-     *
-     * It only:
-     *
-     * 1. loads active polls
-     * 2. checks whether an existing poll
-     *    has crossed the >50% YES threshold
-     *
-     * @mentor requests are handled separately
-     * and bypass the poll system.
-     */
-
-    aiMentorPollTimer =
-        setInterval(
-            async () => {
-
-                if (
-                    !activeClassroomId
-                ) {
-                    return;
-                }
-
-
-                await loadAIMentorPolls();
-
-
-                await checkAutomaticAIMentorInterventions();
-
-            },
-            5000
+        showToast(
+            "Mentor request resolved ✓"
         );
+
+        await loadMentorInterventions();
+
+    }
 
 }
 
 
-/* =========================================================
-   STOP AI POLL SYSTEM
-   ========================================================= */
+/* ---------------------------------------------------------
+   Polling
+   --------------------------------------------------------- */
 
-function stopAIMentorPollSystem() {
+function startMentorDashboardPolling() {
+
+    stopMentorDashboardPolling();
+
+
+    mentorDashboardTimer =
+        setInterval(
+            () => {
+
+                loadMentorInterventions();
+
+            },
+            10000
+        );
+}
+
+
+function stopMentorDashboardPolling() {
 
     if (
-        aiMentorPollTimer
+        mentorDashboardTimer
     ) {
 
         clearInterval(
-            aiMentorPollTimer
+            mentorDashboardTimer
         );
 
-        aiMentorPollTimer =
+        mentorDashboardTimer =
             null;
     }
+}
+
+/* =========================================================
+   STUDY HELP PANEL
+   ========================================================= */
+
+function setupStudyHelpPanel() {
+
+    const button =
+        document.getElementById("studyHelpBtn");
+
+    const panel =
+        document.getElementById("studyHelpPanel");
+
+    const closeButton =
+        document.getElementById("closeStudyHelp");
+
+
+    if (!button || !panel) {
+        return;
+    }
+
+
+    function openStudyHelp() {
+
+        panel.classList.remove("hidden");
+
+        button.setAttribute(
+            "aria-expanded",
+            "true"
+        );
+
+    }
+
+
+    function closeStudyHelp() {
+
+        panel.classList.add("hidden");
+
+        button.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+    }
+
+
+    button.addEventListener(
+        "click",
+        function(event) {
+
+            event.stopPropagation();
+
+            if (
+                panel.classList.contains("hidden")
+            ) {
+
+                openStudyHelp();
+
+            } else {
+
+                closeStudyHelp();
+
+            }
+
+        }
+    );
+
+
+    if (closeButton) {
+
+        closeButton.addEventListener(
+            "click",
+            function(event) {
+
+                event.stopPropagation();
+
+                closeStudyHelp();
+
+            }
+        );
+
+    }
+
+
+    document.addEventListener(
+        "click",
+        function(event) {
+
+            if (
+                !panel.contains(event.target) &&
+                !button.contains(event.target)
+            ) {
+
+                closeStudyHelp();
+
+            }
+
+        }
+    );
 
 }
 
+loadStudyHelpRequests();
 
-/* =========================================================
-   LOAD ACTIVE AI POLLS
-   ========================================================= */
+setInterval(
+    loadStudyHelpRequests,
+    10000
+);
 
-async function loadAIMentorPolls() {
+
+async function loadStudyHelpRequests() {
 
     if (!activeClassroomId) {
         return;
     }
 
-
     const list =
-        document.getElementById(
-            "studyHelpList"
-        );
-
+        document.getElementById("studyHelpList");
 
     const count =
-        document.getElementById(
-            "studyHelpCount"
-        );
-
+        document.getElementById("studyHelpCount");
 
     if (!list) {
         return;
     }
 
-
     const {
         data,
         error
-    } =
-        await supabaseClient.rpc(
-            "get_study_ai_polls",
-            {
-                p_classroom_id:
-                    activeClassroomId
-            }
-        );
-
+    } = await supabaseClient.rpc(
+        "get_study_help_requests",
+        {
+            p_classroom_id: activeClassroomId
+        }
+    );
 
     if (error) {
 
         console.error(
-            "[AI Mentor] Failed to load polls:",
+            "[Study Help] Failed to load requests:",
             error
         );
 
-
         list.innerHTML = `
-
             <div class="study-help-empty">
-
                 <div>⚠️</div>
-
-                <strong>
-                    Couldn't load AI requests
-                </strong>
-
+                <strong>Couldn't load Study Help</strong>
                 <p>
-                    ${escapeHtml(
-                        error.message ||
-                        "Unknown error"
-                    )}
+                    Please try again.
                 </p>
-
             </div>
-
         `;
 
         return;
     }
 
+    const requests = data || [];
 
-    const polls =
-        Array.isArray(data)
-            ? data
-            : [];
-
+    /*
+     * Update count
+     */
 
     if (count) {
 
         count.textContent =
-            polls.length === 1
-                ? "1 AI request"
-                : `${polls.length} AI requests`;
+            `${requests.length} active request${
+                requests.length === 1 ? "" : "s"
+            }`;
 
     }
 
 
-    if (!polls.length) {
+    /*
+     * Empty state
+     */
+
+    if (requests.length === 0) {
 
         list.innerHTML = `
-
             <div class="study-help-empty">
-
                 <div>✨</div>
-
-                <strong>
-                    No AI intervention needed
-                </strong>
-
+                <strong>No active requests</strong>
                 <p>
-                    The AI will ask the classroom
-                    before stepping in.
+                    Doubts and answer conflicts will appear here.
                 </p>
-
             </div>
-
         `;
 
         return;
     }
 
 
+    /*
+     * Render requests
+     */
+
     list.innerHTML =
-        polls
-            .map(
-                renderAIMentorPoll
-            )
+        requests
+            .map(renderStudyHelpRequest)
             .join("");
 
 
-    setupAIMentorPollButtons();
-
-}
-
-
-/* =========================================================
-   NOW-or-NEVER — STUDY SQUAD
-   STUDY-SQUAD.JS
-   PART 3 / 5
-   ========================================================= */
-
-
-/* =========================================================
-   CHECK AUTOMATIC AI MENTOR INTERVENTIONS
-   ========================================================= */
-
-async function checkAutomaticAIMentorInterventions() {
-
-    if (!activeClassroomId) {
-        return;
-    }
-
-
     /*
-     * Do NOT process the same intervention twice.
+     * Only the classroom host gets
+     * mentor controls.
      */
 
-    const {
-        data,
-        error
-    } =
-        await supabaseClient
-            .from("study_ai_polls")
-            .select(`
-                id,
-                intervention_id,
-                classroom_id,
-                yes_votes,
-                no_votes,
-                total_eligible,
-                status,
-                expires_at
-            `)
-            .eq(
-                "classroom_id",
-                activeClassroomId
-            )
-            .eq(
-                "status",
-                "open"
-            );
+    setupStudyHelpActions(requests);
+}
 
+function renderStudyHelpRequest(request) {
 
-    if (error) {
+    const typeMap = {
 
-        console.error(
-            "[AI Mentor] Failed to check polls:",
-            error
-        );
+        unresolved_doubt: {
+            icon: "🤔",
+            label: "Unresolved Doubt"
+        },
 
-        return;
-    }
+        explicit_mentor: {
+            icon: "🧑‍🏫",
+            label: "Mentor Requested"
+        },
 
+        conflicting_answers: {
+            icon: "⚠️",
+            label: "Conflicting Answers"
+        },
 
-    const polls =
-        Array.isArray(data)
-            ? data
-            : [];
-
-
-    for (
-        const poll of polls
-    ) {
-
-        /*
-         * Ignore malformed polls.
-         */
-
-        if (
-            !poll.id ||
-            !poll.intervention_id
-        ) {
-            continue;
+        multiple_requests: {
+            icon: "👥",
+            label: "Multiple Requests"
         }
 
-
-        /*
-         * Never process a poll twice
-         * in this browser session.
-         */
-
-        if (
-            aiMentorProcessedInterventions.has(
-                poll.intervention_id
-            )
-        ) {
-            continue;
-        }
+    };
 
 
-        const yes =
-            Number(
-                poll.yes_votes || 0
-            );
+    const type =
+        typeMap[request.trigger_type] ||
+        {
+            icon: "🧭",
+            label: "Study Help"
+        };
 
 
-        const no =
-            Number(
-                poll.no_votes || 0
-            );
+    const priority =
+        Number(request.priority || 0);
 
 
-        const eligible =
-            Number(
-                poll.total_eligible || 0
-            );
+    const sender =
+        request.sender_name ||
+        "Student";
 
 
-        /*
-         * We require STRICTLY MORE THAN
-         * 50% of eligible students.
-         *
-         * Examples:
-         *
-         * 5 students:
-         * 3 YES = approved
-         * 2 YES = not approved
-         *
-         * 4 students:
-         * 3 YES = approved
-         * 2 YES = 50%, NOT approved
-         */
-
-        if (
-            eligible <= 0
-        ) {
-            continue;
-        }
+    const message =
+        request.message ||
+        "No message available.";
 
 
-        const hasMajority =
-            yes * 2 > eligible;
-
-
-        if (!hasMajority) {
-            continue;
-        }
-
-
-        /*
-         * The poll has passed.
-         */
-
-        aiMentorProcessedInterventions.add(
-            poll.intervention_id
+    const requestCount =
+        Number(
+            request.mentor_request_count || 1
         );
 
 
-        console.log(
-            "[AI Mentor] Poll passed:",
-            {
-                poll_id: poll.id,
-                intervention_id:
-                    poll.intervention_id,
-                yes_votes: yes,
-                no_votes: no,
-                total_eligible:
-                    eligible
-            }
-        );
+    const status =
+        request.status || "pending";
 
 
-        try {
+    let controls = "";
 
-            await activateAIMentorIntervention(
-                poll
-            );
 
-        } catch (activationError) {
+    /* =====================================================
+       HOST CONTROLS
+       ===================================================== */
 
-            console.error(
-                "[AI Mentor] Failed to activate intervention:",
-                activationError
-            );
+    if (request.is_host) {
 
-            /*
-             * Allow retry if activation
-             * itself failed.
-             */
 
-            aiMentorProcessedInterventions.delete(
-                poll.intervention_id
-            );
+        /* -------------------------------------------------
+           PENDING
 
-        }
+           Mentor has not taken the request yet.
+           ------------------------------------------------- */
 
-    }
 
-}
 
+        /* -------------------------------------------------
+           EVALUATING
 
-/* =========================================================
-   ACTIVATE AI MENTOR INTERVENTION
-   ========================================================= */
+           Mentor has taken control.
+           Chat is paused.
+           ------------------------------------------------- */
 
-async function activateAIMentorIntervention(
-    poll
-) {
+        else if (status === "evaluating") {
 
-    if (
-        !poll ||
-        !poll.intervention_id
-    ) {
-        return;
-    }
+            controls = `
 
+                <div class="study-help-host-controls study-help-active">
 
-    /*
-     * IMPORTANT:
-     *
-     * We do not generate the AI response here
-     * directly.
-     *
-     * First we tell the database that the
-     * classroom approved the intervention.
-     *
-     * The backend / existing intervention
-     * system can then process the request.
-     */
+                    <div class="study-help-mentor-lock">
 
+                        🔒
+                        <strong> You are answering this request</strong>
 
-    const {
-        data,
-        error
-    } =
-        await supabaseClient.rpc(
-            "resolve_study_mentor_intervention",
-            {
-                p_intervention_id:
-                    poll.intervention_id
-            }
-        );
+                        <p>
+                            The classroom chat is temporarily paused.
+                        </p>
 
+                    </div>
 
-    if (error) {
 
-        /*
-         * Some existing versions of the database
-         * may use a different RPC signature.
-         *
-         * Log the exact problem instead of
-         * silently breaking the Study Squad.
-         */
+                    <textarea
+                        class="study-help-reply"
+                        data-intervention-id="${escapeHtml(
+                            request.id
+                        )}"
+                        placeholder="Write your mentor explanation..."
+                        rows="4"
+                    ></textarea>
 
-        console.error(
-            "[AI Mentor] Intervention activation RPC failed:",
-            error
-        );
 
-        throw error;
-    }
+                    <div class="study-help-actions">
 
+                        <button
+                            type="button"
+                            class="study-help-reply-send"
+                            data-intervention-id="${escapeHtml(
+                                request.id
+                            )}"
+                        >
+                            🧑‍🏫 Send Explanation
+                        </button>
 
-    console.log(
-        "[AI Mentor] Intervention activated:",
-        data
-    );
 
+                        <button
+                            type="button"
+                            class="study-help-finish"
+                            data-intervention-id="${escapeHtml(
+                                request.id
+                            )}"
+                        >
+                            🔓 Finish & Resume Chat
+                        </button>
 
-    /*
-     * Refresh the classroom UI immediately.
-     */
+                    </div>
 
-    await loadAIMentorPolls();
+                </div>
 
-
-    if (
-        typeof loadClassroomMessages ===
-        "function"
-    ) {
-
-        await loadClassroomMessages();
-
-    }
-
-
-    showToast(
-        "🤖 The classroom approved AI involvement. The AI Mentor is stepping in."
-    );
-
-}
-
-
-/* =========================================================
-   CREATE AUTOMATIC AI POLL
-   ========================================================= */
-
-/*
- * This function is intentionally separate from
- * @mentor handling.
- *
- * Automatic triggers:
- *
- *     conflicting_answers
- *     unresolved_doubt
- *     multiple_requests
- *
- * must create a poll first.
- *
- * Explicit:
- *
- *     @mentor
- *
- * bypasses this function completely.
- */
-
-
-async function createAutomaticAIMentorPoll(
-    interventionId
-) {
-
-    if (
-        !activeClassroomId ||
-        !interventionId
-    ) {
-
-        console.warn(
-            "[AI Mentor] Cannot create poll — missing classroom/intervention."
-        );
-
-        return null;
-    }
-
-
-    /*
-     * Prevent duplicate polls for the same
-     * intervention.
-     */
-
-    const {
-        data: existingPoll,
-        error: existingError
-    } =
-        await supabaseClient
-            .from("study_ai_polls")
-            .select("id,status")
-            .eq(
-                "intervention_id",
-                interventionId
-            )
-            .in(
-                "status",
-                [
-                    "open",
-                    "active"
-                ]
-            )
-            .maybeSingle();
-
-
-    if (existingError) {
-
-        console.error(
-            "[AI Mentor] Existing poll check failed:",
-            existingError
-        );
-
-        return null;
-    }
-
-
-    if (existingPoll) {
-
-        console.log(
-            "[AI Mentor] Poll already exists:",
-            existingPoll.id
-        );
-
-        return existingPoll;
-    }
-
-
-    /*
-     * Get number of eligible classroom members.
-     */
-
-    const {
-        count,
-        error: memberError
-    } =
-        await supabaseClient
-            .from(
-                "study_classroom_members"
-            )
-            .select(
-                "user_id",
-                {
-                    count: "exact",
-                    head: true
-                }
-            )
-            .eq(
-                "classroom_id",
-                activeClassroomId
-            );
-
-
-    if (memberError) {
-
-        console.error(
-            "[AI Mentor] Could not count classroom members:",
-            memberError
-        );
-
-        return null;
-    }
-
-
-    const totalEligible =
-        Number(count || 0);
-
-
-    if (
-        totalEligible <= 0
-    ) {
-
-        console.warn(
-            "[AI Mentor] No eligible classroom members."
-        );
-
-        return null;
-    }
-
-
-    /*
-     * Create a one-minute poll.
-     *
-     * The database default may also provide
-     * expires_at, but explicitly supplying it
-     * keeps the browser and database behaviour
-     * predictable.
-     */
-
-    const expiresAt =
-        new Date(
-            Date.now() +
-            60 * 1000
-        ).toISOString();
-
-
-    const {
-        data,
-        error
-    } =
-        await supabaseClient
-            .from("study_ai_polls")
-            .insert({
-                intervention_id:
-                    interventionId,
-
-                classroom_id:
-                    activeClassroomId,
-
-                yes_votes:
-                    0,
-
-                no_votes:
-                    0,
-
-                total_eligible:
-                    totalEligible,
-
-                status:
-                    "open",
-
-                expires_at:
-                    expiresAt
-            })
-            .select()
-            .single();
-
-
-    if (error) {
-
-        console.error(
-            "[AI Mentor] Poll creation failed:",
-            error
-        );
-
-        return null;
-    }
-
-
-    console.log(
-        "[AI Mentor] Automatic AI poll created:",
-        data
-    );
-
-
-    /*
-     * Immediately display the poll.
-     */
-
-    await loadAIMentorPolls();
-
-
-    return data;
-}
-
-
-/* =========================================================
-   FIND / CREATE POLL FOR AN INTERVENTION
-   ========================================================= */
-
-async function ensureAIMentorPoll(
-    intervention
-) {
-
-    if (!intervention) {
-        return null;
-    }
-
-
-    const interventionId =
-        intervention.id ||
-        intervention.intervention_id;
-
-
-    if (!interventionId) {
-
-        console.warn(
-            "[AI Mentor] Intervention has no ID."
-        );
-
-        return null;
-    }
-
-
-    /*
-     * NEVER create a poll for explicit
-     * @mentor requests.
-     *
-     * Those requests bypass the poll.
-     */
-
-    const triggerType =
-        String(
-            intervention.trigger_type ||
-            intervention.type ||
-            ""
-        )
-            .toLowerCase();
-
-
-    if (
-        triggerType ===
-        "explicit_mentor"
-    ) {
-
-        console.log(
-            "[AI Mentor] Explicit @mentor request — poll bypassed."
-        );
-
-        return null;
-    }
-
-
-    return await createAutomaticAIMentorPoll(
-        interventionId
-    );
-}
-
-
-/* =========================================================
-   AUTOMATIC CONFLICT DETECTION
-   ========================================================= */
-
-/*
- * Called when a new student message is added.
- *
- * IMPORTANT:
- *
- * A normal student message does NOT directly
- * trigger the AI response.
- *
- * It can only create an intervention/poll
- * when the database detector identifies an
- * actual conflict.
- */
-
-async function detectAutomaticAIIntervention(
-    messageId,
-    messageText
-) {
-
-    if (
-        !activeClassroomId ||
-        !messageId ||
-        !messageText
-    ) {
-        return;
-    }
-
-
-    /*
-     * @mentor is intentionally excluded from
-     * automatic detection.
-     *
-     * It has its own direct path.
-     */
-
-    if (
-        /(^|\s)@mentor\b/i.test(
-            messageText
-        )
-    ) {
-
-        console.log(
-            "[AI Mentor] @mentor detected — automatic poll skipped."
-        );
-
-        return;
-    }
-
-
-    /*
-     * Ask the database's conflict detector.
-     */
-
-    const {
-        data,
-        error
-    } =
-        await supabaseClient.rpc(
-            "detect_study_conflicting_answers",
-            {
-                p_message_id:
-                    messageId,
-
-                p_classroom_id:
-                    activeClassroomId,
-
-                p_message:
-                    messageText
-            }
-        );
-
-
-    if (error) {
-
-        console.error(
-            "[AI Mentor] Conflict detector failed:",
-            error
-        );
-
-        return;
-    }
-
-
-    console.log(
-        "[AI Mentor] Conflict detector result:",
-        data
-    );
-
-
-    /*
-     * Nothing detected.
-     */
-
-    if (!data) {
-        return;
-    }
-
-
-    /*
-     * Some SQL functions return a single
-     * boolean, while others return JSON.
-     *
-     * Handle both safely.
-     */
-
-    if (
-        typeof data === "boolean"
-    ) {
-
-        if (!data) {
-            return;
-        }
-
-        /*
-         * If the detector only returns TRUE,
-         * we need an intervention record to
-         * exist before creating a poll.
-         *
-         * The database-side detector should
-         * normally create it.
-         */
-
-        return;
-
-    }
-
-
-    /*
-     * JSON result.
-     */
-
-    const intervention =
-        Array.isArray(data)
-            ? data[0]
-            : data;
-
-
-    if (!intervention) {
-        return;
-    }
-
-
-    if (
-        intervention.detected === false ||
-        intervention.triggered === false
-    ) {
-        return;
-    }
-
-
-    await ensureAIMentorPoll(
-        intervention
-    );
-
-}
-
-/* =========================================================
-   NOW-or-NEVER — STUDY SQUAD
-   STUDY-SQUAD.JS
-   PART 4 / 5
-   ========================================================= */
-
-
-/* =========================================================
-   HANDLE NEW STUDENT MESSAGE
-   ========================================================= */
-
-/*
- * This is the central message handler for the
- * automatic AI intervention system.
- *
- * NORMAL STUDENT MESSAGE
- *        ↓
- *   conflict/doubt detection
- *        ↓
- *   intervention
- *        ↓
- *      AI POLL
- *        ↓
- *   >50% YES
- *        ↓
- *     AI replies
- *
- *
- * @mentor MESSAGE
- *        ↓
- *   DIRECT AI RESPONSE
- *
- * @mentor NEVER enters the poll.
- */
-
-async function handleStudyMessageForAIMentor(
-    message
-) {
-
-    if (!message) {
-        return;
-    }
-
-
-    const messageId =
-        message.id;
-
-
-    const messageText =
-        String(
-            message.message ||
-            ""
-        ).trim();
-
-
-    if (
-        !messageId ||
-        !messageText
-    ) {
-        return;
-    }
-
-
-    /*
-     * Ignore messages generated by the AI itself.
-     */
-
-    const messageType =
-        String(
-            message.message_type ||
-            ""
-        ).toLowerCase();
-
-
-    if (
-        messageType === "ai" ||
-        messageType === "assistant" ||
-        messageType === "mentor"
-    ) {
-
-        return;
-    }
-
-
-    /*
-     * =====================================================
-     * EXPLICIT @mentor BYPASS
-     * =====================================================
-     *
-     * This is intentional.
-     *
-     * If the student explicitly writes:
-     *
-     *     @mentor
-     *
-     * or:
-     *
-     *     @mentor I don't understand this
-     *
-     * the AI should answer directly.
-     *
-     * No poll.
-     * No majority vote.
-     */
-
-    if (
-        /(^|\s)@mentor\b/i.test(
-            messageText
-        )
-    ) {
-
-        console.log(
-            "[AI Mentor] Explicit @mentor request detected:",
-            messageId
-        );
-
-
-        await handleExplicitMentorRequest(
-            message
-        );
-
-
-        return;
-    }
-
-
-    /*
-     * =====================================================
-     * NORMAL STUDENT MESSAGE
-     * =====================================================
-     *
-     * A normal message must NEVER directly
-     * trigger an AI answer.
-     *
-     * We only send it through the detector.
-     */
-
-    console.log(
-        "[AI Mentor] Checking normal student message:",
-        messageId
-    );
-
-
-    await detectAutomaticAIIntervention(
-        messageId,
-        messageText
-    );
-
-}
-
-
-/* =========================================================
-   EXPLICIT @MENTOR HANDLER
-   ========================================================= */
-
-/*
- * @mentor is the ONLY automatic direct-entry path.
- *
- * This function deliberately does NOT call:
- *
- *     createAutomaticAIMentorPoll()
- *
- * and does NOT call:
- *
- *     detectAutomaticAIIntervention()
- *
- */
-
-async function handleExplicitMentorRequest(
-    message
-) {
-
-    if (!message) {
-        return;
-    }
-
-
-    const messageText =
-        String(
-            message.message ||
-            ""
-        ).trim();
-
-
-    if (!messageText) {
-        return;
-    }
-
-
-    /*
-     * Remove @mentor from the message before
-     * sending the actual question to the AI.
-     */
-
-    const cleanMessage =
-        messageText
-            .replace(
-                /(^|\s)@mentor\b/ig,
-                " "
-            )
-            .trim();
-
-
-    if (!cleanMessage) {
-
-        /*
-         * If the student only wrote @mentor,
-         * ask what they need help with.
-         */
-
-        await sendDirectAIMentorMessage(
-            "I'm here! 🤖 What do you need help with?"
-        );
-
-        return;
-    }
-
-
-    console.log(
-        "[AI Mentor] Sending direct @mentor request."
-    );
-
-
-    await sendExplicitMentorToBackend(
-        cleanMessage,
-        message
-    );
-
-}
-
-
-/* =========================================================
-   SEND EXPLICIT MENTOR REQUEST
-   ========================================================= */
-
-async function sendExplicitMentorToBackend(
-    messageText,
-    originalMessage
-) {
-
-    if (!messageText) {
-        return;
-    }
-
-
-    /*
-     * First try the existing database RPC.
-     *
-     * This keeps the explicit mentor path
-     * compatible with the existing Study Squad
-     * backend.
-     */
-
-    try {
-
-        const {
-            data,
-            error
-        } =
-            await supabaseClient.rpc(
-                "request_study_mentor",
-                {
-                    p_classroom_id:
-                        activeClassroomId,
-
-                    p_message:
-                        messageText
-                }
-            );
-
-
-        if (!error) {
-
-            console.log(
-                "[AI Mentor] Explicit mentor request created:",
-                data
-            );
-
-
-            /*
-             * Existing AI processing system can now
-             * process this direct request.
-             */
-
-            await loadClassroomMessages();
-
-            return;
-        }
-
-
-        console.warn(
-            "[AI Mentor] request_study_mentor RPC failed:",
-            error
-        );
-
-
-    } catch (error) {
-
-        console.warn(
-            "[AI Mentor] Explicit mentor RPC exception:",
-            error
-        );
-
-    }
-
-
-    /*
-     * Fallback:
-     *
-     * If request_study_mentor() is not available
-     * in the current database version, directly
-     * invoke the existing AI mentor endpoint.
-     *
-     * This fallback intentionally does NOT create
-     * an AI poll.
-     */
-
-    await sendDirectAIMentorRequest(
-        messageText,
-        originalMessage
-    );
-
-}
-
-
-/* =========================================================
-   DIRECT AI MENTOR REQUEST
-   ========================================================= */
-
-async function sendDirectAIMentorRequest(
-    messageText,
-    originalMessage
-) {
-
-    if (!messageText) {
-        return;
-    }
-
-
-    /*
-     * Prevent accidental duplicate requests.
-     */
-
-    const requestKey =
-        String(
-            originalMessage?.id ||
-            Date.now()
-        );
-
-
-    if (
-        window.__processedMentorRequests &&
-        window.__processedMentorRequests.has(
-            requestKey
-        )
-    ) {
-
-        return;
-    }
-
-
-    if (
-        !window.__processedMentorRequests
-    ) {
-
-        window.__processedMentorRequests =
-            new Set();
-
-    }
-
-
-    window.__processedMentorRequests.add(
-        requestKey
-    );
-
-
-    try {
-
-        /*
-         * Use the existing Study Squad AI
-         * endpoint if it has been exposed by
-         * the application.
-         */
-
-        if (
-            typeof window.sendStudyAIMentorMessage ===
-            "function"
-        ) {
-
-            await window.sendStudyAIMentorMessage(
-                messageText,
-                {
-                    classroomId:
-                        activeClassroomId,
-
-                    source:
-                        "explicit_mentor",
-
-                    messageId:
-                        originalMessage?.id
-                }
-            );
-
-            return;
-        }
-
-
-        /*
-         * Second compatibility path.
-         */
-
-        if (
-            typeof window.askStudyAI ===
-            "function"
-        ) {
-
-            await window.askStudyAI(
-                messageText
-            );
-
-            return;
-        }
-
-
-        console.warn(
-            "[AI Mentor] No direct AI handler is available."
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "[AI Mentor] Direct AI request failed:",
-            error
-        );
-
-
-        /*
-         * Allow retry if the request failed.
-         */
-
-        window.__processedMentorRequests.delete(
-            requestKey
-        );
-
-
-        showToast(
-            "⚠️ AI Mentor could not respond right now."
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   SIMPLE DIRECT AI MESSAGE
-   ========================================================= */
-
-async function sendDirectAIMentorMessage(
-    text
-) {
-
-    if (!text) {
-        return;
-    }
-
-
-    /*
-     * Use the application's existing message
-     * renderer if available.
-     */
-
-    if (
-        typeof window.addStudyAIMessage ===
-        "function"
-    ) {
-
-        window.addStudyAIMessage(
-            text
-        );
-
-        return;
-    }
-
-
-    if (
-        typeof window.addMessage ===
-        "function"
-    ) {
-
-        /*
-         * Existing addMessage() implementations
-         * may use different signatures.
-         *
-         * Try the simplest form first.
-         */
-
-        try {
-
-            window.addMessage(
-                "ai",
-                text
-            );
-
-            return;
-
-        } catch (error) {
-
-            console.warn(
-                "[AI Mentor] addMessage fallback failed:",
-                error
-            );
+            `;
 
         }
 
     }
 
 
-    /*
-     * Last-resort UI notification.
-     */
+    /* =====================================================
+       NON-HOST CONTROLS
+       ===================================================== */
 
-    showToast(
-        "🤖 " + text
-    );
+    else {
 
-}
+        if (status === "evaluating") {
 
+            controls = `
 
-/* =========================================================
-   WATCH FOR NEW CLASSROOM MESSAGES
-   ========================================================= */
+                <div class="study-help-waiting study-help-locked">
 
-let aiMentorMessageChannel =
-    null;
+                    <div>
+                        🔒
+                        <strong>Mentor is answering...</strong>
+                    </div>
 
+                    <p>
+                        Chat is temporarily paused while
+                        the mentor responds.
+                    </p>
 
-/*
- * IDs already inspected by the browser.
- *
- * This prevents the same student message from
- * repeatedly triggering the detector when the
- * realtime channel sends an update.
- */
+                </div>
 
-const aiMentorCheckedMessages =
-    new Set();
+            `;
 
+        } else {
 
-/* =========================================================
-   START AI MESSAGE WATCHER
-   ========================================================= */
+            controls = `
 
-function startAIMentorMessageWatcher() {
+                <div class="study-help-waiting">
 
-    if (!activeClassroomId) {
+                    🧑‍🏫
+                    Waiting for mentor...
 
-        console.warn(
-            "[AI Mentor] Cannot watch messages — no classroom."
-        );
+                </div>
 
-        return;
+            `;
+
+        }
+
     }
 
 
-    stopAIMentorMessageWatcher();
+    /* =====================================================
+       REQUEST CARD
+       ===================================================== */
+
+    return `
+
+        <article
+            class="study-help-card ${
+                status === "evaluating"
+                    ? "study-help-card-active"
+                    : ""
+            }"
+            data-intervention-card="${escapeHtml(
+                request.id
+            )}"
+        >
+
+            <div class="study-help-card-top">
+
+                <div class="study-help-type">
+
+                    ${type.icon}
+
+                    ${type.label}
+
+                </div>
 
 
-    console.log(
-        "[AI Mentor] Starting realtime message watcher:",
-        activeClassroomId
-    );
+                <span class="study-help-priority">
 
+                    ${priority}
+
+                </span>
+
+            </div>
+
+
+            <div class="study-help-message">
+
+                ${escapeHtml(message)}
+
+            </div>
+
+
+            <div class="study-help-meta">
+
+                <span>
+
+                    👤
+                    ${escapeHtml(sender)}
+
+                </span>
+
+
+                <span>
+
+                    👥
+                    ${requestCount}
+
+                </span>
+
+            </div>
+
+
+            ${controls}
+
+        </article>
+
+    `;
+}
+
+function setupStudyHelpActions(requests) {
 
     /*
-     * Supabase Realtime.
+     * ================================================
+     * MENTOR TAKEOVER
+     * ================================================
      */
 
-    aiMentorMessageChannel =
-        supabaseClient
-            .channel(
-                "ai-mentor-messages-" +
-                activeClassroomId
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event:
-                        "INSERT",
+    document
+        .querySelectorAll(".study-help-send")
+        .forEach(button => {
 
-                    schema:
-                        "public",
+            button.addEventListener(
+                "click",
+                async function () {
 
-                    table:
-                        "study_messages",
+                    const interventionId =
+                        this.dataset.interventionId;
 
-                    filter:
-                        "classroom_id=eq." +
-                        activeClassroomId
-                },
-                async payload => {
-
-                    const newMessage =
-                        payload?.new;
-
-
-                    if (!newMessage) {
+                    if (!interventionId) {
                         return;
                     }
 
 
-                    const messageId =
-                        newMessage.id;
+                    this.disabled = true;
+
+                    this.textContent =
+                        "Starting...";
 
 
-                    /*
-                     * Ignore duplicates.
-                     */
+                    const {
+                        data,
+                        error
+                    } =
+                        await supabaseClient.rpc(
+                            "start_study_mentor_response",
+                            {
+                                p_intervention_id:
+                                    interventionId
+                            }
+                        );
 
-                    if (
-                        aiMentorCheckedMessages.has(
-                            messageId
-                        )
-                    ) {
+
+                    if (error) {
+
+                        console.error(
+                            "[Study Help] Failed to start mentor response:",
+                            error
+                        );
+
+                        showToast(
+                            error.message ||
+                            "Couldn't start mentor response."
+                        );
+
+                        this.disabled = false;
+
+                        this.textContent =
+                            "🧑‍🏫 Answer";
 
                         return;
                     }
 
-
-                    aiMentorCheckedMessages.add(
-                        messageId
-                    );
-
-
-                    /*
-                     * Keep the set from growing forever.
-                     */
-
-                    if (
-                        aiMentorCheckedMessages.size >
-                        500
-                    ) {
-
-                        const first =
-                            aiMentorCheckedMessages
-                                .values()
-                                .next()
-                                .value;
-
-                        if (first) {
-
-                            aiMentorCheckedMessages.delete(
-                                first
-                            );
-
-                        }
-
-                    }
-
-
-                    await handleStudyMessageForAIMentor(
-                        newMessage
-                    );
-
-                }
-            )
-            .subscribe(
-                status => {
 
                     console.log(
-                        "[AI Mentor] Realtime status:",
-                        status
+                        "[Study Help] Mentor response started:",
+                        interventionId
                     );
+
+
+                    showToast(
+                        "🔒 Chat paused. You can now answer."
+                    );
+
+
+                    /*
+                     * Refresh panel so the request
+                     * changes from pending → evaluating.
+                     */
+
+                    await loadStudyHelpRequests();
 
                 }
             );
 
-}
+        });
 
 
-/* =========================================================
-   STOP AI MESSAGE WATCHER
-   ========================================================= */
+    /*
+     * ================================================
+     * SEND MENTOR REPLY
+     * ================================================
+     */
 
-function stopAIMentorMessageWatcher() {
+    document
+        .querySelectorAll(".study-help-reply-send")
+        .forEach(button => {
 
-    if (
-        aiMentorMessageChannel
-    ) {
+            button.addEventListener(
+                "click",
+                async function () {
 
-        try {
+                    const interventionId =
+                        this.dataset.interventionId;
 
-            supabaseClient.removeChannel(
-                aiMentorMessageChannel
+
+                    const textarea =
+                        document.querySelector(
+                            `.study-help-reply[data-intervention-id="${CSS.escape(interventionId)}"]`
+                        );
+
+
+                    if (!textarea) {
+                        return;
+                    }
+
+
+                    const message =
+                        textarea.value.trim();
+
+
+                    if (!message) {
+
+                        showToast(
+                            "Write your explanation first."
+                        );
+
+                        textarea.focus();
+
+                        return;
+                    }
+
+
+                    this.disabled = true;
+
+                    this.textContent =
+                        "Sending...";
+
+
+                    const {
+                        error
+                    } =
+                        await supabaseClient.rpc(
+                            "send_study_mentor_reply",
+                            {
+                                p_intervention_id:
+                                    interventionId,
+
+                                p_message:
+                                    message
+                            }
+                        );
+
+
+                    if (error) {
+
+                        console.error(
+                            "[Study Help] Mentor reply error:",
+                            error
+                        );
+
+                        showToast(
+                            error.message ||
+                            "Couldn't send mentor reply."
+                        );
+
+                        this.disabled = false;
+
+                        this.textContent =
+                            "🧑‍🏫 Send Explanation";
+
+                        return;
+                    }
+
+
+                    textarea.value = "";
+
+
+                    showToast(
+                        "🧑‍🏫 Mentor explanation sent."
+                    );
+
+
+                    /*
+                     * Refresh classroom messages.
+                     */
+
+                    if (
+                        typeof loadClassroomMessages ===
+                        "function"
+                    ) {
+
+                        await loadClassroomMessages();
+
+                    }
+
+                }
             );
 
-        } catch (error) {
+        });
 
-            console.warn(
-                "[AI Mentor] Could not remove realtime channel:",
-                error
+
+    /*
+     * ================================================
+     * FINISH / RESUME CHAT
+     * ================================================
+     */
+
+    document
+        .querySelectorAll(".study-help-finish")
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                async function () {
+
+                    const interventionId =
+                        this.dataset.interventionId;
+
+
+                    if (!interventionId) {
+                        return;
+                    }
+
+
+                    this.disabled = true;
+
+                    this.textContent =
+                        "Resuming...";
+
+
+                    const {
+                        error
+                    } =
+                        await supabaseClient.rpc(
+                            "resolve_study_intervention",
+                            {
+                                p_intervention_id:
+                                    interventionId
+                            }
+                        );
+
+
+                    if (error) {
+
+                        console.error(
+                            "[Study Help] Failed to resolve:",
+                            error
+                        );
+
+                        showToast(
+                            error.message ||
+                            "Couldn't resume chat."
+                        );
+
+                        this.disabled = false;
+
+                        this.textContent =
+                            "🔓 Finish & Resume Chat";
+
+                        return;
+                    }
+
+
+                    showToast(
+                        "🔓 Chat resumed."
+                    );
+
+
+                    await loadStudyHelpRequests();
+
+                }
             );
 
-        }
-
-
-        aiMentorMessageChannel =
-            null;
-
-    }
+        });
 
 }
-
-
-/* =========================================================
-   START COMPLETE AI MENTOR SYSTEM
-   ========================================================= */
-
-function startCompleteAIMentorSystem() {
-
-    if (!activeClassroomId) {
-
-        console.warn(
-            "[AI Mentor] Complete system cannot start — no classroom."
-        );
-
-        return;
-    }
-
-
-    console.log(
-        "[AI Mentor] Starting complete AI Mentor system."
-    );
-
-
-    /*
-     * Automatic poll system.
-     */
-
-    startAIMentorPollSystem();
-
-
-    /*
-     * Realtime student-message watcher.
-     */
-
-    startAIMentorMessageWatcher();
-
-}
-
-
-/* =========================================================
-   STOP COMPLETE AI MENTOR SYSTEM
-   ========================================================= */
-
-function stopCompleteAIMentorSystem() {
-
-    stopAIMentorPollSystem();
-
-    stopAIMentorMessageWatcher();
-
-
-    console.log(
-        "[AI Mentor] Complete system stopped."
-    );
-
-}
-
-
-/* =========================================================
-   CLASSROOM CHANGE HOOK
-   ========================================================= */
-
-function restartAIMentorSystemForClassroom() {
-
-    stopCompleteAIMentorSystem();
-
-
-    if (!activeClassroomId) {
-
-        console.log(
-            "[AI Mentor] No active classroom."
-        );
-
-        return;
-    }
-
-
-    /*
-     * Give the classroom state a moment to settle
-     * before subscribing.
-     */
-
-    setTimeout(
-        () => {
-
-            if (
-                activeClassroomId
-            ) {
-
-                startCompleteAIMentorSystem();
-
-            }
-
-        },
-        100
-    );
-
-}
-
-
-/* =========================================================
-   PAGE CLEANUP
-   ========================================================= */
-
-window.addEventListener(
-    "beforeunload",
-    () => {
-
-        stopCompleteAIMentorSystem();
-
-    }
-);
-
-
-/* =========================================================
-   EXPOSE FUNCTIONS FOR EXISTING APP CODE
-   ========================================================= */
-
-window.startAIMentorPollSystem =
-    startAIMentorPollSystem;
-
-
-window.stopAIMentorPollSystem =
-    stopAIMentorPollSystem;
-
-
-window.loadAIMentorPolls =
-    loadAIMentorPolls;
-
-
-window.submitAIPollVote =
-    submitAIPollVote;
-
-
-window.handleStudyMessageForAIMentor =
-    handleStudyMessageForAIMentor;
-
-
-window.startAIMentorMessageWatcher =
-    startAIMentorMessageWatcher;
-
-
-window.stopAIMentorMessageWatcher =
-    stopAIMentorMessageWatcher;
-
-
-window.startCompleteAIMentorSystem =
-    startCompleteAIMentorSystem;
-
-
-window.stopCompleteAIMentorSystem =
-    stopCompleteAIMentorSystem;
-
-
-window.restartAIMentorSystemForClassroom =
-    restartAIMentorSystemForClassroom;
-
-
-/* =========================================================
-   END PART 4 / 5
-   ========================================================= */
