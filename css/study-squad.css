@@ -1630,3 +1630,209 @@ a {
     font-weight: 700;
     line-height: 1;
 }
+/* =========================================================
+   MENTOR DASHBOARD
+   ========================================================= */
+
+.mentor-dashboard {
+    margin: 18px 0;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 18px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,0.055),
+            rgba(255,255,255,0.025)
+        );
+    box-shadow:
+        0 12px 35px rgba(0,0,0,0.20);
+}
+
+.mentor-dashboard.hidden {
+    display: none !important;
+}
+
+.mentor-dashboard-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.mentor-dashboard-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    opacity: 0.65;
+    margin-bottom: 5px;
+}
+
+.mentor-dashboard-header h3 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.mentor-dashboard-header p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+    opacity: 0.65;
+    max-width: 520px;
+}
+
+.mentor-pending-badge {
+    flex-shrink: 0;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.07);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.mentor-pending-badge span {
+    font-size: 15px;
+    margin-right: 3px;
+}
+
+.mentor-interventions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mentor-intervention-card {
+    padding: 16px;
+    border-radius: 15px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.16);
+}
+
+.mentor-intervention-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.mentor-intervention-type {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.mentor-priority {
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.mentor-priority.high {
+    background: rgba(255, 90, 90, 0.14);
+}
+
+.mentor-priority.medium {
+    background: rgba(255, 190, 70, 0.14);
+}
+
+.mentor-priority.normal {
+    background: rgba(255,255,255,0.08);
+}
+
+.mentor-intervention-message {
+    padding: 12px;
+    border-radius: 11px;
+    background: rgba(255,255,255,0.045);
+    font-size: 14px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.mentor-intervention-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+    font-size: 11px;
+    opacity: 0.55;
+}
+
+.mentor-intervention-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 13px;
+}
+
+.mentor-resolve-btn {
+    border: 0;
+    border-radius: 9px;
+    padding: 8px 13px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 12px;
+    background: rgba(255,255,255,0.09);
+}
+
+.mentor-resolve-btn:hover {
+    background: rgba(255,255,255,0.15);
+}
+
+.mentor-resolve-btn:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.mentor-empty-state {
+    text-align: center;
+    padding: 28px 15px;
+    opacity: 0.65;
+}
+
+.mentor-empty-icon {
+    font-size: 30px;
+    margin-bottom: 8px;
+}
+
+.mentor-empty-state strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.mentor-empty-state p {
+    margin: 0;
+    font-size: 12px;
+}
+
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+    .mentor-dashboard {
+        padding: 15px;
+        border-radius: 15px;
+    }
+
+    .mentor-dashboard-header {
+        flex-direction: column;
+    }
+
+    .mentor-pending-badge {
+        align-self: flex-start;
+    }
+
+    .mentor-intervention-actions {
+        justify-content: stretch;
+    }
+
+    .mentor-resolve-btn {
+        width: 100%;
+    }
+
+}
