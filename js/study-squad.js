@@ -714,6 +714,8 @@ $("backToClassroomsBtn")
           .classList
           .add("hidden");
 
+         setupNeedMentorButton();
+
       }
 
 
@@ -758,6 +760,129 @@ $("backToClassroomsBtn")
     }
   );
 
+
+/* =========================================================
+   NEED MENTOR BUTTON
+   ========================================================= */
+
+function setupNeedMentorButton() {
+
+    const button =
+        $("needMentorBtn");
+
+
+    if (!button) {
+
+        console.warn(
+            "[Study Squad] Need Mentor button not found."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        button.dataset.listenerAttached ===
+        "true"
+    ) {
+
+        return;
+
+    }
+
+
+    button.dataset.listenerAttached =
+        "true";
+
+
+    button.addEventListener(
+        "click",
+        async () => {
+
+            if (!currentUser) {
+
+                showToast(
+                    "Please log in first."
+                );
+
+                return;
+
+            }
+
+
+            if (!activeClassroomId) {
+
+                showToast(
+                    "Open a classroom first."
+                );
+
+                return;
+
+            }
+
+
+            button.disabled = true;
+
+
+            try {
+
+                const {
+                    error
+                } =
+                    await supabaseClient
+                        .from(
+                            "study_mentor_requests"
+                        )
+                        .insert({
+
+                            classroom_id:
+                                activeClassroomId,
+
+                            student_id:
+                                currentUser.id,
+
+                            status:
+                                "pending"
+
+                        });
+
+
+                if (error) {
+
+                    console.error(
+                        "[Study Squad] Need Mentor failed:",
+                        error
+                    );
+
+                    showToast(
+                        "Couldn't request a mentor."
+                    );
+
+                    return;
+
+                }
+
+
+                showToast(
+                    "Mentor requested 🧑‍🏫"
+                );
+
+
+                loadMentorRequests?.();
+
+
+            } finally {
+
+                button.disabled =
+                    false;
+
+            }
+
+        }
+    );
+
+}
 
 /* =========================================================
    CREATE CLASSROOM
@@ -1713,97 +1838,107 @@ function formatMessageTime(
 
 async function sendStudyMessage() {
 
-  if (!currentUser) {
+    if (!currentUser) {
 
-    showToast(
-      "Please log in first."
-    );
+        showToast(
+            "Please log in first."
+        );
 
-    return;
-
-  }
-
-
-  if (!activeClassroomId) {
-
-    showToast(
-      "Open a classroom first."
-    );
-
-    return;
-
-  }
+        return;
+    }
 
 
-  const input =
-    $("studyMessageInput");
+    if (!activeClassroomId) {
+
+        showToast(
+            "Open a classroom first."
+        );
+
+        return;
+    }
 
 
-  if (!input) return;
+    const input =
+        $("classroomMessageInput");
 
 
-  const message =
-    input.value.trim();
+    if (!input) {
+
+        console.error(
+            "[Study Squad] classroomMessageInput not found."
+        );
+
+        return;
+    }
 
 
-  if (!message) return;
+    const message =
+        input.value.trim();
 
 
-  const sendButton =
-    $("sendStudyMessageBtn");
+    if (!message) return;
 
 
-  if (sendButton) {
-
-    sendButton.disabled =
-      true;
-
-  }
+    const sendButton =
+        $("sendClassroomMessageBtn");
 
 
-  const {
-    error
-  } =
-    await supabaseClient
-      .from("study_messages")
-      .insert({
-        classroom_id:
-          activeClassroomId,
+    if (sendButton) {
 
-        sender_id:
-          currentUser.id,
+        sendButton.disabled = true;
 
-        message,
-
-        message_type:
-          "student"
-      });
+    }
 
 
-  if (error) {
+    try {
 
-    console.error(
-      "[Study Squad] Failed to send message:",
-      error
-    );
+        const {
+            error
+        } =
+            await supabaseClient
+                .from("study_messages")
+                .insert({
+                    classroom_id:
+                        activeClassroomId,
 
-    showToast(
-      "Couldn't send message."
-    );
+                    sender_id:
+                        currentUser.id,
 
-  } else {
+                    message,
 
-    input.value = "";
+                    message_type:
+                        "student"
+                });
 
-  }
+
+        if (error) {
+
+            console.error(
+                "[Study Squad] Failed to send message:",
+                error
+            );
+
+            showToast(
+                "Couldn't send message."
+            );
+
+            return;
+        }
 
 
-  if (sendButton) {
+        input.value = "";
 
-    sendButton.disabled =
-      false;
 
-  }
+    } finally {
+
+        if (sendButton) {
+
+            sendButton.disabled =
+                false;
+
+        }
+
+    }
 
 }
 
@@ -1812,32 +1947,54 @@ async function sendStudyMessage() {
    SEND BUTTON
    ========================================================= */
 
-$("sendStudyMessageBtn")
-  ?.addEventListener(
-    "click",
-    sendStudyMessage
-  );
+/* =========================================================
+   CLASSROOM MESSAGE INPUT
+   ========================================================= */
+
+const classroomMessageForm =
+    $("classroomMessageForm");
+
+const classroomMessageInput =
+    $("classroomMessageInput");
 
 
-$("studyMessageInput")
-  ?.addEventListener(
-    "keydown",
-    event => {
+if (classroomMessageForm) {
 
-      if (
-        event.key ===
-        "Enter" &&
-        !event.shiftKey
-      ) {
+    classroomMessageForm.addEventListener(
+        "submit",
+        event => {
 
-        event.preventDefault();
+            event.preventDefault();
 
-        sendStudyMessage();
+            sendStudyMessage();
 
-      }
+        }
+    );
 
-    }
-  );
+}
+
+
+if (classroomMessageInput) {
+
+    classroomMessageInput.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+
+                event.preventDefault();
+
+                sendStudyMessage();
+
+            }
+
+        }
+    );
+
+}
 
 
 /* =========================================================
@@ -1979,7 +2136,7 @@ function setupStudyHelpPanel() {
 
 
   const closeButton =
-    $("closeStudyHelpPanel");
+    $("closeStudyHelp");
 
 
   closeButton?.addEventListener(
@@ -2130,14 +2287,16 @@ async function updateClassroomOnlineCount() {
     );
 
 
-  const onlineCount =
-    $("classroomOnlineCount");
+      const onlineCount =
+          $("classroomActiveCount");
+      
+      
+      if (onlineCount) {
+      
+          onlineCount.textContent =
+              `🟢 ${count} students active`;
 
 
-  if (onlineCount) {
-
-    onlineCount.textContent =
-      `${count} online`;
 
   }
 
