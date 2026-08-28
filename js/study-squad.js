@@ -636,11 +636,10 @@ async function openClassroom(
     .remove("hidden");
     
    await loadClassroomMessages();
-   await setupMentorDashboard();
    setupStudyHelpPanel();
    subscribeToClassroomMessages();
    startClassroomPresence();
-   stopMentorDashboardPolling();
+   
 
 
   /* -------------------------------------------------------
