@@ -1836,3 +1836,59 @@ a {
     }
 
 }
+
+.mentor-student-label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    opacity: 0.55;
+    margin-bottom: 6px;
+}
+
+.mentor-reply-area {
+    margin-top: 14px;
+}
+
+.mentor-reply-input {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 75px;
+    padding: 11px 12px;
+    border-radius: 11px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(0,0,0,0.18);
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.45;
+    outline: none;
+}
+
+.mentor-reply-input:focus {
+    border-color: rgba(255,255,255,0.25);
+}
+
+.mentor-reply-input::placeholder {
+    opacity: 0.45;
+}
+
+.mentor-send-btn {
+    border: 0;
+    border-radius: 9px;
+    padding: 8px 13px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 12px;
+    background: rgba(255,255,255,0.12);
+}
+
+.mentor-send-btn:hover {
+    background: rgba(255,255,255,0.18);
+}
+
+.mentor-send-btn:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
