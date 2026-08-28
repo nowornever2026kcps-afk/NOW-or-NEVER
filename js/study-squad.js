@@ -636,12 +636,14 @@ async function openClassroom(
     .remove("hidden");
     
    await loadClassroomMessages();
+   
    setupStudyHelpPanel();
+   
    subscribeToClassroomMessages();
+   
    startClassroomPresence();
-
-   /* Automatic AI Mentor voting system */
-   startAIMentorPollSystem();
+   
+   initializeAIMentorSystem();
    
 
 
@@ -671,6 +673,8 @@ $("backToClassroomsBtn")
   ?.addEventListener(
     "click",
     () => {
+
+      stopAIMentorPollSystem();
 
       if (classroomPresenceChannel) {
 
@@ -724,7 +728,7 @@ $("backToClassroomsBtn")
 
       }
 
-      stopAIMentorPollSystem();
+     
 
 
       /* Show hero */
@@ -1548,7 +1552,7 @@ $("classroomMessageForm")
          ) {
          
              showToast(
-                 "🔒 Chat paused — mentor is answering."
+                "🔒 Chat paused — AI Mentor is answering."
              );
          
              input.focus();
@@ -3256,7 +3260,23 @@ function stopMentorDashboardPolling() {
 }
 
 /* =========================================================
-   STUDY HELP PANEL
+   STUDY SQUAD — AUTOMATIC AI MENTOR SYSTEM
+   ========================================================= */
+
+
+/* =========================================================
+   AI POLL STATE
+   ========================================================= */
+
+let aiMentorPollTimer = null;
+
+let aiMentorProcessing = new Set();
+
+let aiMentorPollInitialized = false;
+
+
+/* =========================================================
+   OPEN / CLOSE STUDY HELP PANEL
    ========================================================= */
 
 function setupStudyHelpPanel() {
@@ -3276,7 +3296,7 @@ function setupStudyHelpPanel() {
     }
 
 
-    function openStudyHelp() {
+    function openPanel() {
 
         panel.classList.remove("hidden");
 
@@ -3285,10 +3305,12 @@ function setupStudyHelpPanel() {
             "true"
         );
 
+        loadAIMentorPolls();
+
     }
 
 
-    function closeStudyHelp() {
+    function closePanel() {
 
         panel.classList.add("hidden");
 
@@ -3300,374 +3322,330 @@ function setupStudyHelpPanel() {
     }
 
 
-    button.addEventListener(
-        "click",
-        function(event) {
+    /* Prevent duplicate listeners */
 
-            event.stopPropagation();
+    if (button.dataset.aiPanelReady !== "true") {
 
-            if (
-                panel.classList.contains("hidden")
-            ) {
+        button.dataset.aiPanelReady = "true";
 
-                openStudyHelp();
-
-            } else {
-
-                closeStudyHelp();
-
-            }
-
-        }
-    );
-
-
-    if (closeButton) {
-
-        closeButton.addEventListener(
+        button.addEventListener(
             "click",
-            function(event) {
+            event => {
 
                 event.stopPropagation();
 
-                closeStudyHelp();
+                if (
+                    panel.classList.contains("hidden")
+                ) {
+
+                    openPanel();
+
+                } else {
+
+                    closePanel();
+
+                }
+
+            }
+        );
+
+
+        closeButton?.addEventListener(
+            "click",
+            event => {
+
+                event.stopPropagation();
+
+                closePanel();
+
+            }
+        );
+
+
+        document.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    !panel.contains(event.target) &&
+                    !button.contains(event.target)
+                ) {
+
+                    closePanel();
+
+                }
 
             }
         );
 
     }
 
+}
 
-    document.addEventListener(
-        "click",
-        function(event) {
 
-            if (
-                !panel.contains(event.target) &&
-                !button.contains(event.target)
-            ) {
+/* =========================================================
+   START AUTOMATIC AI POLL SYSTEM
+   ========================================================= */
 
-                closeStudyHelp();
+function startAIMentorPollSystem() {
 
-            }
+    if (!activeClassroomId) {
 
-        }
+        console.warn(
+            "[AI Mentor] Cannot start poll system — no classroom."
+        );
+
+        return;
+
+    }
+
+
+    stopAIMentorPollSystem();
+
+
+    console.log(
+        "[AI Mentor] Automatic poll system started:",
+        activeClassroomId
     );
+
+
+    loadAIMentorPolls();
+
+
+    aiMentorPollTimer =
+        setInterval(
+            async () => {
+
+                await loadAIMentorPolls();
+
+                await checkAutomaticAIMentorInterventions();
+
+            },
+            5000
+        );
 
 }
 
-loadStudyHelpRequests();
 
-setInterval(
-    loadStudyHelpRequests,
-    10000
-);
+/* =========================================================
+   STOP POLL SYSTEM
+   ========================================================= */
+
+function stopAIMentorPollSystem() {
+
+    if (aiMentorPollTimer) {
+
+        clearInterval(
+            aiMentorPollTimer
+        );
+
+        aiMentorPollTimer = null;
+
+    }
+
+}
 
 
-async function loadStudyHelpRequests() {
+/* =========================================================
+   LOAD ACTIVE AI POLLS
+   ========================================================= */
+
+async function loadAIMentorPolls() {
 
     if (!activeClassroomId) {
         return;
     }
 
+
     const list =
-        document.getElementById("studyHelpList");
+        document.getElementById(
+            "studyHelpList"
+        );
 
     const count =
-        document.getElementById("studyHelpCount");
+        document.getElementById(
+            "studyHelpCount"
+        );
+
 
     if (!list) {
         return;
     }
 
+
     const {
         data,
         error
-    } = await supabaseClient.rpc(
-        "get_study_help_requests",
-        {
-            p_classroom_id: activeClassroomId
-        }
-    );
+    } =
+        await supabaseClient.rpc(
+            "get_study_ai_polls",
+            {
+                p_classroom_id:
+                    activeClassroomId
+            }
+        );
+
 
     if (error) {
 
         console.error(
-            "[Study Help] Failed to load requests:",
+            "[AI Mentor] Failed to load polls:",
             error
         );
 
         list.innerHTML = `
+
             <div class="study-help-empty">
+
                 <div>⚠️</div>
-                <strong>Couldn't load Study Help</strong>
+
+                <strong>
+                    Couldn't load AI requests
+                </strong>
+
                 <p>
-                    Please try again.
+                    ${escapeHtml(
+                        error.message
+                    )}
                 </p>
+
             </div>
+
         `;
 
         return;
     }
 
-    const requests = data || [];
 
-    /*
-     * Update count
-     */
+    const polls =
+        Array.isArray(data)
+            ? data
+            : [];
+
 
     if (count) {
 
         count.textContent =
-            `${requests.length} active request${
-                requests.length === 1 ? "" : "s"
-            }`;
+            polls.length === 1
+                ? "1 AI request"
+                : `${polls.length} AI requests`;
 
     }
 
 
-    /*
-     * Empty state
-     */
-
-    if (requests.length === 0) {
+    if (!polls.length) {
 
         list.innerHTML = `
+
             <div class="study-help-empty">
+
                 <div>✨</div>
-                <strong>No active requests</strong>
+
+                <strong>
+                    No AI intervention needed
+                </strong>
+
                 <p>
-                    Doubts and answer conflicts will appear here.
+                    The AI will ask the classroom
+                    before stepping in.
                 </p>
+
             </div>
+
         `;
 
         return;
     }
 
 
-    /*
-     * Render requests
-     */
-
     list.innerHTML =
-        requests
-            .map(renderStudyHelpRequest)
+        polls
+            .map(
+                renderAIMentorPoll
+            )
             .join("");
 
 
-    /*
-     * Only the classroom host gets
-     * mentor controls.
-     */
+    setupAIMentorPollButtons();
 
-    setupStudyHelpActions(requests);
 }
 
-function renderStudyHelpRequest(request) {
 
-    const typeMap = {
+/* =========================================================
+   RENDER AI POLL
+   ========================================================= */
 
-        unresolved_doubt: {
-            icon: "🤔",
-            label: "Unresolved Doubt"
-        },
+function renderAIMentorPoll(poll) {
 
-        explicit_mentor: {
-            icon: "🧑‍🏫",
-            label: "Mentor Requested"
-        },
-
-        conflicting_answers: {
-            icon: "⚠️",
-            label: "Conflicting Answers"
-        },
-
-        multiple_requests: {
-            icon: "👥",
-            label: "Multiple Requests"
-        }
-
-    };
-
-
-    const type =
-        typeMap[request.trigger_type] ||
-        {
-            icon: "🧭",
-            label: "Study Help"
-        };
-
-
-    const priority =
-        Number(request.priority || 0);
-
-
-    const sender =
-        request.sender_name ||
-        "Student";
-
-
-    const message =
-        request.message ||
-        "No message available.";
-
-
-    const requestCount =
+    const total =
         Number(
-            request.mentor_request_count || 1
+            poll.total_students || 0
+        );
+
+    const yes =
+        Number(
+            poll.yes_votes || 0
+        );
+
+    const no =
+        Number(
+            poll.no_votes || 0
         );
 
 
-    const status =
-        request.status || "pending";
+    const myVote =
+        poll.my_vote;
 
 
-    let controls = "";
+    const percentage =
+        total > 0
+            ? Math.round(
+                (yes / total) * 100
+            )
+            : 0;
 
 
-    /* =====================================================
-       HOST CONTROLS
-       ===================================================== */
-
-    if (request.is_host) {
+    let voteStatus = "";
 
 
-        /* -------------------------------------------------
-           PENDING
+    if (myVote === true) {
 
-           Mentor has not taken the request yet.
-           ------------------------------------------------- */
+        voteStatus =
+            "You voted YES";
 
+    } else if (myVote === false) {
 
-
-        /* -------------------------------------------------
-           EVALUATING
-
-           Mentor has taken control.
-           Chat is paused.
-           ------------------------------------------------- */
-
-        else if (status === "evaluating") {
-
-            controls = `
-
-                <div class="study-help-host-controls study-help-active">
-
-                    <div class="study-help-mentor-lock">
-
-                        🔒
-                        <strong> You are answering this request</strong>
-
-                        <p>
-                            The classroom chat is temporarily paused.
-                        </p>
-
-                    </div>
-
-
-                    <textarea
-                        class="study-help-reply"
-                        data-intervention-id="${escapeHtml(
-                            request.id
-                        )}"
-                        placeholder="Write your mentor explanation..."
-                        rows="4"
-                    ></textarea>
-
-
-                    <div class="study-help-actions">
-
-                        <button
-                            type="button"
-                            class="study-help-reply-send"
-                            data-intervention-id="${escapeHtml(
-                                request.id
-                            )}"
-                        >
-                            🧑‍🏫 Send Explanation
-                        </button>
-
-
-                        <button
-                            type="button"
-                            class="study-help-finish"
-                            data-intervention-id="${escapeHtml(
-                                request.id
-                            )}"
-                        >
-                            🔓 Finish & Resume Chat
-                        </button>
-
-                    </div>
-
-                </div>
-
-            `;
-
-        }
+        voteStatus =
+            "You voted NO";
 
     }
 
 
-    /* =====================================================
-       NON-HOST CONTROLS
-       ===================================================== */
+    const typeLabel = {
 
-    else {
+        unresolved_doubt:
+            "🤔 Unresolved Doubt",
 
-        if (status === "evaluating") {
+        conflicting_answers:
+            "⚠️ Conflicting Answers",
 
-            controls = `
+        multiple_requests:
+            "👥 Multiple Students",
 
-                <div class="study-help-waiting study-help-locked">
+        explicit_mentor:
+            "🧑‍🏫 Mentor Requested"
 
-                    <div>
-                        🔒
-                        <strong>Mentor is answering...</strong>
-                    </div>
+    }[
+        poll.trigger_type
+    ] || "📚 Study Help";
 
-                    <p>
-                        Chat is temporarily paused while
-                        the mentor responds.
-                    </p>
-
-                </div>
-
-            `;
-
-        } else {
-
-            controls = `
-
-                <div class="study-help-waiting">
-
-                    🧑‍🏫
-                    Waiting for mentor...
-
-                </div>
-
-            `;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       REQUEST CARD
-       ===================================================== */
 
     return `
 
         <article
-            class="study-help-card ${
-                status === "evaluating"
-                    ? "study-help-card-active"
-                    : ""
-            }"
-            data-intervention-card="${escapeHtml(
-                request.id
+            class="study-help-card ai-mentor-poll-card"
+            data-ai-intervention-id="${escapeHtml(
+                poll.id
             )}"
         >
 
@@ -3675,16 +3653,15 @@ function renderStudyHelpRequest(request) {
 
                 <div class="study-help-type">
 
-                    ${type.icon}
-
-                    ${type.label}
+                    ${typeLabel}
 
                 </div>
 
-
                 <span class="study-help-priority">
 
-                    ${priority}
+                    ${Number(
+                        poll.priority || 0
+                    )}
 
                 </span>
 
@@ -3693,7 +3670,10 @@ function renderStudyHelpRequest(request) {
 
             <div class="study-help-message">
 
-                ${escapeHtml(message)}
+                ${escapeHtml(
+                    poll.message ||
+                    "The classroom may need AI help."
+                )}
 
             </div>
 
@@ -3703,39 +3683,133 @@ function renderStudyHelpRequest(request) {
                 <span>
 
                     👤
-                    ${escapeHtml(sender)}
+                    ${escapeHtml(
+                        poll.sender_name ||
+                        "Student"
+                    )}
 
                 </span>
 
-
                 <span>
 
-                    👥
-                    ${requestCount}
+                    🗳️
+                    ${yes} yes /
+                    ${no} no
 
                 </span>
 
             </div>
 
 
-            ${controls}
+            <div class="ai-poll-question">
+
+                <strong>
+                    🤖 Should the AI Mentor step in?
+                </strong>
+
+                <p>
+                    AI involvement requires
+                    more than 50% YES votes.
+                </p>
+
+            </div>
+
+
+            <div class="ai-poll-progress">
+
+                <div
+                    class="ai-poll-progress-bar"
+                    style="width:${Math.min(
+                        percentage,
+                        100
+                    )}%"
+                ></div>
+
+            </div>
+
+
+            <div class="ai-poll-votes">
+
+                ${yes} / ${total}
+                students currently support AI help
+
+            </div>
+
+
+            <div class="ai-poll-buttons">
+
+                <button
+                    type="button"
+                    class="ai-poll-yes"
+                    data-intervention-id="${escapeHtml(
+                        poll.id
+                    )}"
+                    ${myVote !== null && myVote !== undefined
+                        ? "disabled"
+                        : ""}
+                >
+                    🤖 Yes, let AI help
+                </button>
+
+
+                <button
+                    type="button"
+                    class="ai-poll-no"
+                    data-intervention-id="${escapeHtml(
+                        poll.id
+                    )}"
+                    ${myVote !== null && myVote !== undefined
+                        ? "disabled"
+                        : ""}
+                >
+                    🙅 No, continue ourselves
+                </button>
+
+            </div>
+
+
+            ${
+                voteStatus
+                    ? `
+                        <div class="ai-poll-my-vote">
+                            ${escapeHtml(
+                                voteStatus
+                            )}
+                        </div>
+                    `
+                    : ""
+            }
 
         </article>
 
     `;
+
 }
 
-function setupStudyHelpActions(requests) {
 
-    /*
-     * ================================================
-     * MENTOR TAKEOVER
-     * ================================================
-     */
+/* =========================================================
+   POLL BUTTONS
+   ========================================================= */
+
+function setupAIMentorPollButtons() {
 
     document
-        .querySelectorAll(".study-help-send")
+        .querySelectorAll(
+            ".ai-poll-yes, .ai-poll-no"
+        )
         .forEach(button => {
+
+            if (
+                button.dataset.bound === "true"
+            ) {
+
+                return;
+
+            }
+
+
+            button.dataset.bound = "true";
+
 
             button.addEventListener(
                 "click",
@@ -3744,15 +3818,39 @@ function setupStudyHelpActions(requests) {
                     const interventionId =
                         this.dataset.interventionId;
 
+
+                    const vote =
+                        this.classList.contains(
+                            "ai-poll-yes"
+                        );
+
+
                     if (!interventionId) {
                         return;
                     }
 
 
-                    this.disabled = true;
+                    const card =
+                        this.closest(
+                            ".ai-mentor-poll-card"
+                        );
+
+
+                    const buttons =
+                        card?.querySelectorAll(
+                            "button"
+                        );
+
+
+                    buttons?.forEach(
+                        b => {
+                            b.disabled = true;
+                        }
+                    );
+
 
                     this.textContent =
-                        "Starting...";
+                        "⏳ Voting...";
 
 
                     const {
@@ -3760,10 +3858,13 @@ function setupStudyHelpActions(requests) {
                         error
                     } =
                         await supabaseClient.rpc(
-                            "start_study_mentor_response",
+                            "cast_study_ai_poll_vote",
                             {
                                 p_intervention_id:
-                                    interventionId
+                                    interventionId,
+
+                                p_vote:
+                                    vote
                             }
                         );
 
@@ -3771,234 +3872,477 @@ function setupStudyHelpActions(requests) {
                     if (error) {
 
                         console.error(
-                            "[Study Help] Failed to start mentor response:",
+                            "[AI Mentor] Vote failed:",
                             error
                         );
 
-                        showToast(
-                            error.message ||
-                            "Couldn't start mentor response."
+
+                        buttons?.forEach(
+                            b => {
+                                b.disabled = false;
+                            }
                         );
 
-                        this.disabled = false;
 
-                        this.textContent =
-                            "🧑‍🏫 Answer";
+                        showToast(
+                            error.message ||
+                            "Couldn't submit your vote."
+                        );
+
 
                         return;
                     }
 
 
                     console.log(
-                        "[Study Help] Mentor response started:",
-                        interventionId
+                        "[AI Mentor] Vote result:",
+                        data
                     );
 
-
-                    showToast(
-                        "🔒 Chat paused. You can now answer."
-                    );
-
-
-                    /*
-                     * Refresh panel so the request
-                     * changes from pending → evaluating.
-                     */
-
-                    await loadStudyHelpRequests();
-
-                }
-            );
-
-        });
-
-
-    /*
-     * ================================================
-     * SEND MENTOR REPLY
-     * ================================================
-     */
-
-    document
-        .querySelectorAll(".study-help-reply-send")
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                async function () {
-
-                    const interventionId =
-                        this.dataset.interventionId;
-
-
-                    const textarea =
-                        document.querySelector(
-                            `.study-help-reply[data-intervention-id="${CSS.escape(interventionId)}"]`
-                        );
-
-
-                    if (!textarea) {
-                        return;
-                    }
-
-
-                    const message =
-                        textarea.value.trim();
-
-
-                    if (!message) {
-
-                        showToast(
-                            "Write your explanation first."
-                        );
-
-                        textarea.focus();
-
-                        return;
-                    }
-
-
-                    this.disabled = true;
-
-                    this.textContent =
-                        "Sending...";
-
-
-                    const {
-                        error
-                    } =
-                        await supabaseClient.rpc(
-                            "send_study_mentor_reply",
-                            {
-                                p_intervention_id:
-                                    interventionId,
-
-                                p_message:
-                                    message
-                            }
-                        );
-
-
-                    if (error) {
-
-                        console.error(
-                            "[Study Help] Mentor reply error:",
-                            error
-                        );
-
-                        showToast(
-                            error.message ||
-                            "Couldn't send mentor reply."
-                        );
-
-                        this.disabled = false;
-
-                        this.textContent =
-                            "🧑‍🏫 Send Explanation";
-
-                        return;
-                    }
-
-
-                    textarea.value = "";
-
-
-                    showToast(
-                        "🧑‍🏫 Mentor explanation sent."
-                    );
-
-
-                    /*
-                     * Refresh classroom messages.
-                     */
 
                     if (
-                        typeof loadClassroomMessages ===
-                        "function"
+                        data?.approved
                     ) {
 
-                        await loadClassroomMessages();
-
-                    }
-
-                }
-            );
-
-        });
-
-
-    /*
-     * ================================================
-     * FINISH / RESUME CHAT
-     * ================================================
-     */
-
-    document
-        .querySelectorAll(".study-help-finish")
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                async function () {
-
-                    const interventionId =
-                        this.dataset.interventionId;
-
-
-                    if (!interventionId) {
-                        return;
-                    }
-
-
-                    this.disabled = true;
-
-                    this.textContent =
-                        "Resuming...";
-
-
-                    const {
-                        error
-                    } =
-                        await supabaseClient.rpc(
-                            "resolve_study_intervention",
-                            {
-                                p_intervention_id:
-                                    interventionId
-                            }
+                        showToast(
+                            "🤖 Majority approved AI help!"
                         );
 
-
-                    if (error) {
-
-                        console.error(
-                            "[Study Help] Failed to resolve:",
-                            error
-                        );
+                    } else {
 
                         showToast(
-                            error.message ||
-                            "Couldn't resume chat."
+                            "Vote recorded ✓"
                         );
 
-                        this.disabled = false;
-
-                        this.textContent =
-                            "🔓 Finish & Resume Chat";
-
-                        return;
                     }
 
 
-                    showToast(
-                        "🔓 Chat resumed."
-                    );
+                    await loadAIMentorPolls();
 
-
-                    await loadStudyHelpRequests();
+                    await checkAutomaticAIMentorInterventions();
 
                 }
             );
 
         });
+
+}
+
+
+/* =========================================================
+   AUTOMATIC AI INTERVENTION CHECK
+   ========================================================= */
+
+async function checkAutomaticAIMentorInterventions() {
+
+    if (!activeClassroomId) {
+        return;
+    }
+
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient
+            .from("study_ai_interventions")
+            .select(`
+                id,
+                classroom_id,
+                trigger_message_id,
+                trigger_type,
+                status,
+                priority,
+                mentor_request_count
+            `)
+            .eq(
+                "classroom_id",
+                activeClassroomId
+            )
+            .eq(
+                "status",
+                "evaluating"
+            )
+            .order(
+                "updated_at",
+                {
+                    ascending: true
+                }
+            )
+            .limit(5);
+
+
+    if (error) {
+
+        console.error(
+            "[AI Mentor] Failed to check interventions:",
+            error
+        );
+
+        return;
+    }
+
+
+    for (
+        const intervention
+        of (data || [])
+    ) {
+
+        if (
+            aiMentorProcessing.has(
+                intervention.id
+            )
+        ) {
+
+            continue;
+
+        }
+
+
+        /*
+         * Every evaluating intervention is
+         * now an AI intervention.
+         *
+         * @mentor is already evaluating,
+         * so it bypasses the poll.
+         *
+         * Normal requests reach evaluating
+         * only after >50% YES.
+         */
+
+        aiMentorProcessing.add(
+            intervention.id
+        );
+
+
+        await runAIMentorForIntervention(
+            intervention
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   RUN AI FOR INTERVENTION
+   ========================================================= */
+
+async function runAIMentorForIntervention(
+    intervention
+) {
+
+    try {
+
+        console.log(
+            "[AI Mentor] Starting AI:",
+            intervention.id,
+            intervention.trigger_type
+        );
+
+
+        /* -------------------------------------------------
+           Get triggering message
+           ------------------------------------------------- */
+
+        let triggerMessage = "";
+
+
+        if (
+            intervention.trigger_message_id
+        ) {
+
+            const {
+                data: message
+            } =
+                await supabaseClient
+                    .from("study_messages")
+                    .select(`
+                        message,
+                        sender_id
+                    `)
+                    .eq(
+                        "id",
+                        intervention.trigger_message_id
+                    )
+                    .maybeSingle();
+
+
+            triggerMessage =
+                message?.message ||
+                "";
+
+        }
+
+
+        /* -------------------------------------------------
+           Get recent classroom conversation
+           ------------------------------------------------- */
+
+        const {
+            data: recentMessages
+        } =
+            await supabaseClient
+                .from("study_messages")
+                .select(`
+                    message,
+                    message_type,
+                    sender_id,
+                    created_at
+                `)
+                .eq(
+                    "classroom_id",
+                    activeClassroomId
+                )
+                .order(
+                    "created_at",
+                    {
+                        ascending: false
+                    }
+                )
+                .limit(20);
+
+
+        const conversation =
+            (recentMessages || [])
+                .reverse()
+                .map(
+                    m =>
+                        `[${m.message_type || "student"}] ${m.message}`
+                )
+                .join("\n");
+
+
+        /* -------------------------------------------------
+           Build AI instruction
+           ------------------------------------------------- */
+
+        const aiPrompt = `You are the AI Mentor of the NOW-or-NEVER Study Squad.
+
+There is NO human teacher.
+
+You are responding automatically to a classroom intervention.
+
+Trigger type:
+${intervention.trigger_type}
+
+Triggering student message:
+${triggerMessage}
+
+Recent classroom conversation:
+${conversation}
+
+Your job:
+- Understand the actual academic issue.
+- Answer the student's doubt clearly.
+- If students gave conflicting answers, identify the correct answer and explain why.
+- Do not simply say "ask a teacher".
+- Be concise but useful.
+- Help students preparing for NEET and Board exams.
+- Do not mention internal AI polls, database status, interventions, or system mechanics.
+- Do not pretend to be a human teacher.
+- Speak naturally as the classroom's AI Mentor.
+
+Give the best educational response now.`;
+
+
+        /* -------------------------------------------------
+           CALL EXISTING NOW AI EDGE FUNCTION
+           ------------------------------------------------- */
+
+        const response =
+            await fetch(
+                `${SUPABASE_URL}/functions/v1/now-ai`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+
+                        Authorization:
+                            `Bearer ${SUPABASE_KEY}`
+                    },
+
+                    body: JSON.stringify({
+                        message:
+                            aiPrompt
+                    })
+                }
+            );
+
+
+        if (!response.ok) {
+
+            const errorText =
+                await response.text();
+
+
+            throw new Error(
+                `AI request failed (${response.status}): ${errorText}`
+            );
+
+        }
+
+
+        const result =
+            await response.json();
+
+
+        /* -------------------------------------------------
+           Extract AI response
+           ------------------------------------------------- */
+
+        const aiMessage =
+            result?.message ||
+            result?.response ||
+            result?.reply ||
+            result?.content;
+
+
+        if (
+            !aiMessage ||
+            typeof aiMessage !== "string"
+        ) {
+
+            console.error(
+                "[AI Mentor] Unexpected response:",
+                result
+            );
+
+            throw new Error(
+                "AI returned no usable response."
+            );
+
+        }
+
+
+        /* -------------------------------------------------
+           Save AI message through RPC
+           ------------------------------------------------- */
+
+        const {
+            data: savedMessage,
+            error: saveError
+        } =
+            await supabaseClient.rpc(
+                "send_study_ai_mentor_reply",
+                {
+                    p_intervention_id:
+                        intervention.id,
+
+                    p_message:
+                        aiMessage.trim()
+                }
+            );
+
+
+        if (saveError) {
+
+            throw saveError;
+
+        }
+
+
+        console.log(
+            "[AI Mentor] Response saved:",
+            savedMessage
+        );
+
+
+        showToast(
+            "🤖 AI Mentor has joined the discussion."
+        );
+
+
+        /* -------------------------------------------------
+           Refresh chat
+           ------------------------------------------------- */
+
+        await loadClassroomMessages();
+
+        await loadAIMentorPolls();
+
+
+    } catch (error) {
+
+        console.error(
+            "[AI Mentor] Automatic response failed:",
+            error
+        );
+
+
+        /*
+         * Important:
+         * Do NOT leave the intervention permanently
+         * locked in evaluating if AI failed.
+         */
+
+        await supabaseClient
+            .from("study_ai_interventions")
+            .update({
+                status: "pending",
+                updated_at:
+                    new Date().toISOString()
+            })
+            .eq(
+                "id",
+                intervention.id
+            )
+            .eq(
+                "status",
+                "evaluating"
+            );
+
+
+        showToast(
+            "⚠️ AI Mentor couldn't respond. The request is waiting again."
+        );
+
+
+    } finally {
+
+        aiMentorProcessing.delete(
+            intervention.id
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   START AI SYSTEM WHEN CLASSROOM OPENS
+   ========================================================= */
+
+function initializeAIMentorSystem() {
+
+    if (!activeClassroomId) {
+
+        console.warn(
+            "[AI Mentor] No classroom loaded."
+        );
+
+        return;
+
+    }
+
+
+    setupStudyHelpPanel();
+
+    startAIMentorPollSystem();
+
+}
+
+
+/* =========================================================
+   CLEANUP WHEN LEAVING CLASSROOM
+   ========================================================= */
+
+function stopAIMentorSystem() {
+
+    stopAIMentorPollSystem();
+
+    aiMentorProcessing.clear();
 
 }
