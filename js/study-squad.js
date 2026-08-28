@@ -636,8 +636,10 @@ async function openClassroom(
     .remove("hidden");
     
    await loadClassroomMessages();
+   await setupMentorDashboard();
    subscribeToClassroomMessages();
    startClassroomPresence();
+   stopMentorDashboardPolling();
 
 
   /* -------------------------------------------------------
@@ -2465,3 +2467,572 @@ setInterval(
   updateMentorRequestCount,
   15000
 );
+/* =========================================================
+   MENTOR DASHBOARD
+   ========================================================= */
+
+let mentorDashboardTimer = null;
+
+
+/* ---------------------------------------------------------
+   Helpers
+   --------------------------------------------------------- */
+
+function mentorTypeLabel(type) {
+
+    switch (type) {
+
+        case "explicit_mentor":
+            return "🙋 MENTOR REQUEST";
+
+        case "unresolved_doubt":
+            return "🤔 UNRESOLVED DOUBT";
+
+        case "conflicting_answers":
+            return "⚠️ CONFLICTING ANSWERS";
+
+        case "multiple_requests":
+            return "🆘 MULTIPLE REQUESTS";
+
+        default:
+            return "📌 STUDY REQUEST";
+    }
+
+}
+
+
+function mentorPriorityClass(priority) {
+
+    if (Number(priority) >= 80) {
+        return "high";
+    }
+
+    if (Number(priority) >= 50) {
+        return "medium";
+    }
+
+    return "normal";
+}
+
+
+function mentorPriorityLabel(priority) {
+
+    if (Number(priority) >= 80) {
+        return "HIGH";
+    }
+
+    if (Number(priority) >= 50) {
+        return "MEDIUM";
+    }
+
+    return "NORMAL";
+}
+
+
+function mentorTimeAgo(dateString) {
+
+    if (!dateString) {
+        return "";
+    }
+
+    const date = new Date(dateString);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    const seconds =
+        Math.floor(
+            (Date.now() - date.getTime()) / 1000
+        );
+
+    if (seconds < 60) {
+        return "just now";
+    }
+
+    const minutes =
+        Math.floor(seconds / 60);
+
+    if (minutes < 60) {
+        return `${minutes} min ago`;
+    }
+
+    const hours =
+        Math.floor(minutes / 60);
+
+    if (hours < 24) {
+        return `${hours} hr ago`;
+    }
+
+    const days =
+        Math.floor(hours / 24);
+
+    return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
+
+/* ---------------------------------------------------------
+   Check whether current user owns classroom
+   --------------------------------------------------------- */
+
+async function isCurrentUserMentor(classroomId) {
+
+    if (!currentUser || !classroomId) {
+        return false;
+    }
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("study_classrooms")
+
+        .select("created_by")
+
+        .eq("id", classroomId)
+
+        .maybeSingle();
+
+
+    if (error) {
+
+        console.error(
+            "[Study Squad] Mentor check failed:",
+            error
+        );
+
+        return false;
+    }
+
+
+    return Boolean(
+        data &&
+        data.created_by === currentUser.id
+    );
+}
+
+
+/* ---------------------------------------------------------
+   Show / hide mentor dashboard
+   --------------------------------------------------------- */
+
+async function setupMentorDashboard() {
+
+    const dashboard =
+        $("mentorDashboard");
+
+    if (!dashboard) {
+        return;
+    }
+
+    const isMentor =
+        await isCurrentUserMentor(
+            activeClassroomId
+        );
+
+
+    if (!isMentor) {
+
+        dashboard.classList.add(
+            "hidden"
+        );
+
+        stopMentorDashboardPolling();
+
+        return;
+    }
+
+
+    dashboard.classList.remove(
+        "hidden"
+    );
+
+
+    await loadMentorInterventions();
+
+    startMentorDashboardPolling();
+}
+
+
+/* ---------------------------------------------------------
+   Load interventions
+   --------------------------------------------------------- */
+
+async function loadMentorInterventions() {
+
+    if (!activeClassroomId) {
+        return;
+    }
+
+    const dashboard =
+        $("mentorDashboard");
+
+    if (
+        !dashboard ||
+        dashboard.classList.contains("hidden")
+    ) {
+        return;
+    }
+
+
+    const list =
+        $("mentorInterventionsList");
+
+    if (!list) {
+        return;
+    }
+
+
+    const {
+        data,
+        error
+    } = await supabaseClient.rpc(
+        "get_study_mentor_interventions",
+        {
+            p_classroom_id:
+                activeClassroomId
+        }
+    );
+
+
+    if (error) {
+
+        console.error(
+            "[Study Squad] Failed to load mentor interventions:",
+            error
+        );
+
+        list.innerHTML = `
+            <div class="mentor-empty-state">
+                <div class="mentor-empty-icon">
+                    ⚠️
+                </div>
+
+                <strong>
+                    Couldn't load mentor requests
+                </strong>
+
+                <p>
+                    ${escapeHtml(error.message)}
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+
+    const interventions =
+        Array.isArray(data)
+            ? data
+            : [];
+
+
+    const pendingCount =
+        interventions.length;
+
+
+    if ($("mentorPendingCount")) {
+
+        $("mentorPendingCount")
+            .textContent =
+            pendingCount;
+    }
+
+
+    if (
+        $("mentorRequestCount")
+    ) {
+
+        $("mentorRequestCount")
+            .textContent =
+            pendingCount;
+    }
+
+
+    if (interventions.length === 0) {
+
+        list.innerHTML = `
+            <div class="mentor-empty-state">
+
+                <div class="mentor-empty-icon">
+                    🧑‍🏫
+                </div>
+
+                <strong>
+                    No pending requests
+                </strong>
+
+                <p>
+                    Everything is under control.
+                </p>
+
+            </div>
+        `;
+
+        return;
+    }
+
+
+    list.innerHTML =
+        interventions
+            .map(renderMentorIntervention)
+            .join("");
+
+
+    list
+        .querySelectorAll(
+            ".mentor-resolve-btn"
+        )
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    resolveMentorIntervention(
+                        button.dataset.interventionId
+                    );
+
+                }
+            );
+
+        });
+}
+
+
+/* ---------------------------------------------------------
+   Render intervention
+   --------------------------------------------------------- */
+
+function renderMentorIntervention(
+    intervention
+) {
+
+    const priorityClass =
+        mentorPriorityClass(
+            intervention.priority
+        );
+
+    const priorityLabel =
+        mentorPriorityLabel(
+            intervention.priority
+        );
+
+    const typeLabel =
+        mentorTypeLabel(
+            intervention.trigger_type
+        );
+
+
+    const message =
+        intervention.message ||
+        "No message is attached to this request.";
+
+
+    const requestCount =
+        Number(
+            intervention.mentor_request_count || 1
+        );
+
+
+    return `
+
+        <article
+            class="mentor-intervention-card"
+        >
+
+            <div
+                class="mentor-intervention-top"
+            >
+
+                <div
+                    class="mentor-intervention-type"
+                >
+                    ${typeLabel}
+                </div>
+
+                <span
+                    class="mentor-priority ${priorityClass}"
+                >
+                    ${priorityLabel}
+                    · ${Number(intervention.priority || 0)}
+                </span>
+
+            </div>
+
+
+            <div
+                class="mentor-intervention-message"
+            >
+                ${escapeHtml(message)}
+            </div>
+
+
+            <div
+                class="mentor-intervention-meta"
+            >
+
+                <span>
+                    👥 ${requestCount}
+                    request${requestCount === 1 ? "" : "s"}
+                </span>
+
+                <span>
+                    🕒 ${mentorTimeAgo(
+                        intervention.created_at
+                    )}
+                </span>
+
+                ${
+                    intervention.trigger_message_id
+                        ? `
+                            <span>
+                                💬 Message #${escapeHtml(
+                                    String(
+                                        intervention.trigger_message_id
+                                    )
+                                )}
+                            </span>
+                          `
+                        : ""
+                }
+
+            </div>
+
+
+            <div
+                class="mentor-intervention-actions"
+            >
+
+                <button
+                    type="button"
+                    class="mentor-resolve-btn"
+                    data-intervention-id="${escapeHtml(
+                        intervention.id
+                    )}"
+                >
+                    ✓ Mark Resolved
+                </button>
+
+            </div>
+
+        </article>
+
+    `;
+}
+
+
+/* ---------------------------------------------------------
+   Resolve intervention
+   --------------------------------------------------------- */
+
+async function resolveMentorIntervention(
+    interventionId
+) {
+
+    if (!interventionId) {
+        return;
+    }
+
+
+    const button =
+        document.querySelector(
+            `.mentor-resolve-btn[data-intervention-id="${CSS.escape(interventionId)}"]`
+        );
+
+
+    if (button) {
+
+        button.disabled = true;
+
+        button.textContent =
+            "Resolving...";
+    }
+
+
+    const {
+        data,
+        error
+    } = await supabaseClient.rpc(
+        "resolve_study_mentor_intervention",
+        {
+            p_intervention_id:
+                interventionId
+        }
+    );
+
+
+    if (error) {
+
+        console.error(
+            "[Study Squad] Failed to resolve intervention:",
+            error
+        );
+
+        showToast(
+            "Couldn't resolve this request."
+        );
+
+        if (button) {
+
+            button.disabled =
+                false;
+
+            button.textContent =
+                "✓ Mark Resolved";
+        }
+
+        return;
+    }
+
+
+    if (data === true) {
+
+        showToast(
+            "Mentor request resolved ✓"
+        );
+
+        await loadMentorInterventions();
+
+    }
+
+}
+
+
+/* ---------------------------------------------------------
+   Polling
+   --------------------------------------------------------- */
+
+function startMentorDashboardPolling() {
+
+    stopMentorDashboardPolling();
+
+
+    mentorDashboardTimer =
+        setInterval(
+            () => {
+
+                loadMentorInterventions();
+
+            },
+            10000
+        );
+}
+
+
+function stopMentorDashboardPolling() {
+
+    if (
+        mentorDashboardTimer
+    ) {
+
+        clearInterval(
+            mentorDashboardTimer
+        );
+
+        mentorDashboardTimer =
+            null;
+    }
+}
