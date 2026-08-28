@@ -633,17 +633,41 @@ async function openClassroom(
   classroomRoom
     .classList
     .remove("hidden");
-    
-   await loadClassroomMessages();
-   
-   setupStudyHelpPanel();
-   
-   subscribeToClassroomMessages();
-   
-   startClassroomPresence();
-   
-   initializeAIMentorSystem();
-   
+    await loadClassroomMessages();
+
+/*
+ * Classroom message realtime
+ */
+subscribeToClassroomMessages();
+
+/*
+ * Online student presence
+ */
+startClassroomPresence();
+
+/*
+ * Study Help menu
+ */
+setupStudyHelpPanel();
+
+/*
+ * Need Mentor
+ */
+setupNeedMentorButton();
+
+/*
+ * Active student list
+ */
+setupActiveStudentsPanel();
+
+/*
+ * Complete AI Mentor
+ *
+ * This starts BOTH:
+ * 1. AI poll monitoring
+ * 2. realtime AI message watcher
+ */
+startCompleteAIMentorSystem();
 
 
   /* -------------------------------------------------------
@@ -783,7 +807,8 @@ function setupNeedMentorButton() {
 
 
     if (
-        button.dataset.listenerAttached ===
+        button.dataset
+            .listenerAttached ===
         "true"
     ) {
 
@@ -792,7 +817,8 @@ function setupNeedMentorButton() {
     }
 
 
-    button.dataset.listenerAttached =
+    button.dataset
+        .listenerAttached =
         "true";
 
 
@@ -828,24 +854,20 @@ function setupNeedMentorButton() {
             try {
 
                 const {
+                    data,
                     error
                 } =
                     await supabaseClient
-                        .from(
-                            "study_mentor_requests"
-                        )
-                        .insert({
+                        .rpc(
+                            "request_study_mentor",
+                            {
+                                p_classroom_id:
+                                    activeClassroomId,
 
-                            classroom_id:
-                                activeClassroomId,
-
-                            student_id:
-                                currentUser.id,
-
-                            status:
-                                "pending"
-
-                        });
+                                p_message:
+                                    "Student requested mentor help."
+                            }
+                        );
 
 
                 if (error) {
@@ -856,6 +878,7 @@ function setupNeedMentorButton() {
                     );
 
                     showToast(
+                        error.message ||
                         "Couldn't request a mentor."
                     );
 
@@ -864,13 +887,41 @@ function setupNeedMentorButton() {
                 }
 
 
-                showToast(
-                    "Mentor requested 🧑‍🏫"
+                console.log(
+                    "[Study Squad] Mentor request created:",
+                    data
                 );
 
 
-                loadMentorRequests?.();
+                showToast(
+                    "🧑‍🏫 Mentor requested!"
+                );
 
+
+                /*
+                 * Refresh mentor-related UI.
+                 */
+
+                if (
+                    typeof loadMentorRequests ===
+                    "function"
+                ) {
+
+                    await loadMentorRequests();
+
+                }
+
+
+            } catch (error) {
+
+                console.error(
+                    "[Study Squad] Mentor request error:",
+                    error
+                );
+
+                showToast(
+                    "Couldn't request a mentor."
+                );
 
             } finally {
 
@@ -883,7 +934,6 @@ function setupNeedMentorButton() {
     );
 
 }
-
 /* =========================================================
    CREATE CLASSROOM
    ========================================================= */
@@ -2151,7 +2201,104 @@ function setupStudyHelpPanel() {
   );
 
 }
+function setupStudyHelpPanel() {
 
+    const button =
+        $("studyHelpBtn");
+
+    const panel =
+        $("studyHelpPanel");
+
+    const closeButton =
+        $("closeStudyHelp");
+
+
+    if (!button || !panel) {
+
+        console.warn(
+            "[Study Squad] Study Help elements not found."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        button.dataset
+            .listenerAttached ===
+        "true"
+    ) {
+
+        return;
+
+    }
+
+
+    button.dataset
+        .listenerAttached =
+        "true";
+
+
+    button.addEventListener(
+        "click",
+        event => {
+
+            event.stopPropagation();
+
+            const isHidden =
+                panel.classList.contains(
+                    "hidden"
+                );
+
+
+            if (isHidden) {
+
+                panel.classList.remove(
+                    "hidden"
+                );
+
+                button.setAttribute(
+                    "aria-expanded",
+                    "true"
+                );
+
+            } else {
+
+                panel.classList.add(
+                    "hidden"
+                );
+
+                button.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+            }
+
+        }
+    );
+
+
+    closeButton?.addEventListener(
+        "click",
+        event => {
+
+            event.stopPropagation();
+
+            panel.classList.add(
+                "hidden"
+            );
+
+            button.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+        }
+    );
+
+}
 
 function openStudyHelpPanel() {
 
@@ -2262,87 +2409,185 @@ function startClassroomPresence() {
 
 async function updateClassroomOnlineCount() {
 
-  if (
-    !classroomPresenceChannel
-  ) return;
+    if (!classroomPresenceChannel) {
+        return;
+    }
 
 
-  const state =
-    classroomPresenceChannel
-      .presenceState();
+    const state =
+        classroomPresenceChannel
+            .presenceState();
 
 
-  let count = 0;
+    const activeUserIds = [];
 
 
-  Object
-    .values(state)
-    .forEach(
-      presences => {
+    Object
+        .values(state)
+        .forEach(presences => {
 
-        count +=
-          presences.length;
+            presences.forEach(presence => {
 
-      }
+                const userId =
+                    presence?.user_id;
+
+                if (
+                    userId &&
+                    !activeUserIds.includes(userId)
+                ) {
+
+                    activeUserIds.push(
+                        userId
+                    );
+
+                }
+
+            });
+
+        });
+
+
+    /*
+     * Update visible count
+     */
+
+    const onlineCount =
+        $("classroomActiveCount");
+
+
+    if (onlineCount) {
+
+        onlineCount.textContent =
+            `🟢 ${activeUserIds.length} students active`;
+
+    }
+
+
+    /*
+     * Render active students
+     */
+
+    await renderActiveStudents(
+        activeUserIds
     );
 
-
-      const onlineCount =
-          $("classroomActiveCount");
-      
-      
-      if (onlineCount) {
-      
-          onlineCount.textContent =
-              `🟢 ${count} students active`;
+}
 
 
+async function renderActiveStudents(
+    userIds
+) {
 
-  }
+    const list =
+        $("activeStudentsList");
+
+
+    if (!list) {
+        return;
+    }
+
+
+    if (!userIds.length) {
+
+        list.innerHTML = `
+            <div class="active-student-empty">
+                No students are currently active.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    const {
+        data: profiles,
+        error
+    } =
+        await supabaseClient
+            .from("profiles")
+            .select(`
+                id,
+                username,
+                display_name
+            `)
+            .in(
+                "id",
+                userIds
+            );
+
+
+    if (error) {
+
+        console.error(
+            "[Study Squad] Failed to load active students:",
+            error
+        );
+
+        list.innerHTML = `
+            <div class="active-student-empty">
+                Couldn't load active students.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    const profileMap =
+        new Map(
+            (profiles || [])
+                .map(profile => [
+                    profile.id,
+                    profile
+                ])
+        );
+
+
+    list.innerHTML =
+        userIds
+            .map(userId => {
+
+                const profile =
+                    profileMap.get(userId);
+
+
+                const name =
+                    profile?.display_name ||
+                    profile?.username ||
+                    "Student";
+
+
+                const isCurrentUser =
+                    currentUser &&
+                    userId === currentUser.id;
+
+
+                return `
+                    <div
+                        class="active-student-item"
+                        data-student-id="${escapeHtml(userId)}"
+                    >
+
+                        <span class="active-student-dot">
+                            🟢
+                        </span>
+
+                        <span class="active-student-name">
+                            ${escapeHtml(name)}
+                            ${
+                                isCurrentUser
+                                    ? " (You)"
+                                    : ""
+                            }
+                        </span>
+
+                    </div>
+                `;
+
+            })
+            .join("");
 
 }
-let aiMentorProcessedInterventions =
-  new Set();
-
-/* =========================================================
-   AI MENTOR SYSTEM
-   ========================================================= */
-
-let aiMentorInitialized =
-  false;
-
-let aiMentorPollTimer =
-  null;
-
-let aiMentorProcessing =
-  false;
-
-let aiMentorLastMessageId =
-  null;
-
-
-/*
- * IMPORTANT DESIGN RULE
- *
- * Normal student messages:
- *   → NEVER directly generate AI answer.
- *
- * @mentor:
- *   → DIRECT BYPASS.
- *   → AI can answer immediately.
- *
- * Conflict / doubt / intervention:
- *   → AI does NOT immediately answer.
- *   → A classroom poll is created.
- *   → AI interrupts only when YES votes
- *     are strictly greater than 50%.
- *
- * This keeps the classroom fully AI-driven
- * while allowing students to control
- * unsolicited AI interruptions.
- */
-
-
 /* =========================================================
    INITIALIZE AI MENTOR SYSTEM
    ========================================================= */
