@@ -1895,7 +1895,8 @@ async function updateClassroomOnlineCount() {
   }
 
 }
-
+let aiMentorProcessedInterventions =
+  new Set();
 
 /* =========================================================
    AI MENTOR SYSTEM
@@ -3657,8 +3658,9 @@ async function checkAutomaticAIMentorInterventions() {
          */
 
         if (
-            aiMentorProcessing.has(
-                poll.intervention_id
+           aiMentorProcessedInterventions.has(
+                      poll.intervention_id
+                  )
             )
         ) {
             continue;
@@ -3718,7 +3720,7 @@ async function checkAutomaticAIMentorInterventions() {
          * The poll has passed.
          */
 
-        aiMentorProcessing.add(
+        aiMentorProcessedInterventions.add(
             poll.intervention_id
         );
 
@@ -3755,7 +3757,7 @@ async function checkAutomaticAIMentorInterventions() {
              * itself failed.
              */
 
-            aiMentorProcessing.delete(
+            aiMentorProcessedInterventions.delete(
                 poll.intervention_id
             );
 
