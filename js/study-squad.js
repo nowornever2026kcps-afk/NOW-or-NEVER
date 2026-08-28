@@ -637,6 +637,7 @@ async function openClassroom(
     
    await loadClassroomMessages();
    await setupMentorDashboard();
+   setupStudyHelpPanel();
    subscribeToClassroomMessages();
    startClassroomPresence();
    stopMentorDashboardPolling();
@@ -3213,4 +3214,105 @@ function stopMentorDashboardPolling() {
         mentorDashboardTimer =
             null;
     }
+}
+
+/* =========================================================
+   STUDY HELP PANEL
+   ========================================================= */
+
+function setupStudyHelpPanel() {
+
+    const button =
+        document.getElementById("studyHelpBtn");
+
+    const panel =
+        document.getElementById("studyHelpPanel");
+
+    const closeButton =
+        document.getElementById("closeStudyHelp");
+
+
+    if (!button || !panel) {
+        return;
+    }
+
+
+    function openStudyHelp() {
+
+        panel.classList.remove("hidden");
+
+        button.setAttribute(
+            "aria-expanded",
+            "true"
+        );
+
+    }
+
+
+    function closeStudyHelp() {
+
+        panel.classList.add("hidden");
+
+        button.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+    }
+
+
+    button.addEventListener(
+        "click",
+        function(event) {
+
+            event.stopPropagation();
+
+            if (
+                panel.classList.contains("hidden")
+            ) {
+
+                openStudyHelp();
+
+            } else {
+
+                closeStudyHelp();
+
+            }
+
+        }
+    );
+
+
+    if (closeButton) {
+
+        closeButton.addEventListener(
+            "click",
+            function(event) {
+
+                event.stopPropagation();
+
+                closeStudyHelp();
+
+            }
+        );
+
+    }
+
+
+    document.addEventListener(
+        "click",
+        function(event) {
+
+            if (
+                !panel.contains(event.target) &&
+                !button.contains(event.target)
+            ) {
+
+                closeStudyHelp();
+
+            }
+
+        }
+    );
+
 }
