@@ -7791,6 +7791,10 @@ async function clearNotificationHistory() {
 })();
 
 
+/* =========================================================
+   MORE MENU — WORKING VERSION
+========================================================= */
+
 (function () {
 
   const moreBtn =
@@ -7802,73 +7806,47 @@ async function clearNotificationHistory() {
   const closeBtn =
     document.getElementById("moreCloseBtn");
 
-    if (!moreBtn || !moreMenu) {
+
+  if (!moreBtn || !moreMenu) {
     return;
   }
 
-/* =========================================================
-   MORE MENU
-========================================================= */
 
-
-
-  /* -------------------------------------------------------
-     OPEN
-  ------------------------------------------------------- */
+  /* =====================================================
+     OPEN / CLOSE
+  ===================================================== */
 
   function openMore() {
 
-    moreMenu.classList.add(
-      "open"
-    );
+    moreMenu.classList.add("open");
 
-    moreBtn.classList.add(
-      "open"
-    );
+    moreBtn.classList.add("open");
 
     moreBtn.setAttribute(
       "aria-expanded",
       "true"
     );
 
-    moreMenu.setAttribute(
-      "aria-hidden",
-      "false"
-    );
-
   }
 
-
-  /* -------------------------------------------------------
-     CLOSE
-  ------------------------------------------------------- */
 
   function closeMore() {
 
-    moreMenu.classList.remove(
-      "open"
-    );
+    moreMenu.classList.remove("open");
 
-    moreBtn.classList.remove(
-      "open"
-    );
+    moreBtn.classList.remove("open");
 
     moreBtn.setAttribute(
       "aria-expanded",
       "false"
     );
 
-    moreMenu.setAttribute(
-      "aria-hidden",
-      "true"
-    );
-
   }
 
 
-  /* -------------------------------------------------------
+  /* =====================================================
      MORE BUTTON
-  ------------------------------------------------------- */
+  ===================================================== */
 
   moreBtn.addEventListener(
     "click",
@@ -7878,11 +7856,8 @@ async function clearNotificationHistory() {
 
       event.stopPropagation();
 
-
       if (
-        moreMenu.classList.contains(
-          "open"
-        )
+        moreMenu.classList.contains("open")
       ) {
 
         closeMore();
@@ -7897,53 +7872,115 @@ async function clearNotificationHistory() {
   );
 
 
-  /* -------------------------------------------------------
+  /* =====================================================
      ME / SHOP / HISTORY
-  ------------------------------------------------------- */
+  ===================================================== */
 
   moreMenu
-    .querySelectorAll(
-      "[data-more-view]"
-    )
+    .querySelectorAll("[data-more-view]")
     .forEach(
       function (item) {
 
         item.addEventListener(
           "click",
-          function () {
+          function (event) {
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
 
             const view =
-              item.dataset.moreView;
-
-
-            /*
-              Find the original navigation
-              button that your existing
-              navigation system understands.
-            */
-
-            const originalButton =
-              document.querySelector(
-                `.nav button[data-view="${view}"]`
+              item.getAttribute(
+                "data-more-view"
               );
 
 
-            if (originalButton) {
+            closeMore();
 
-              /*
-                 IMPORTANT:
-                 We trigger the original button.
 
-                 We do NOT duplicate your
-                 navigation logic.
-              */
+            /*
+             * Find ANY existing button on the
+             * page with the requested view.
+             */
 
-              originalButton.click();
+            let target =
+              document.querySelector(
+                `[data-view="${view}"]`
+              );
+
+
+            if (target) {
+
+              target.click();
+
+              return;
 
             }
 
 
-            closeMore();
+            /*
+             * Fallback:
+             * Some versions of the site use
+             * IDs/functions rather than buttons.
+             */
+
+
+            if (
+              view === "personal"
+            ) {
+
+              const personal =
+                document.getElementById(
+                  "personalView"
+                );
+
+              if (personal) {
+
+                personal.style.display =
+                  "block";
+
+              }
+
+            }
+
+
+            if (
+              view === "shop"
+            ) {
+
+              const shop =
+                document.getElementById(
+                  "shopView"
+                );
+
+              if (shop) {
+
+                shop.style.display =
+                  "block";
+
+              }
+
+            }
+
+
+            if (
+              view === "history"
+            ) {
+
+              const history =
+                document.getElementById(
+                  "historyView"
+                );
+
+              if (history) {
+
+                history.style.display =
+                  "block";
+
+              }
+
+            }
 
           }
         );
@@ -7952,9 +7989,9 @@ async function clearNotificationHistory() {
     );
 
 
-  /* -------------------------------------------------------
+  /* =====================================================
      CLOSE BUTTON
-  ------------------------------------------------------- */
+  ===================================================== */
 
   if (closeBtn) {
 
@@ -7974,24 +8011,18 @@ async function clearNotificationHistory() {
   }
 
 
-  /* -------------------------------------------------------
+  /* =====================================================
      CLICK OUTSIDE
-  ------------------------------------------------------- */
+  ===================================================== */
 
   document.addEventListener(
     "click",
     function (event) {
 
       if (
-        moreMenu.classList.contains(
-          "open"
-        ) &&
-        !moreMenu.contains(
-          event.target
-        ) &&
-        !moreBtn.contains(
-          event.target
-        )
+        moreMenu.classList.contains("open") &&
+        !moreMenu.contains(event.target) &&
+        !moreBtn.contains(event.target)
       ) {
 
         closeMore();
@@ -8002,9 +8033,9 @@ async function clearNotificationHistory() {
   );
 
 
-  /* -------------------------------------------------------
-     ESCAPE
-  ------------------------------------------------------- */
+  /* =====================================================
+     ESC
+  ===================================================== */
 
   document.addEventListener(
     "keydown",
@@ -8020,7 +8051,6 @@ async function clearNotificationHistory() {
 
     }
   );
-
 
 })();
 
