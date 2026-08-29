@@ -385,20 +385,119 @@
   <div class="user-info" id="userInfo"></div>
 
 
-  <nav class="nav">
-
-    <button class="active" data-view="daily">Daily</button>
-    <button data-view="tasks">Tasks</button>
-    <button data-view="tests">Tests</button>
-    <button data-view="personal">Me</button>
-    <button data-view="shop">Shop</button>
-    <button data-view="leaderboard">Board</button>
-    <button data-view="history">History</button>
-    <a class="nav-link" href="study-squad.html">
-    👥 Squad
-    </a>
-
-  </nav>
+  <!-- =========================
+     BOTTOM NAVIGATION
+========================== -->
+      <nav class="bottom-nav">
+      
+        <div class="bottom-nav-main">
+      
+          <button class="bottom-nav-btn active" data-view="daily">
+            <span class="bottom-nav-icon">⌂</span>
+            <span class="bottom-nav-label">Daily</span>
+          </button>
+      
+          <button class="bottom-nav-btn" data-view="tasks">
+            <span class="bottom-nav-icon">✓</span>
+            <span class="bottom-nav-label">Tasks</span>
+          </button>
+      
+          <button class="bottom-nav-btn" data-view="tests">
+            <span class="bottom-nav-icon">▣</span>
+            <span class="bottom-nav-label">Tests</span>
+          </button>
+      
+          <button class="bottom-nav-btn" data-view="personal">
+            <span class="bottom-nav-icon">♙</span>
+            <span class="bottom-nav-label">Me</span>
+          </button>
+      
+          <button
+            type="button"
+            class="bottom-nav-btn more-nav-btn"
+            id="moreNavBtn"
+            aria-label="More"
+            aria-expanded="false"
+          >
+            <span class="bottom-nav-icon more-icon">☰</span>
+            <span class="bottom-nav-label">More</span>
+          </button>
+      
+        </div>
+      
+        <!-- MORE MENU -->
+        <div class="more-nav-menu" id="moreNavMenu">
+      
+          <div class="more-nav-header">
+            <div>
+              <strong>More</strong>
+              <span>Everything else</span>
+            </div>
+      
+            <button
+              type="button"
+              class="more-close-btn"
+              id="moreCloseBtn"
+              aria-label="Close menu"
+            >
+              ×
+            </button>
+          </div>
+      
+          <div class="more-nav-grid">
+      
+            <button
+              type="button"
+              class="more-nav-item"
+              data-view="shop"
+            >
+              <span class="more-nav-item-icon">🛒</span>
+              <span>
+                <strong>Shop</strong>
+                <small>Cosmetics & items</small>
+              </span>
+            </button>
+      
+            <button
+              type="button"
+              class="more-nav-item"
+              data-view="leaderboard"
+            >
+              <span class="more-nav-item-icon">🏆</span>
+              <span>
+                <strong>Board</strong>
+                <small>Leaderboard</small>
+              </span>
+            </button>
+      
+            <button
+              type="button"
+              class="more-nav-item"
+              data-view="history"
+            >
+              <span class="more-nav-item-icon">📜</span>
+              <span>
+                <strong>History</strong>
+                <small>Your records</small>
+              </span>
+            </button>
+      
+            <a
+              class="more-nav-item"
+              href="study-squad.html"
+            >
+              <span class="more-nav-item-icon">👥</span>
+              <span>
+                <strong>Study Squad</strong>
+                <small>Learn together</small>
+              </span>
+            </a>
+      
+          </div>
+      
+        </div>
+      
+      </nav>
 
 
   <main>
@@ -7395,6 +7494,73 @@ async function clearNotificationHistory() {
   }
 
 }
+
+/* =========================================================
+   BOTTOM NAVIGATION — MORE MENU
+   ========================================================= */
+
+(function () {
+
+  const moreBtn = document.getElementById("moreNavBtn");
+  const moreMenu = document.getElementById("moreNavMenu");
+  const closeBtn = document.getElementById("moreCloseBtn");
+
+  if (!moreBtn || !moreMenu) return;
+
+  function openMoreMenu() {
+    moreMenu.classList.add("open");
+    moreBtn.classList.add("open");
+    moreBtn.setAttribute("aria-expanded", "true");
+  }
+
+  function closeMoreMenu() {
+    moreMenu.classList.remove("open");
+    moreBtn.classList.remove("open");
+    moreBtn.setAttribute("aria-expanded", "false");
+  }
+
+  moreBtn.addEventListener("click", function (event) {
+    event.stopPropagation();
+
+    if (moreMenu.classList.contains("open")) {
+      closeMoreMenu();
+    } else {
+      openMoreMenu();
+    }
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", function (event) {
+      event.stopPropagation();
+      closeMoreMenu();
+    });
+  }
+
+  /* Close when clicking outside */
+  document.addEventListener("click", function (event) {
+
+    if (
+      moreMenu.classList.contains("open") &&
+      !moreMenu.contains(event.target) &&
+      !moreBtn.contains(event.target)
+    ) {
+      closeMoreMenu();
+    }
+
+  });
+
+  /* Close with Escape */
+  document.addEventListener("keydown", function (event) {
+
+    if (event.key === "Escape") {
+      closeMoreMenu();
+    }
+
+  });
+
+})();
+
+  
 </script>
 <script src="js/ai.js"></script>
 <script src="js/dragon.js"></script>
