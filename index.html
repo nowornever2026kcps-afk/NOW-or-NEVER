@@ -388,9 +388,12 @@
   <!-- =========================
      BOTTOM NAVIGATION
 ========================== -->
-      <nav class="bottom-nav">
+          
       
-        <div class="bottom-nav-main">
+      <div class="bottom-nav">
+      
+        <!-- MAIN NAVIGATION -->
+        <nav class="nav bottom-nav-main">
       
           <button class="bottom-nav-btn active" data-view="daily">
             <span class="bottom-nav-icon">⌂</span>
@@ -412,23 +415,32 @@
             <span class="bottom-nav-label">Me</span>
           </button>
       
-          <button
-            type="button"
+          <!-- IMPORTANT:
+               This is NOT a button so the existing
+               .nav button system ignores it. -->
+          <div
             class="bottom-nav-btn more-nav-btn"
             id="moreNavBtn"
+            role="button"
+            tabindex="0"
             aria-label="More"
             aria-expanded="false"
           >
             <span class="bottom-nav-icon more-icon">☰</span>
             <span class="bottom-nav-label">More</span>
-          </button>
+          </div>
       
-        </div>
+        </nav>
       
-        <!-- MORE MENU -->
+      
+        <!-- =========================
+             MORE MENU
+        ========================== -->
+      
         <div class="more-nav-menu" id="moreNavMenu">
       
           <div class="more-nav-header">
+      
             <div>
               <strong>More</strong>
               <span>Everything else</span>
@@ -442,51 +454,60 @@
             >
               ×
             </button>
+      
           </div>
+      
       
           <div class="more-nav-grid">
       
             <button
               type="button"
               class="more-nav-item"
-              data-view="shop"
+              data-more-view="shop"
             >
               <span class="more-nav-item-icon">🛒</span>
+      
               <span>
                 <strong>Shop</strong>
                 <small>Cosmetics & items</small>
               </span>
             </button>
       
+      
             <button
               type="button"
               class="more-nav-item"
-              data-view="leaderboard"
+              data-more-view="leaderboard"
             >
               <span class="more-nav-item-icon">🏆</span>
+      
               <span>
                 <strong>Board</strong>
                 <small>Leaderboard</small>
               </span>
             </button>
       
+      
             <button
               type="button"
               class="more-nav-item"
-              data-view="history"
+              data-more-view="history"
             >
               <span class="more-nav-item-icon">📜</span>
+      
               <span>
                 <strong>History</strong>
                 <small>Your records</small>
               </span>
             </button>
       
+      
             <a
               class="more-nav-item"
               href="study-squad.html"
             >
               <span class="more-nav-item-icon">👥</span>
+      
               <span>
                 <strong>Study Squad</strong>
                 <small>Learn together</small>
@@ -497,8 +518,7 @@
       
         </div>
       
-      </nav>
-
+      </div>
 
   <main>
 
@@ -7494,72 +7514,227 @@ async function clearNotificationHistory() {
   }
 
 }
-
 /* =========================================================
    BOTTOM NAVIGATION — MORE MENU
+   Works with the existing .nav navigation system
    ========================================================= */
 
 (function () {
 
-  const moreBtn = document.getElementById("moreNavBtn");
-  const moreMenu = document.getElementById("moreNavMenu");
-  const closeBtn = document.getElementById("moreCloseBtn");
+  const moreBtn =
+    document.getElementById("moreNavBtn");
+
+  const moreMenu =
+    document.getElementById("moreNavMenu");
+
+  const closeBtn =
+    document.getElementById("moreCloseBtn");
 
   if (!moreBtn || !moreMenu) return;
 
+
+  /* ---------------------------------------------------------
+     OPEN MENU
+  --------------------------------------------------------- */
+
   function openMoreMenu() {
+
     moreMenu.classList.add("open");
+
     moreBtn.classList.add("open");
-    moreBtn.setAttribute("aria-expanded", "true");
+
+    moreBtn.setAttribute(
+      "aria-expanded",
+      "true"
+    );
+
   }
+
+
+  /* ---------------------------------------------------------
+     CLOSE MENU
+  --------------------------------------------------------- */
 
   function closeMoreMenu() {
+
     moreMenu.classList.remove("open");
+
     moreBtn.classList.remove("open");
-    moreBtn.setAttribute("aria-expanded", "false");
+
+    moreBtn.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+
   }
 
-  moreBtn.addEventListener("click", function (event) {
-    event.stopPropagation();
 
-    if (moreMenu.classList.contains("open")) {
-      closeMoreMenu();
-    } else {
-      openMoreMenu();
+  /* ---------------------------------------------------------
+     MORE BUTTON
+  --------------------------------------------------------- */
+
+  moreBtn.addEventListener(
+    "click",
+    function (event) {
+
+      event.stopPropagation();
+
+      if (
+        moreMenu.classList.contains("open")
+      ) {
+
+        closeMoreMenu();
+
+      } else {
+
+        openMoreMenu();
+
+      }
+
     }
-  });
+  );
+
+
+  /* Keyboard accessibility */
+
+  moreBtn.addEventListener(
+    "keydown",
+    function (event) {
+
+      if (
+        event.key === "Enter" ||
+        event.key === " "
+      ) {
+
+        event.preventDefault();
+
+        if (
+          moreMenu.classList.contains("open")
+        ) {
+
+          closeMoreMenu();
+
+        } else {
+
+          openMoreMenu();
+
+        }
+
+      }
+
+    }
+  );
+
+
+  /* ---------------------------------------------------------
+     CLOSE BUTTON
+  --------------------------------------------------------- */
 
   if (closeBtn) {
-    closeBtn.addEventListener("click", function (event) {
-      event.stopPropagation();
-      closeMoreMenu();
-    });
+
+    closeBtn.addEventListener(
+      "click",
+      function (event) {
+
+        event.stopPropagation();
+
+        closeMoreMenu();
+
+      }
+    );
+
   }
 
-  /* Close when clicking outside */
-  document.addEventListener("click", function (event) {
 
-    if (
-      moreMenu.classList.contains("open") &&
-      !moreMenu.contains(event.target) &&
-      !moreBtn.contains(event.target)
-    ) {
-      closeMoreMenu();
+  /* ---------------------------------------------------------
+     MORE MENU ITEMS
+     
+     We manually activate the existing navigation system.
+  --------------------------------------------------------- */
+
+  moreMenu
+    .querySelectorAll("[data-more-view]")
+    .forEach(function (item) {
+
+      item.addEventListener(
+        "click",
+        function () {
+
+          const view =
+            item.dataset.moreView;
+
+          /*
+             Find the ORIGINAL navigation button
+             belonging to that view.
+          */
+
+          const originalButton =
+            document.querySelector(
+              `.nav button[data-view="${view}"]`
+            );
+
+
+          if (originalButton) {
+
+            /*
+               This triggers your EXISTING navigation
+               code instead of creating a second
+               navigation system.
+            */
+
+            originalButton.click();
+
+          }
+
+
+          closeMoreMenu();
+
+        }
+      );
+
+    });
+
+
+  /* ---------------------------------------------------------
+     CLOSE WHEN CLICKING OUTSIDE
+  --------------------------------------------------------- */
+
+  document.addEventListener(
+    "click",
+    function (event) {
+
+      if (
+        moreMenu.classList.contains("open") &&
+        !moreMenu.contains(event.target) &&
+        !moreBtn.contains(event.target)
+      ) {
+
+        closeMoreMenu();
+
+      }
+
     }
+  );
 
-  });
 
-  /* Close with Escape */
-  document.addEventListener("keydown", function (event) {
+  /* ---------------------------------------------------------
+     ESCAPE KEY
+  --------------------------------------------------------- */
 
-    if (event.key === "Escape") {
-      closeMoreMenu();
+  document.addEventListener(
+    "keydown",
+    function (event) {
+
+      if (event.key === "Escape") {
+
+        closeMoreMenu();
+
+      }
+
     }
-
-  });
+  );
 
 })();
-
   
 </script>
 <script src="js/ai.js"></script>
