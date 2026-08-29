@@ -7873,120 +7873,106 @@ async function clearNotificationHistory() {
 
 
   /* =====================================================
-     ME / SHOP / HISTORY
-  ===================================================== */
+   ME / SHOP / HISTORY
+===================================================== */
 
-  moreMenu
-    .querySelectorAll("[data-more-view]")
-    .forEach(
-      function (item) {
+moreMenu
+  .querySelectorAll("[data-more-view]")
+  .forEach(function (item) {
 
-        item.addEventListener(
-          "click",
-          function (event) {
+    item.addEventListener(
+      "click",
+      function (event) {
 
-            event.preventDefault();
+        event.preventDefault();
+        event.stopPropagation();
 
-            event.stopPropagation();
+        const view =
+          item.getAttribute("data-more-view");
 
-
-            const view =
-              item.getAttribute(
-                "data-more-view"
-              );
+        closeMore();
 
 
-            closeMore();
+        /* ==========================================
+           FIRST: USE AN EXISTING NAVIGATION BUTTON
+        ========================================== */
+
+        const navButton =
+          document.querySelector(
+            `.nav button[data-view="${view}"]`
+          );
 
 
-            /*
-             * Find ANY existing button on the
-             * page with the requested view.
-             */
+        if (navButton) {
 
-            let target =
-              document.querySelector(
-                `[data-view="${view}"]`
-              );
+          navButton.click();
+
+          return;
+
+        }
 
 
-            if (target) {
+        /* ==========================================
+           FALLBACK: OPEN THE EXISTING VIEW DIRECTLY
+        ========================================== */
 
-              target.click();
-
-              return;
-
-            }
-
-
-            /*
-             * Fallback:
-             * Some versions of the site use
-             * IDs/functions rather than buttons.
-             */
+        const target =
+          document.getElementById(view);
 
 
-            if (
-              view === "personal"
-            ) {
+        if (!target) {
 
-              const personal =
-                document.getElementById(
-                  "personalView"
-                );
+          console.warn(
+            "More menu: view not found:",
+            view
+          );
 
-              if (personal) {
+          return;
 
-                personal.style.display =
-                  "block";
-
-              }
-
-            }
+        }
 
 
-            if (
-              view === "shop"
-            ) {
+        /* Hide all normal views */
 
-              const shop =
-                document.getElementById(
-                  "shopView"
-                );
+        document
+          .querySelectorAll(
+            "#mainApp .view"
+          )
+          .forEach(function (section) {
 
-              if (shop) {
+            section.classList.remove(
+              "active"
+            );
 
-                shop.style.display =
-                  "block";
-
-              }
-
-            }
+          });
 
 
-            if (
-              view === "history"
-            ) {
+        /* Show selected view */
 
-              const history =
-                document.getElementById(
-                  "historyView"
-                );
-
-              if (history) {
-
-                history.style.display =
-                  "block";
-
-              }
-
-            }
-
-          }
+        target.classList.add(
+          "active"
         );
+
+
+        /* Update active bottom button */
+
+        document
+          .querySelectorAll(
+            ".nav > button[data-view]"
+          )
+          .forEach(function (button) {
+
+            button.classList.toggle(
+              "active",
+              button.dataset.view === view
+            );
+
+          });
 
       }
     );
+
+  });
 
 
   /* =====================================================
