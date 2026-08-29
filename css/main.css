@@ -6425,3 +6425,11 @@ body {
   }
 
 }
+
+/* =========================================================
+   KEEP LEADERBOARD IN BOTTOM NAV
+========================================================= */
+
+.nav button[data-view="leaderboard"] {
+  display: flex !important;
+}
