@@ -7196,140 +7196,113 @@ select:focus {
 }
 
 /* =========================================================
-   🌌 UNIVERSE BACKGROUND — REPLACES PURPLE ORB
+   🌌 NOW OR NEVER — UNIVERSE STAR BACKGROUND
+   Replaces the old purple ambient lighting
    ========================================================= */
 
 html,
 body {
-    background: #02030a;
+    background: #02030a !important;
 }
 
-/* Main universe background */
 body {
     position: relative;
     min-height: 100vh;
     overflow-x: hidden;
 
     background:
-        radial-gradient(circle at 50% 50%, rgba(35, 25, 80, 0.18), transparent 45%),
-        radial-gradient(circle at 20% 20%, rgba(25, 45, 100, 0.12), transparent 35%),
-        radial-gradient(circle at 80% 80%, rgba(70, 25, 100, 0.10), transparent 35%),
-        #02030a;
+        radial-gradient(
+            ellipse at center,
+            rgba(35, 35, 80, 0.22) 0%,
+            rgba(5, 7, 18, 0.8) 45%,
+            #02030a 100%
+        ) !important;
 }
 
-/* Star layers */
-body::before,
+/* Star field */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    pointer-events: none;
+
+    background-image:
+        radial-gradient(circle, rgba(255,255,255,.9) 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(190,210,255,.7) 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(255,255,255,.5) .7px, transparent 1.2px);
+
+    background-size:
+        71px 71px,
+        113px 113px,
+        173px 173px;
+
+    background-position:
+        10px 20px,
+        40px 80px,
+        100px 35px;
+
+    opacity: .75;
+
+    z-index: -2;
+}
+
+/* Bigger distant stars */
 body::after {
     content: "";
     position: fixed;
     inset: 0;
+
     pointer-events: none;
+
+    background-image:
+        radial-gradient(circle, rgba(255,255,255,.95) 1.3px, transparent 2px),
+        radial-gradient(circle, rgba(180,200,255,.8) 1px, transparent 1.8px);
+
+    background-size:
+        197px 197px,
+        263px 263px;
+
+    background-position:
+        70px 110px,
+        130px 40px;
+
+    opacity: .55;
+
+    animation: starTwinkle 8s ease-in-out infinite alternate;
+
     z-index: -1;
 }
 
-/* Small stars */
-body::before {
-    background-image:
-        radial-gradient(circle, rgba(255,255,255,0.85) 1px, transparent 1.5px),
-        radial-gradient(circle, rgba(180,210,255,0.65) 1px, transparent 1.5px),
-        radial-gradient(circle, rgba(255,255,255,0.45) 0.8px, transparent 1.3px);
-
-    background-size:
-        73px 73px,
-        113px 113px,
-        157px 157px;
-
-    background-position:
-        12px 18px,
-        45px 70px,
-        90px 25px;
-
-    opacity: 0.75;
-}
-
-/* Larger / brighter stars */
-body::after {
-    background-image:
-        radial-gradient(circle, rgba(255,255,255,0.95) 1.2px, transparent 2px),
-        radial-gradient(circle, rgba(150,190,255,0.8) 1px, transparent 1.8px);
-
-    background-size:
-        181px 181px,
-        239px 239px;
-
-    background-position:
-        30px 90px,
-        120px 40px;
-
-    opacity: 0.55;
-
-    animation: universeTwinkle 7s ease-in-out infinite alternate;
-}
-
-/* Gentle star twinkle */
-@keyframes universeTwinkle {
+/* Very subtle universe breathing effect */
+@keyframes starTwinkle {
     0% {
-        opacity: 0.35;
+        opacity: .35;
     }
 
     50% {
-        opacity: 0.65;
+        opacity: .65;
     }
 
     100% {
-        opacity: 0.45;
+        opacity: .45;
     }
 }
 
-
 /* =========================================================
-   🌠 OPTIONAL: VERY SUBTLE SPACE GLOW
+   🚫 COMPLETELY DISABLE OLD PURPLE ORBS
    ========================================================= */
 
-body {
-    isolation: isolate;
-}
-
-body::marker {
-    display: none;
-}
-
-
-/* =========================================================
-   📱 MOBILE PERFORMANCE
-   ========================================================= */
-
-@media (max-width: 768px) {
-    body::before {
-        opacity: 0.65;
-    }
-
-    body::after {
-        opacity: 0.4;
-        animation-duration: 10s;
-    }
-}
-
-
-/* =========================================================
-   🚫 REMOVE OLD PURPLE ORB
-   ========================================================= */
-
-/*
-   If your old orb uses one of these classes/IDs,
-   this will completely hide it.
-*/
-
-.purple-orb,
-.purpleOrb,
-.orb,
-.bg-orb,
-.background-orb,
-.glow-orb,
-#purple-orb,
-#purpleOrb,
-#orb,
-#bg-orb {
+.ambient-lighting,
+.light-orb,
+.light-a,
+.light-b,
+.light-c {
     display: none !important;
     animation: none !important;
+    transform: none !important;
+    filter: none !important;
 }
