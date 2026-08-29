@@ -387,8 +387,6 @@
 
  <nav class="nav">
 
-  <!-- MAIN NAVIGATION -->
-
   <button class="active" data-view="daily">
     <span class="nav-icon">🏠</span>
     <span>Daily</span>
@@ -409,39 +407,32 @@
     <span>Board</span>
   </button>
 
-  <!-- MORE -->
-
   <button
     type="button"
     id="moreNavBtn"
     class="more-nav-btn"
     aria-expanded="false"
-    aria-label="More"
   >
     <span class="nav-icon">☰</span>
     <span>More</span>
   </button>
 
 
-  <!-- MORE POPUP -->
-
   <div
     id="moreNavMenu"
     class="more-nav-menu"
-    aria-hidden="true"
   >
 
-    <div class="more-nav-header">
+    <div class="more-nav-title">
       <div>
         <strong>More</strong>
-        <small>Everything else</small>
+        <span>Explore everything</span>
       </div>
 
       <button
         type="button"
         id="moreCloseBtn"
         class="more-close-btn"
-        aria-label="Close"
       >
         ×
       </button>
@@ -450,64 +441,55 @@
 
     <div class="more-nav-grid">
 
-
-      <!-- ME -->
-
       <button
         type="button"
         class="more-nav-item"
         data-more-view="personal"
       >
-        <span class="more-nav-item-icon">👤</span>
+        <span class="more-icon">👤</span>
 
-        <span class="more-nav-item-text">
+        <span>
           <strong>Me</strong>
-          <small>Your profile & progress</small>
+          <small>Profile & progress</small>
         </span>
       </button>
 
-
-      <!-- SHOP -->
 
       <button
         type="button"
         class="more-nav-item"
         data-more-view="shop"
       >
-        <span class="more-nav-item-icon">🛒</span>
+        <span class="more-icon">🛒</span>
 
-        <span class="more-nav-item-text">
+        <span>
           <strong>Shop</strong>
-          <small>Cosmetics & items</small>
+          <small>Items & cosmetics</small>
         </span>
       </button>
 
-
-      <!-- HISTORY -->
 
       <button
         type="button"
         class="more-nav-item"
         data-more-view="history"
       >
-        <span class="more-nav-item-icon">📜</span>
+        <span class="more-icon">📜</span>
 
-        <span class="more-nav-item-text">
+        <span>
           <strong>History</strong>
-          <small>Your study records</small>
+          <small>Study records</small>
         </span>
       </button>
 
 
-      <!-- STUDY SQUAD -->
-
       <a
-        class="more-nav-item"
         href="study-squad.html"
+        class="more-nav-item"
       >
-        <span class="more-nav-item-icon">👥</span>
+        <span class="more-icon">👥</span>
 
-        <span class="more-nav-item-text">
+        <span>
           <strong>Study Squad</strong>
           <small>Learn together</small>
         </span>
@@ -7807,6 +7789,409 @@ async function clearNotificationHistory() {
   }
 
 })();
+
+/* =========================================================
+   MORE MENU
+========================================================= */
+
+
+
+  /* -------------------------------------------------------
+     OPEN
+  ------------------------------------------------------- */
+
+  function openMore() {
+
+    moreMenu.classList.add(
+      "open"
+    );
+
+    moreBtn.classList.add(
+      "open"
+    );
+
+    moreBtn.setAttribute(
+      "aria-expanded",
+      "true"
+    );
+
+    moreMenu.setAttribute(
+      "aria-hidden",
+      "false"
+    );
+
+  }
+
+
+  /* -------------------------------------------------------
+     CLOSE
+  ------------------------------------------------------- */
+
+  function closeMore() {
+
+    moreMenu.classList.remove(
+      "open"
+    );
+
+    moreBtn.classList.remove(
+      "open"
+    );
+
+    moreBtn.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+
+    moreMenu.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
+  }
+
+
+  /* -------------------------------------------------------
+     MORE BUTTON
+  ------------------------------------------------------- */
+
+  moreBtn.addEventListener(
+    "click",
+    function (event) {
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+
+      if (
+        moreMenu.classList.contains(
+          "open"
+        )
+      ) {
+
+        closeMore();
+
+      } else {
+
+        openMore();
+
+      }
+
+    }
+  );
+
+
+  /* -------------------------------------------------------
+     ME / SHOP / HISTORY
+  ------------------------------------------------------- */
+
+  moreMenu
+    .querySelectorAll(
+      "[data-more-view]"
+    )
+    .forEach(
+      function (item) {
+
+        item.addEventListener(
+          "click",
+          function () {
+
+            const view =
+              item.dataset.moreView;
+
+
+            /*
+              Find the original navigation
+              button that your existing
+              navigation system understands.
+            */
+
+            const originalButton =
+              document.querySelector(
+                `.nav button[data-view="${view}"]`
+              );
+
+
+            if (originalButton) {
+
+              /*
+                 IMPORTANT:
+                 We trigger the original button.
+
+                 We do NOT duplicate your
+                 navigation logic.
+              */
+
+              originalButton.click();
+
+            }
+
+
+            closeMore();
+
+          }
+        );
+
+      }
+    );
+
+
+  /* -------------------------------------------------------
+     CLOSE BUTTON
+  ------------------------------------------------------- */
+
+  if (closeBtn) {
+
+    closeBtn.addEventListener(
+      "click",
+      function (event) {
+
+        event.preventDefault();
+
+        event.stopPropagation();
+
+        closeMore();
+
+      }
+    );
+
+  }
+
+
+  /* -------------------------------------------------------
+     CLICK OUTSIDE
+  ------------------------------------------------------- */
+
+  document.addEventListener(
+    "click",
+    function (event) {
+
+      if (
+        moreMenu.classList.contains(
+          "open"
+        ) &&
+        !moreMenu.contains(
+          event.target
+        ) &&
+        !moreBtn.contains(
+          event.target
+        )
+      ) {
+
+        closeMore();
+
+      }
+
+    }
+  );
+
+
+  /* -------------------------------------------------------
+     ESCAPE
+  ------------------------------------------------------- */
+
+  document.addEventListener(
+    "keydown",
+    function (event) {
+
+      if (
+        event.key === "Escape"
+      ) {
+
+        closeMore();
+
+      }
+
+    }
+  );
+
+
+})();
+
+
+
+  /* =========================================================
+   MORE MENU — FINAL
+========================================================= */
+
+(function () {
+
+  const moreBtn =
+    document.getElementById("moreNavBtn");
+
+  const moreMenu =
+    document.getElementById("moreNavMenu");
+
+  const closeBtn =
+    document.getElementById("moreCloseBtn");
+
+
+  if (
+    !moreBtn ||
+    !moreMenu
+  ) {
+    return;
+  }
+
+
+  function openMore() {
+
+    moreMenu.classList.add("open");
+
+    moreBtn.setAttribute(
+      "aria-expanded",
+      "true"
+    );
+
+  }
+
+
+  function closeMore() {
+
+    moreMenu.classList.remove("open");
+
+    moreBtn.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+
+  }
+
+
+  /* More button */
+
+  moreBtn.addEventListener(
+    "click",
+    function (event) {
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+      if (
+        moreMenu.classList.contains("open")
+      ) {
+
+        closeMore();
+
+      } else {
+
+        openMore();
+
+      }
+
+    }
+  );
+
+
+  /* Me / Shop / History */
+
+  moreMenu
+    .querySelectorAll("[data-more-view]")
+    .forEach(
+      function (item) {
+
+        item.addEventListener(
+          "click",
+          function (event) {
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+
+            const view =
+              item.dataset.moreView;
+
+
+            /*
+              Find the ORIGINAL navigation
+              button.
+
+              We don't duplicate its logic.
+            */
+
+            const original =
+              document.querySelector(
+                `.nav button[data-view="${view}"]`
+              );
+
+
+            if (original) {
+
+              original.click();
+
+            }
+
+
+            closeMore();
+
+          }
+        );
+
+      }
+    );
+
+
+  /* Close */
+
+  if (closeBtn) {
+
+    closeBtn.addEventListener(
+      "click",
+      function (event) {
+
+        event.preventDefault();
+
+        event.stopPropagation();
+
+        closeMore();
+
+      }
+    );
+
+  }
+
+
+  /* Click outside */
+
+  document.addEventListener(
+    "click",
+    function (event) {
+
+      if (
+        !moreMenu.contains(event.target) &&
+        !moreBtn.contains(event.target)
+      ) {
+
+        closeMore();
+
+      }
+
+    }
+  );
+
+
+  /* Escape */
+
+  document.addEventListener(
+    "keydown",
+    function (event) {
+
+      if (
+        event.key === "Escape"
+      ) {
+
+        closeMore();
+
+      }
+
+    }
+  );
+
+})();
+
+
 
   
 </script>
