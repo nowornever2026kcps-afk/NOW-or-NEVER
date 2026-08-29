@@ -5835,3 +5835,24 @@ body {
   cursor: grabbing !important;
 
 }
+
+/* =========================================================
+   NOW AI — DRAGGABLE BUTTON
+========================================================= */
+
+#nowAiButton {
+  position: fixed !important;
+
+  cursor: grab !important;
+
+  touch-action: none !important;
+
+  user-select: none !important;
+  -webkit-user-select: none !important;
+
+  z-index: 1000000 !important;
+}
+
+#nowAiButton:active {
+  cursor: grabbing !important;
+}
