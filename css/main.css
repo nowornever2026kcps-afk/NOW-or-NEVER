@@ -7307,95 +7307,107 @@ body::after {
     filter: none !important;
 }
 
-```css
+
 /* =========================================================
-   🌌 UNIVERSE BACKGROUND
+   🌌 NOW OR NEVER — VISIBLE UNIVERSE BACKGROUND
    ========================================================= */
 
 html {
-    background: #02030a !important;
+    background: #01020a !important;
 }
 
 body {
     margin: 0 !important;
-    min-height: 100vh;
-    background: #02030a !important;
+    min-height: 100vh !important;
+    background:
+        radial-gradient(
+            circle at 50% 40%,
+            #10142d 0%,
+            #050714 35%,
+            #01020a 75%,
+            #000108 100%
+        ) !important;
     position: relative;
 }
 
-/* STAR FIELD — layer 1 */
+/* ✨ MANY SMALL STARS */
 body::before {
     content: "";
     position: fixed;
     inset: 0;
-    width: 100%;
-    height: 100%;
     pointer-events: none;
 
     background-image:
-        radial-gradient(circle, white 1px, transparent 1.5px),
-        radial-gradient(circle, rgba(255,255,255,.8) 1px, transparent 1.5px),
-        radial-gradient(circle, rgba(180,200,255,.7) .8px, transparent 1.3px);
+        radial-gradient(circle, #ffffff 1px, transparent 1.5px),
+        radial-gradient(circle, #ffffff 1px, transparent 1.5px),
+        radial-gradient(circle, #b9d7ff 1px, transparent 1.5px),
+        radial-gradient(circle, #ffffff .8px, transparent 1.3px);
 
     background-size:
-        70px 70px,
-        110px 110px,
-        160px 160px;
+        47px 47px,
+        83px 83px,
+        127px 127px,
+        181px 181px;
 
     background-position:
-        10px 15px,
-        40px 75px,
-        90px 30px;
+        5px 12px,
+        27px 41px,
+        71px 18px,
+        110px 93px;
 
-    opacity: .8;
+    opacity: .85;
+
     z-index: -10;
 }
 
-/* STAR FIELD — layer 2 */
+/* ⭐ BRIGHTER DISTANT STARS */
 body::after {
     content: "";
     position: fixed;
     inset: 0;
-    width: 100%;
-    height: 100%;
     pointer-events: none;
 
     background-image:
-        radial-gradient(circle, white 1.5px, transparent 2.5px),
-        radial-gradient(circle, rgba(150,190,255,.9) 1.2px, transparent 2px);
+        radial-gradient(circle, #ffffff 1.8px, transparent 3px),
+        radial-gradient(circle, #d9e7ff 1.4px, transparent 2.5px),
+        radial-gradient(circle, #ffffff 1.2px, transparent 2px);
 
     background-size:
-        190px 190px,
-        270px 270px;
+        211px 211px,
+        293px 293px,
+        347px 347px;
 
     background-position:
-        80px 100px,
-        150px 45px;
+        35px 70px,
+        150px 25px,
+        90px 170px;
 
-    opacity: .65;
+    opacity: .8;
+
+    animation: universeTwinkle 6s ease-in-out infinite alternate;
+
     z-index: -9;
-
-    animation: universeStars 8s ease-in-out infinite alternate;
 }
 
-@keyframes universeStars {
-    from {
+/* ✨ Gentle twinkling */
+@keyframes universeTwinkle {
+    0% {
         opacity: .35;
     }
 
-    to {
-        opacity: .75;
+    50% {
+        opacity: .9;
+    }
+
+    100% {
+        opacity: .55;
     }
 }
 
 
-/* REMOVE OLD PURPLE AMBIENT LIGHTING */
+/* 🚫 Make sure old lighting stays gone */
 
-.ambient-lighting {
-    display: none !important;
-}
-
-.ambient-lighting *,
+.ambient-lighting,
 .light-orb,
 .light-a,
 .light-b,
@@ -7403,4 +7415,3 @@ body::after {
     display: none !important;
     animation: none !important;
 }
-```
