@@ -4817,9 +4817,7 @@ body {
 
 @media (max-width: 620px) {
 
-  body {
-    padding-bottom: 92px !important;
-  }
+ 
 
 
   .bottom-nav {
@@ -5232,6 +5230,98 @@ body {
 
   .nav > button {
     transition: none !important;
+  }
+
+}
+
+/* =========================================================
+   TRUE FLOATING SCREEN NAVIGATION
+========================================================= */
+
+.nav {
+  position: fixed !important;
+
+  /* Always attach to the viewport */
+  left: 50% !important;
+  bottom: 16px !important;
+
+  transform: translateX(-50%) !important;
+
+  /* Float ABOVE the page */
+  z-index: 2147483647 !important;
+
+  width: min(650px, calc(100vw - 24px)) !important;
+
+  margin: 0 !important;
+
+  /* Prevent it from behaving like normal page content */
+  flex: none !important;
+
+  /* Floating glass appearance */
+  background: rgba(15, 14, 21, 0.90) !important;
+
+  backdrop-filter: blur(24px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+
+  border: 1px solid rgba(255,255,255,.10) !important;
+
+  border-radius: 22px !important;
+
+  box-shadow:
+    0 16px 45px rgba(0,0,0,.55),
+    0 0 30px rgba(139,92,246,.12),
+    inset 0 1px rgba(255,255,255,.07) !important;
+}
+
+
+/* Desktop */
+@media (min-width: 621px) {
+
+  .nav {
+    bottom: 18px !important;
+  }
+
+}
+
+
+/* Mobile */
+@media (max-width: 620px) {
+
+  .nav {
+
+    left: 50% !important;
+
+    bottom:
+      max(
+        8px,
+        env(safe-area-inset-bottom)
+      ) !important;
+
+    width:
+      calc(100vw - 16px) !important;
+
+    border-radius:
+      20px !important;
+
+  }
+
+}
+
+
+/* Very small phones */
+@media (max-width: 380px) {
+
+  .nav {
+
+    width:
+      calc(100vw - 10px) !important;
+
+    bottom:
+      max(
+        6px,
+        env(safe-area-inset-bottom)
+      ) !important;
+
   }
 
 }
