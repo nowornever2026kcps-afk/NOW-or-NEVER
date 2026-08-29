@@ -5803,3 +5803,35 @@ body {
   }
 
 }
+/* =========================================================
+   DRAGGABLE AI BOT
+========================================================= */
+
+#aiCompanion,
+#ai-companion,
+.ai-companion,
+.ai-bot,
+.ai-fab {
+
+  cursor: grab !important;
+
+  touch-action: none !important;
+
+  user-select: none !important;
+
+  -webkit-user-select: none !important;
+
+  z-index: 1000000 !important;
+
+}
+
+
+#aiCompanion:active,
+#ai-companion:active,
+.ai-companion:active,
+.ai-bot:active,
+.ai-fab:active {
+
+  cursor: grabbing !important;
+
+}
