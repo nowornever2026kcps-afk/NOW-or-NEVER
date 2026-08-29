@@ -4442,3 +4442,76 @@ body {
     transition: none !important;
   }
 }
+/* =========================================================
+   BOTTOM NAV — COMPATIBILITY FIX
+   ========================================================= */
+
+.bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+
+  width: min(680px, calc(100% - 24px));
+
+  z-index: 9998;
+
+  pointer-events: none;
+
+  margin: 0;
+}
+
+.bottom-nav-main {
+  pointer-events: auto;
+
+  /* Override all old .nav grid rules */
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+
+  gap: 5px !important;
+
+  margin: 0 !important;
+  padding: 7px !important;
+}
+
+
+/* The More control is a div, not a nav button */
+.more-nav-btn {
+  cursor: pointer;
+  user-select: none;
+}
+
+
+/* The popup itself can receive clicks */
+.more-nav-menu {
+  pointer-events: none;
+}
+
+.more-nav-menu.open {
+  pointer-events: auto;
+}
+
+
+/* Make the more items independent of old .nav styling */
+.more-nav-grid .more-nav-item {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+/* Mobile */
+@media (max-width: 620px) {
+
+  .bottom-nav {
+    width: calc(100% - 18px);
+    bottom: max(9px, env(safe-area-inset-bottom));
+  }
+
+  .bottom-nav-main {
+    grid-template-columns: repeat(5, 1fr) !important;
+    padding: 5px !important;
+    gap: 3px !important;
+  }
+
+}
