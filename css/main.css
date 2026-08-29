@@ -7196,152 +7196,50 @@ select:focus {
 }
 
 /* =========================================================
-   🌌 NOW OR NEVER — UNIVERSE STAR BACKGROUND
-   Replaces the old purple ambient lighting
-   ========================================================= */
-
-html,
-body {
-    background: #02030a !important;
-}
-
-body {
-    position: relative;
-    min-height: 100vh;
-    overflow-x: hidden;
-
-    background:
-        radial-gradient(
-            ellipse at center,
-            rgba(35, 35, 80, 0.22) 0%,
-            rgba(5, 7, 18, 0.8) 45%,
-            #02030a 100%
-        ) !important;
-}
-
-/* Star field */
-body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-
-    width: 100%;
-    height: 100%;
-
-    pointer-events: none;
-
-    background-image:
-        radial-gradient(circle, rgba(255,255,255,.9) 1px, transparent 1.5px),
-        radial-gradient(circle, rgba(190,210,255,.7) 1px, transparent 1.5px),
-        radial-gradient(circle, rgba(255,255,255,.5) .7px, transparent 1.2px);
-
-    background-size:
-        71px 71px,
-        113px 113px,
-        173px 173px;
-
-    background-position:
-        10px 20px,
-        40px 80px,
-        100px 35px;
-
-    opacity: .75;
-
-    z-index: -2;
-}
-
-/* Bigger distant stars */
-body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-
-    pointer-events: none;
-
-    background-image:
-        radial-gradient(circle, rgba(255,255,255,.95) 1.3px, transparent 2px),
-        radial-gradient(circle, rgba(180,200,255,.8) 1px, transparent 1.8px);
-
-    background-size:
-        197px 197px,
-        263px 263px;
-
-    background-position:
-        70px 110px,
-        130px 40px;
-
-    opacity: .55;
-
-    animation: starTwinkle 8s ease-in-out infinite alternate;
-
-    z-index: -1;
-}
-
-/* Very subtle universe breathing effect */
-@keyframes starTwinkle {
-    0% {
-        opacity: .35;
-    }
-
-    50% {
-        opacity: .65;
-    }
-
-    100% {
-        opacity: .45;
-    }
-}
-
-/* =========================================================
-   🚫 COMPLETELY DISABLE OLD PURPLE ORBS
-   ========================================================= */
-
-.ambient-lighting,
-.light-orb,
-.light-a,
-.light-b,
-.light-c {
-    display: none !important;
-    animation: none !important;
-    transform: none !important;
-    filter: none !important;
-}
-
-
-/* =========================================================
-   🌌 NOW OR NEVER — VISIBLE UNIVERSE BACKGROUND
+   🌌 NOW OR NEVER — UNIVERSE BACKGROUND
    ========================================================= */
 
 html {
-    background: #01020a !important;
+    background: #02030a !important;
 }
 
 body {
     margin: 0 !important;
     min-height: 100vh !important;
+
     background:
         radial-gradient(
-            circle at 50% 40%,
-            #10142d 0%,
-            #050714 35%,
-            #01020a 75%,
-            #000108 100%
-        ) !important;
+            circle at 50% 30%,
+            rgba(30, 35, 90, 0.45),
+            transparent 45%
+        ),
+        radial-gradient(
+            circle at 20% 80%,
+            rgba(20, 35, 80, 0.25),
+            transparent 40%
+        ),
+        #02030a !important;
+
     position: relative;
 }
 
-/* ✨ MANY SMALL STARS */
+/* ⭐ STAR LAYER */
 body::before {
     content: "";
     position: fixed;
-    inset: 0;
+
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
     pointer-events: none;
 
     background-image:
-        radial-gradient(circle, #ffffff 1px, transparent 1.5px),
-        radial-gradient(circle, #ffffff 1px, transparent 1.5px),
+        radial-gradient(circle, white 1px, transparent 1.5px),
+        radial-gradient(circle, white 1px, transparent 1.5px),
         radial-gradient(circle, #b9d7ff 1px, transparent 1.5px),
-        radial-gradient(circle, #ffffff .8px, transparent 1.3px);
+        radial-gradient(circle, rgba(255,255,255,.7) .8px, transparent 1.3px);
 
     background-size:
         47px 47px,
@@ -7355,22 +7253,27 @@ body::before {
         71px 18px,
         110px 93px;
 
-    opacity: .85;
+    opacity: 0.9;
 
-    z-index: -10;
+    z-index: 0;
 }
 
-/* ⭐ BRIGHTER DISTANT STARS */
+/* ✨ BRIGHTER STARS */
 body::after {
     content: "";
     position: fixed;
-    inset: 0;
+
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
     pointer-events: none;
 
     background-image:
-        radial-gradient(circle, #ffffff 1.8px, transparent 3px),
-        radial-gradient(circle, #d9e7ff 1.4px, transparent 2.5px),
-        radial-gradient(circle, #ffffff 1.2px, transparent 2px);
+        radial-gradient(circle, white 2px, transparent 3px),
+        radial-gradient(circle, #d9e7ff 1.5px, transparent 2.5px),
+        radial-gradient(circle, white 1.2px, transparent 2px);
 
     background-size:
         211px 211px,
@@ -7382,31 +7285,36 @@ body::after {
         150px 25px,
         90px 170px;
 
-    opacity: .8;
+    opacity: 0.8;
+
+    z-index: 0;
 
     animation: universeTwinkle 6s ease-in-out infinite alternate;
-
-    z-index: -9;
 }
 
-/* ✨ Gentle twinkling */
 @keyframes universeTwinkle {
     0% {
-        opacity: .35;
+        opacity: 0.35;
     }
 
     50% {
-        opacity: .9;
+        opacity: 0.9;
     }
 
     100% {
-        opacity: .55;
+        opacity: 0.55;
     }
 }
 
+/* Keep the actual website content ABOVE the stars */
+.app,
+.auth-screen,
+.session-splash {
+    position: relative;
+    z-index: 1;
+}
 
-/* 🚫 Make sure old lighting stays gone */
-
+/* Old ambient lighting stays disabled */
 .ambient-lighting,
 .light-orb,
 .light-a,
