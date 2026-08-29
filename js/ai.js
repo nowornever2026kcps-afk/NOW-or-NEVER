@@ -259,7 +259,182 @@
     document.body.appendChild(
       aiPanel
     );
+/* =====================================================
+   DRAGGABLE NOW AI BUTTON
+===================================================== */
 
+let isDraggingAI = false;
+let aiMoved = false;
+
+let aiStartX = 0;
+let aiStartY = 0;
+
+let aiStartLeft = 0;
+let aiStartTop = 0;
+
+
+aiButton.addEventListener(
+  "pointerdown",
+  function (event) {
+
+    isDraggingAI = false;
+    aiMoved = false;
+
+    aiStartX = event.clientX;
+    aiStartY = event.clientY;
+
+    const rect =
+      aiButton.getBoundingClientRect();
+
+    aiStartLeft = rect.left;
+    aiStartTop = rect.top;
+
+    aiButton.setPointerCapture(
+      event.pointerId
+    );
+
+    event.preventDefault();
+  }
+);
+
+
+aiButton.addEventListener(
+  "pointermove",
+  function (event) {
+
+    if (
+      !aiButton.hasPointerCapture(
+        event.pointerId
+      )
+    ) {
+      return;
+    }
+
+    const dx =
+      event.clientX - aiStartX;
+
+    const dy =
+      event.clientY - aiStartY;
+
+
+    /* Ignore tiny accidental movements */
+
+    if (
+      !isDraggingAI &&
+      Math.abs(dx) < 6 &&
+      Math.abs(dy) < 6
+    ) {
+      return;
+    }
+
+
+    isDraggingAI = true;
+    aiMoved = true;
+
+
+    const rect =
+      aiButton.getBoundingClientRect();
+
+
+    let newLeft =
+      aiStartLeft + dx;
+
+    let newTop =
+      aiStartTop + dy;
+
+
+    /* Keep the AI button inside the screen */
+
+    newLeft =
+      Math.max(
+        5,
+        Math.min(
+          newLeft,
+          window.innerWidth -
+          rect.width -
+          5
+        )
+      );
+
+
+    newTop =
+      Math.max(
+        5,
+        Math.min(
+          newTop,
+          window.innerHeight -
+          rect.height -
+          5
+        )
+      );
+
+
+    aiButton.style.position =
+      "fixed";
+
+    aiButton.style.left =
+      `${newLeft}px`;
+
+    aiButton.style.top =
+      `${newTop}px`;
+
+    aiButton.style.right =
+      "auto";
+
+    aiButton.style.bottom =
+      "auto";
+
+
+    event.preventDefault();
+  }
+);
+
+
+aiButton.addEventListener(
+  "pointerup",
+  function (event) {
+
+    if (
+      aiButton.hasPointerCapture(
+        event.pointerId
+      )
+    ) {
+      aiButton.releasePointerCapture(
+        event.pointerId
+      );
+    }
+
+    isDraggingAI = false;
+  }
+);
+
+
+aiButton.addEventListener(
+  "pointercancel",
+  function () {
+
+    isDraggingAI = false;
+  }
+);
+
+
+/* Prevent a drag from accidentally opening NOW AI */
+
+aiButton.addEventListener(
+  "click",
+  function (event) {
+
+    if (aiMoved) {
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      aiMoved = false;
+    }
+
+  },
+  true
+);
 
     /* -----------------------------------------------------
        PET COMPANION
