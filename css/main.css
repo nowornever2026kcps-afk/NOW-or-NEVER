@@ -4515,3 +4515,379 @@ body {
   }
 
 }
+
+/* =========================================================
+   FINAL FIXED BOTTOM NAVIGATION
+========================================================= */
+
+body {
+  padding-bottom: 105px !important;
+}
+
+
+/* THE OUTER BAR */
+.bottom-nav {
+
+  position: fixed !important;
+
+  left: 50% !important;
+  bottom: max(
+    12px,
+    env(safe-area-inset-bottom)
+  ) !important;
+
+  transform: translateX(-50%) !important;
+
+  width: min(
+    680px,
+    calc(100vw - 24px)
+  ) !important;
+
+  margin: 0 !important;
+
+  z-index: 10000 !important;
+
+  pointer-events: none;
+}
+
+
+/* ACTUAL NAVIGATION BAR */
+
+.bottom-nav-main {
+
+  pointer-events: auto;
+
+  width: 100%;
+
+  box-sizing: border-box;
+
+  display: grid !important;
+
+  grid-template-columns:
+    repeat(5, 1fr) !important;
+
+  gap: 5px !important;
+
+  margin: 0 !important;
+
+  padding: 7px !important;
+
+  border-radius: 23px !important;
+
+  background:
+    rgba(15, 14, 21, .92) !important;
+
+  border:
+    1px solid
+    rgba(255,255,255,.10) !important;
+
+  box-shadow:
+    0 15px 45px
+    rgba(0,0,0,.55),
+
+    0 0 30px
+    rgba(139,92,246,.12),
+
+    inset 0 1px
+    rgba(255,255,255,.07) !important;
+
+  backdrop-filter:
+    blur(24px)
+    saturate(150%) !important;
+
+  -webkit-backdrop-filter:
+    blur(24px)
+    saturate(150%) !important;
+}
+
+
+/* NAV BUTTON */
+
+.bottom-nav-main .bottom-nav-btn {
+
+  min-width: 0 !important;
+
+  height: 58px !important;
+
+  margin: 0 !important;
+
+  border: 0 !important;
+
+  border-radius: 17px !important;
+
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  align-items: center !important;
+
+  justify-content: center !important;
+
+  gap: 3px !important;
+
+  background: transparent !important;
+
+  color: #858392 !important;
+
+  cursor: pointer;
+
+}
+
+
+/* ACTIVE */
+
+.bottom-nav-main
+.bottom-nav-btn.active {
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139,92,246,.27),
+      rgba(103,232,249,.08)
+    ) !important;
+
+  color: #ffffff !important;
+
+}
+
+
+/* MORE BUTTON */
+
+.bottom-nav-main
+.more-nav-btn {
+
+  cursor: pointer !important;
+
+  user-select: none;
+
+}
+
+
+/* =========================================================
+   MORE POPUP
+========================================================= */
+
+.more-nav-menu {
+
+  position: absolute !important;
+
+  right: 0 !important;
+
+  bottom:
+    calc(100% + 12px) !important;
+
+  width:
+    min(
+      390px,
+      calc(100vw - 24px)
+    ) !important;
+
+  box-sizing: border-box;
+
+  padding: 12px !important;
+
+  border-radius: 21px !important;
+
+  background:
+    rgba(18,17,25,.97) !important;
+
+  border:
+    1px solid
+    rgba(255,255,255,.10) !important;
+
+  box-shadow:
+    0 25px 70px
+    rgba(0,0,0,.65),
+
+    0 0 35px
+    rgba(139,92,246,.13) !important;
+
+  backdrop-filter:
+    blur(28px)
+    saturate(150%) !important;
+
+  -webkit-backdrop-filter:
+    blur(28px)
+    saturate(150%) !important;
+
+  opacity: 0;
+
+  visibility: hidden;
+
+  pointer-events: none;
+
+  transform:
+    translateY(12px)
+    scale(.96);
+
+  transform-origin:
+    bottom right;
+
+  transition:
+    opacity .20s ease,
+    transform .22s ease,
+    visibility .20s ease;
+}
+
+
+.more-nav-menu.open {
+
+  opacity: 1;
+
+  visibility: visible;
+
+  pointer-events: auto;
+
+  transform:
+    translateY(0)
+    scale(1);
+
+}
+
+
+/* =========================================================
+   MORE ITEMS
+========================================================= */
+
+.more-nav-grid {
+
+  display: grid !important;
+
+  grid-template-columns:
+    repeat(2, 1fr) !important;
+
+  gap: 8px !important;
+
+}
+
+
+.more-nav-item {
+
+  box-sizing: border-box;
+
+  min-height: 68px !important;
+
+  width: 100% !important;
+
+  margin: 0 !important;
+
+  display: flex !important;
+
+  align-items: center !important;
+
+  gap: 11px !important;
+
+  padding: 10px !important;
+
+  border-radius: 15px !important;
+
+  border:
+    1px solid
+    rgba(255,255,255,.07) !important;
+
+  background:
+    rgba(255,255,255,.035) !important;
+
+  color: white !important;
+
+  text-decoration: none !important;
+
+  cursor: pointer;
+
+}
+
+
+.more-nav-item:hover {
+
+  background:
+    rgba(139,92,246,.14) !important;
+
+  border-color:
+    rgba(139,92,246,.30) !important;
+
+  transform:
+    translateY(-2px);
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 620px) {
+
+  body {
+    padding-bottom: 92px !important;
+  }
+
+
+  .bottom-nav {
+
+    width:
+      calc(100vw - 14px) !important;
+
+    bottom:
+      max(
+        7px,
+        env(safe-area-inset-bottom)
+      ) !important;
+
+  }
+
+
+  .bottom-nav-main {
+
+    padding: 5px !important;
+
+    gap: 3px !important;
+
+    border-radius: 20px !important;
+
+  }
+
+
+  .bottom-nav-main
+  .bottom-nav-btn {
+
+    height: 53px !important;
+
+    border-radius: 15px !important;
+
+  }
+
+
+  .more-nav-menu {
+
+    right: 0 !important;
+
+    width:
+      min(
+        370px,
+        calc(100vw - 14px)
+      ) !important;
+
+  }
+
+}
+
+
+/* VERY SMALL PHONES */
+
+@media (max-width: 380px) {
+
+  .bottom-nav-main
+  .bottom-nav-btn {
+
+    height: 50px !important;
+
+  }
+
+
+  .bottom-nav-label {
+
+    font-size: 7px !important;
+
+  }
+
+}
