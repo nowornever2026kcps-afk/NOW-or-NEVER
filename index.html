@@ -7790,6 +7790,22 @@ async function clearNotificationHistory() {
 
 })();
 
+
+(function () {
+
+  const moreBtn =
+    document.getElementById("moreNavBtn");
+
+  const moreMenu =
+    document.getElementById("moreNavMenu");
+
+  const closeBtn =
+    document.getElementById("moreCloseBtn");
+
+    if (!moreBtn || !moreMenu) {
+    return;
+  }
+
 /* =========================================================
    MORE MENU
 ========================================================= */
