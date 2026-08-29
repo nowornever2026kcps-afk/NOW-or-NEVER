@@ -385,21 +385,139 @@
   <div class="user-info" id="userInfo"></div>
 
 
-  <nav class="nav">
+ <nav class="nav">
 
-    <button class="active" data-view="daily">Daily</button>
-    <button data-view="tasks">Tasks</button>
-    <button data-view="tests">Tests</button>
-    <button data-view="personal">Me</button>
-    <button data-view="shop">Shop</button>
-    <button data-view="leaderboard">Board</button>
-    <button data-view="history">History</button>
-    <a class="nav-link" href="study-squad.html">
-    👥 Squad
-    </a>
+  <!-- MAIN NAVIGATION -->
 
-  </nav>
+  <button class="active" data-view="daily">
+    <span class="nav-icon">🏠</span>
+    <span>Daily</span>
+  </button>
 
+  <button data-view="tasks">
+    <span class="nav-icon">✓</span>
+    <span>Tasks</span>
+  </button>
+
+  <button data-view="tests">
+    <span class="nav-icon">📝</span>
+    <span>Tests</span>
+  </button>
+
+  <button data-view="leaderboard">
+    <span class="nav-icon">🏆</span>
+    <span>Board</span>
+  </button>
+
+  <!-- MORE -->
+
+  <button
+    type="button"
+    id="moreNavBtn"
+    class="more-nav-btn"
+    aria-expanded="false"
+    aria-label="More"
+  >
+    <span class="nav-icon">☰</span>
+    <span>More</span>
+  </button>
+
+
+  <!-- MORE POPUP -->
+
+  <div
+    id="moreNavMenu"
+    class="more-nav-menu"
+    aria-hidden="true"
+  >
+
+    <div class="more-nav-header">
+      <div>
+        <strong>More</strong>
+        <small>Everything else</small>
+      </div>
+
+      <button
+        type="button"
+        id="moreCloseBtn"
+        class="more-close-btn"
+        aria-label="Close"
+      >
+        ×
+      </button>
+    </div>
+
+
+    <div class="more-nav-grid">
+
+
+      <!-- ME -->
+
+      <button
+        type="button"
+        class="more-nav-item"
+        data-more-view="personal"
+      >
+        <span class="more-nav-item-icon">👤</span>
+
+        <span class="more-nav-item-text">
+          <strong>Me</strong>
+          <small>Your profile & progress</small>
+        </span>
+      </button>
+
+
+      <!-- SHOP -->
+
+      <button
+        type="button"
+        class="more-nav-item"
+        data-more-view="shop"
+      >
+        <span class="more-nav-item-icon">🛒</span>
+
+        <span class="more-nav-item-text">
+          <strong>Shop</strong>
+          <small>Cosmetics & items</small>
+        </span>
+      </button>
+
+
+      <!-- HISTORY -->
+
+      <button
+        type="button"
+        class="more-nav-item"
+        data-more-view="history"
+      >
+        <span class="more-nav-item-icon">📜</span>
+
+        <span class="more-nav-item-text">
+          <strong>History</strong>
+          <small>Your study records</small>
+        </span>
+      </button>
+
+
+      <!-- STUDY SQUAD -->
+
+      <a
+        class="more-nav-item"
+        href="study-squad.html"
+      >
+        <span class="more-nav-item-icon">👥</span>
+
+        <span class="more-nav-item-text">
+          <strong>Study Squad</strong>
+          <small>Learn together</small>
+        </span>
+      </a>
+
+    </div>
+
+  </div>
+
+</nav>
 
   <main>
 
