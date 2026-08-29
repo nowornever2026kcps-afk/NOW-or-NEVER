@@ -3914,3 +3914,531 @@ body::after{width:230px;height:230px;right:-90px;top:62%;background:rgba(103,232
 .nav .nav-link:active {
   transform: scale(.97);
 }
+
+
+/* =========================================================
+   NOW OR NEVER — PREMIUM BOTTOM NAVIGATION
+   ========================================================= */
+
+/* Give the page a little room so the fixed navigation
+   never covers the final content */
+body {
+  padding-bottom: 92px;
+}
+
+/* ---------------------------------------------------------
+   MAIN BOTTOM NAV
+   --------------------------------------------------------- */
+
+.bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(680px, calc(100% - 24px));
+  z-index: 9998;
+
+  pointer-events: none;
+}
+
+/* Main five-button capsule */
+.bottom-nav-main {
+  pointer-events: auto;
+
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+
+  padding: 7px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(25, 23, 34, .94),
+      rgba(11, 11, 16, .96)
+    );
+
+  border: 1px solid rgba(255,255,255,.09);
+
+  border-radius: 23px;
+
+  box-shadow:
+    0 18px 50px rgba(0,0,0,.55),
+    0 4px 20px rgba(139,92,246,.12),
+    inset 0 1px rgba(255,255,255,.07);
+
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+
+/* ---------------------------------------------------------
+   NAV BUTTONS
+   --------------------------------------------------------- */
+
+.bottom-nav-btn {
+  position: relative;
+
+  min-width: 0;
+  height: 58px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 3px;
+
+  border: 0;
+  border-radius: 17px;
+
+  background: transparent;
+  color: #858392;
+
+  cursor: pointer;
+
+  transition:
+    color .2s ease,
+    background .2s ease,
+    transform .2s ease,
+    box-shadow .2s ease;
+}
+
+.bottom-nav-btn:hover {
+  color: #eeeaff;
+  background: rgba(255,255,255,.045);
+  transform: translateY(-2px);
+}
+
+.bottom-nav-btn:active {
+  transform: scale(.94);
+}
+
+/* Icon */
+.bottom-nav-icon {
+  width: 25px;
+  height: 25px;
+
+  display: grid;
+  place-items: center;
+
+  font-size: 19px;
+  line-height: 1;
+
+  transition:
+    transform .25s ease,
+    filter .25s ease;
+}
+
+/* Text */
+.bottom-nav-label {
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .15px;
+
+  white-space: nowrap;
+
+  transition: opacity .2s ease;
+}
+
+/* ---------------------------------------------------------
+   ACTIVE BUTTON
+   --------------------------------------------------------- */
+
+.bottom-nav-btn.active {
+  color: #fff;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139,92,246,.28),
+      rgba(103,232,249,.09)
+    );
+
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.08),
+    0 5px 18px rgba(139,92,246,.14);
+}
+
+.bottom-nav-btn.active::after {
+  content: "";
+
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+
+  width: 18px;
+  height: 2px;
+
+  transform: translateX(-50%);
+
+  border-radius: 99px;
+
+  background: linear-gradient(
+    90deg,
+    #8b5cf6,
+    #67e8f9
+  );
+
+  box-shadow:
+    0 0 9px rgba(139,92,246,.7);
+}
+
+.bottom-nav-btn.active .bottom-nav-icon {
+  transform: translateY(-1px) scale(1.08);
+  filter:
+    drop-shadow(0 0 7px rgba(139,92,246,.65));
+}
+
+/* ---------------------------------------------------------
+   MORE BUTTON
+   --------------------------------------------------------- */
+
+.more-nav-btn {
+  color: #aaa7b5;
+}
+
+.more-nav-btn.open {
+  color: #fff;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139,92,246,.24),
+      rgba(103,232,249,.08)
+    );
+}
+
+.more-nav-btn.open .more-icon {
+  transform: rotate(90deg);
+}
+
+/* ---------------------------------------------------------
+   MORE POPUP
+   --------------------------------------------------------- */
+
+.more-nav-menu {
+  position: absolute;
+
+  right: 0;
+  bottom: calc(100% + 12px);
+
+  width: min(390px, calc(100vw - 24px));
+
+  padding: 12px;
+
+  border-radius: 21px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(27,25,37,.98),
+      rgba(11,11,16,.98)
+    );
+
+  border: 1px solid rgba(255,255,255,.10);
+
+  box-shadow:
+    0 25px 70px rgba(0,0,0,.62),
+    0 0 35px rgba(139,92,246,.12),
+    inset 0 1px rgba(255,255,255,.07);
+
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+
+  opacity: 0;
+  visibility: hidden;
+
+  transform:
+    translateY(12px)
+    scale(.96);
+
+  transform-origin: bottom right;
+
+  transition:
+    opacity .2s ease,
+    visibility .2s ease,
+    transform .22s cubic-bezier(.2,.8,.2,1);
+
+  pointer-events: none;
+}
+
+.more-nav-menu.open {
+  opacity: 1;
+  visibility: visible;
+
+  transform:
+    translateY(0)
+    scale(1);
+
+  pointer-events: auto;
+}
+
+/* ---------------------------------------------------------
+   MORE HEADER
+   --------------------------------------------------------- */
+
+.more-nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 4px 4px 10px 7px;
+}
+
+.more-nav-header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.more-nav-header strong {
+  font-size: 14px;
+  color: #fff;
+  letter-spacing: -.2px;
+}
+
+.more-nav-header span {
+  font-size: 10px;
+  color: #777582;
+}
+
+.more-close-btn {
+  width: 30px;
+  height: 30px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+
+  background: rgba(255,255,255,.045);
+  color: #aaa;
+
+  font-size: 20px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background .18s ease,
+    color .18s ease,
+    transform .18s ease;
+}
+
+.more-close-btn:hover {
+  color: #fff;
+  background: rgba(255,255,255,.09);
+  transform: rotate(4deg);
+}
+
+/* ---------------------------------------------------------
+   MORE GRID
+   --------------------------------------------------------- */
+
+.more-nav-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 7px;
+}
+
+/* Items */
+.more-nav-item {
+  min-height: 66px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  padding: 10px;
+
+  border: 1px solid rgba(255,255,255,.065);
+  border-radius: 15px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.045),
+      rgba(255,255,255,.018)
+    );
+
+  color: #fff;
+
+  text-align: left;
+  text-decoration: none;
+
+  cursor: pointer;
+
+  transition:
+    transform .18s ease,
+    background .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease;
+}
+
+.more-nav-item:hover {
+  transform: translateY(-2px);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139,92,246,.15),
+      rgba(103,232,249,.055)
+    );
+
+  border-color: rgba(139,92,246,.28);
+
+  box-shadow:
+    0 8px 22px rgba(0,0,0,.25),
+    0 0 18px rgba(139,92,246,.08);
+}
+
+.more-nav-item:active {
+  transform: scale(.97);
+}
+
+/* More icons */
+.more-nav-item-icon {
+  width: 36px;
+  height: 36px;
+
+  flex: 0 0 36px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139,92,246,.16),
+      rgba(103,232,249,.06)
+    );
+
+  border: 1px solid rgba(255,255,255,.06);
+
+  font-size: 17px;
+
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.06);
+}
+
+.more-nav-item > span:last-child {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.more-nav-item strong {
+  font-size: 11px;
+  font-weight: 800;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.more-nav-item small {
+  font-size: 9px;
+  color: #777582;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------
+   SMALL DESKTOP / TABLET
+   --------------------------------------------------------- */
+
+@media (max-width: 620px) {
+
+  body {
+    padding-bottom: 86px;
+  }
+
+  .bottom-nav {
+    width: calc(100% - 18px);
+    bottom: max(9px, env(safe-area-inset-bottom));
+  }
+
+  .bottom-nav-main {
+    padding: 5px;
+    gap: 3px;
+    border-radius: 20px;
+  }
+
+  .bottom-nav-btn {
+    height: 54px;
+    border-radius: 15px;
+  }
+
+  .bottom-nav-icon {
+    font-size: 18px;
+  }
+
+  .bottom-nav-label {
+    font-size: 8px;
+  }
+
+  .more-nav-menu {
+    right: 0;
+    width: min(370px, calc(100vw - 18px));
+  }
+}
+
+/* ---------------------------------------------------------
+   VERY SMALL PHONES
+   --------------------------------------------------------- */
+
+@media (max-width: 380px) {
+
+  .bottom-nav {
+    width: calc(100% - 12px);
+  }
+
+  .bottom-nav-main {
+    padding: 4px;
+  }
+
+  .bottom-nav-btn {
+    height: 51px;
+  }
+
+  .bottom-nav-icon {
+    font-size: 17px;
+  }
+
+  .bottom-nav-label {
+    font-size: 7px;
+  }
+
+  .more-nav-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .more-nav-item {
+    min-height: 58px;
+  }
+}
+
+/* ---------------------------------------------------------
+   REDUCED MOTION
+   --------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .bottom-nav-btn,
+  .bottom-nav-icon,
+  .more-nav-menu,
+  .more-nav-item,
+  .more-close-btn {
+    transition: none !important;
+  }
+}
