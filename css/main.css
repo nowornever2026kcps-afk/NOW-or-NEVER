@@ -6433,3 +6433,667 @@ body {
 .nav button[data-view="leaderboard"] {
   display: flex !important;
 }
+
+
+/* =========================================================
+   NOW OR NEVER — PREMIUM UI OVERHAUL
+   Safe override layer
+========================================================= */
+
+:root {
+  --bg: #07070b;
+  --surface: #101017;
+  --surface2: #171722;
+  --border: rgba(255,255,255,.09);
+
+  --text: #f7f7fb;
+  --muted: #9494a6;
+  --soft: #c9c9d5;
+
+  --accent: #8b5cf6;
+  --accent2: #6366f1;
+  --accent-glow: rgba(139,92,246,.28);
+
+  --green: #72e6a0;
+  --red: #ff7d8a;
+  --yellow: #ffd76a;
+
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+}
+
+
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+html {
+  background: var(--bg);
+}
+
+body {
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      900px 500px at 50% -120px,
+      rgba(99,102,241,.13),
+      transparent 70%
+    ),
+    radial-gradient(
+      600px 400px at 100% 45%,
+      rgba(139,92,246,.07),
+      transparent 70%
+    ),
+    var(--bg);
+
+  color: var(--text);
+}
+
+
+/* subtle ambient glow */
+
+body::before {
+  content: "";
+
+  position: fixed;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  z-index: -1;
+
+  background:
+    radial-gradient(
+      500px 300px at 15% 20%,
+      rgba(139,92,246,.045),
+      transparent 70%
+    );
+
+}
+
+
+/* =========================================================
+   MAIN APP
+========================================================= */
+
+#mainApp {
+  position: relative;
+
+  max-width: 1250px;
+
+  margin: 0 auto;
+
+  padding-bottom: 115px;
+}
+
+
+/* =========================================================
+   HEADINGS
+========================================================= */
+
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -.025em;
+}
+
+h1 {
+  font-weight: 800;
+}
+
+h2 {
+  font-weight: 750;
+}
+
+
+/* =========================================================
+   CARDS — GLASS EFFECT
+========================================================= */
+
+.card,
+.panel,
+.stat-card,
+.task-card,
+.test-card,
+.history-card,
+.profile-card {
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.055),
+      rgba(255,255,255,.018)
+    ) !important;
+
+  border:
+    1px solid rgba(255,255,255,.085) !important;
+
+  border-radius:
+    var(--radius-lg) !important;
+
+  box-shadow:
+    0 14px 45px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.035) !important;
+
+  backdrop-filter:
+    blur(18px)
+    saturate(125%);
+
+  -webkit-backdrop-filter:
+    blur(18px)
+    saturate(125%);
+
+}
+
+
+/* =========================================================
+   CARD HOVER
+========================================================= */
+
+.card:hover,
+.panel:hover,
+.stat-card:hover,
+.task-card:hover,
+.test-card:hover {
+
+  border-color:
+    rgba(139,92,246,.22) !important;
+
+  box-shadow:
+    0 18px 55px rgba(0,0,0,.34),
+    0 0 30px rgba(139,92,246,.045) !important;
+
+}
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+button {
+
+  font-family: inherit;
+
+  transition:
+    transform .16s ease,
+    box-shadow .16s ease,
+    background .16s ease,
+    border-color .16s ease,
+    opacity .16s ease;
+}
+
+
+button:not(:disabled):hover {
+
+  transform:
+    translateY(-1px);
+
+}
+
+
+button:not(:disabled):active {
+
+  transform:
+    translateY(1px)
+    scale(.98);
+
+}
+
+
+/* =========================================================
+   PRIMARY BUTTONS
+========================================================= */
+
+.btn-primary,
+.primary-btn,
+button.primary,
+.save-btn,
+#saveBtn {
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent),
+      var(--accent2)
+    ) !important;
+
+  border:
+    1px solid
+    rgba(255,255,255,.13) !important;
+
+  color:
+    #fff !important;
+
+  box-shadow:
+    0 8px 25px
+    rgba(99,102,241,.25) !important;
+
+}
+
+
+.btn-primary:hover,
+.primary-btn:hover,
+button.primary:hover,
+.save-btn:hover,
+#saveBtn:hover {
+
+  box-shadow:
+    0 12px 35px
+    rgba(99,102,241,.36) !important;
+
+}
+
+
+/* =========================================================
+   INPUTS
+========================================================= */
+
+input,
+textarea,
+select {
+
+  background:
+    rgba(255,255,255,.035) !important;
+
+  color:
+    var(--text) !important;
+
+  border:
+    1px solid
+    rgba(255,255,255,.09) !important;
+
+  border-radius:
+    12px !important;
+
+  outline: none !important;
+
+  transition:
+    border-color .18s ease,
+    box-shadow .18s ease,
+    background .18s ease;
+
+}
+
+
+input:focus,
+textarea:focus,
+select:focus {
+
+  border-color:
+    rgba(139,92,246,.55) !important;
+
+  background:
+    rgba(139,92,246,.045) !important;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(139,92,246,.10) !important;
+
+}
+
+
+/* =========================================================
+   FLOATING BOTTOM NAV
+========================================================= */
+
+.nav {
+
+  position: fixed !important;
+
+  left: 50% !important;
+
+  bottom: 14px !important;
+
+  transform:
+    translateX(-50%) !important;
+
+  z-index:
+    999999 !important;
+
+  display: flex !important;
+
+  align-items: center;
+
+  gap: 5px !important;
+
+  padding: 7px !important;
+
+  border-radius: 22px !important;
+
+  background:
+    rgba(13,13,20,.86) !important;
+
+  border:
+    1px solid
+    rgba(255,255,255,.105) !important;
+
+  box-shadow:
+    0 18px 55px
+    rgba(0,0,0,.55),
+    0 0 35px
+    rgba(99,102,241,.08) !important;
+
+  backdrop-filter:
+    blur(24px)
+    saturate(160%) !important;
+
+  -webkit-backdrop-filter:
+    blur(24px)
+    saturate(160%) !important;
+
+  overflow:
+    visible !important;
+
+}
+
+
+/* nav buttons */
+
+.nav > button {
+
+  position: relative;
+
+  min-width: 67px;
+
+  height: 53px;
+
+  padding:
+    6px 9px !important;
+
+  border: 0 !important;
+
+  border-radius: 16px !important;
+
+  background:
+    transparent !important;
+
+  color:
+    #8e8e9d !important;
+
+  display: flex !important;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 3px;
+
+  font-size: 10px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+}
+
+
+/* icon */
+
+.nav-icon {
+
+  font-size: 18px;
+
+  line-height: 1;
+
+  transition:
+    transform .18s ease;
+
+}
+
+
+/* active */
+
+.nav > button.active {
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139,92,246,.22),
+      rgba(99,102,241,.10)
+    ) !important;
+
+  color:
+    #fff !important;
+
+  box-shadow:
+    inset 0 1px 0
+    rgba(255,255,255,.06),
+    0 4px 18px
+    rgba(99,102,241,.12);
+
+}
+
+
+.nav > button.active
+.nav-icon {
+
+  transform:
+    translateY(-1px)
+    scale(1.08);
+
+}
+
+
+/* =========================================================
+   MORE POPUP
+========================================================= */
+
+.more-nav-menu {
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(20,19,29,.98),
+      rgba(11,11,17,.98)
+    ) !important;
+
+  border:
+    1px solid
+    rgba(255,255,255,.11) !important;
+
+  box-shadow:
+    0 25px 70px
+    rgba(0,0,0,.68),
+    0 0 40px
+    rgba(139,92,246,.12) !important;
+
+}
+
+
+/* =========================================================
+   PROGRESS BARS
+========================================================= */
+
+.progress,
+.progress-bar-container {
+
+  background:
+    rgba(255,255,255,.055) !important;
+
+  border-radius:
+    999px !important;
+
+  overflow: hidden;
+
+}
+
+
+.progress-bar {
+
+  border-radius:
+    999px !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--accent),
+      #a78bfa
+    ) !important;
+
+  box-shadow:
+    0 0 16px
+    rgba(139,92,246,.35);
+
+}
+
+
+/* =========================================================
+   BADGES / PILLS
+========================================================= */
+
+.badge,
+.tag,
+.chip,
+.pill {
+
+  border-radius:
+    999px !important;
+
+  border:
+    1px solid
+    rgba(255,255,255,.08) !important;
+
+  background:
+    rgba(255,255,255,.045) !important;
+
+}
+
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+::-webkit-scrollbar {
+
+  width: 7px;
+
+  height: 7px;
+
+}
+
+
+::-webkit-scrollbar-track {
+
+  background:
+    transparent;
+
+}
+
+
+::-webkit-scrollbar-thumb {
+
+  background:
+    rgba(255,255,255,.12);
+
+  border-radius:
+    999px;
+
+}
+
+
+::-webkit-scrollbar-thumb:hover {
+
+  background:
+    rgba(139,92,246,.4);
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 620px) {
+
+  #mainApp {
+
+    padding-left: 10px;
+
+    padding-right: 10px;
+
+    padding-bottom: 105px;
+
+  }
+
+
+  .nav {
+
+    bottom: 9px !important;
+
+    width:
+      calc(100vw - 12px) !important;
+
+    max-width:
+      500px;
+
+    padding: 6px !important;
+
+    border-radius: 20px !important;
+
+  }
+
+
+  .nav > button {
+
+    flex: 1;
+
+    min-width: 0;
+
+    height: 51px;
+
+    padding:
+      5px 4px !important;
+
+    font-size: 9px;
+
+  }
+
+
+  .nav-icon {
+
+    font-size: 17px;
+
+  }
+
+
+  .more-nav-menu {
+
+    max-width:
+      calc(100vw - 18px) !important;
+
+  }
+
+}
+
+
+/* =========================================================
+   REDUCE MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+
+    animation-duration:
+      .01ms !important;
+
+    animation-iteration-count:
+      1 !important;
+
+    transition-duration:
+      .01ms !important;
+
+    scroll-behavior:
+      auto !important;
+
+  }
+
+}
