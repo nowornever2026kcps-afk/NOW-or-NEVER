@@ -437,86 +437,68 @@
              MORE MENU
         ========================== -->
       
-        <div class="more-nav-menu" id="moreNavMenu">
-      
-          <div class="more-nav-header">
-      
-            <div>
-              <strong>More</strong>
-              <span>Everything else</span>
+          <div class="more-nav-menu" id="moreNavMenu">
+        
+            <div class="more-nav-header">
+        
+              <div>
+                <strong>More</strong>
+                <span>Everything else</span>
+              </div>
+        
+              <button
+                type="button"
+                class="more-close-btn"
+                id="moreCloseBtn"
+                aria-label="Close menu"
+              >
+                ×
+              </button>
+        
             </div>
+        
+        
+         <div class="more-nav-grid">
+  
+        <button
+          type="button"
+          class="more-nav-item"
+          data-view="shop"
+        >
+          <span class="more-nav-item-icon">🛒</span>
       
-            <button
-              type="button"
-              class="more-close-btn"
-              id="moreCloseBtn"
-              aria-label="Close menu"
-            >
-              ×
-            </button>
-      
-          </div>
-      
-      
-          <div class="more-nav-grid">
-      
-            <button
-              type="button"
-              class="more-nav-item"
-              data-more-view="shop"
-            >
-              <span class="more-nav-item-icon">🛒</span>
-      
-              <span>
-                <strong>Shop</strong>
-                <small>Cosmetics & items</small>
-              </span>
-            </button>
+          <span>
+            <strong>Shop</strong>
+            <small>Cosmetics & items</small>
+          </span>
+        </button>
       
       
-            <button
-              type="button"
-              class="more-nav-item"
-              data-more-view="leaderboard"
-            >
-              <span class="more-nav-item-icon">🏆</span>
+        <button
+          type="button"
+          class="more-nav-item"
+          data-view="history"
+        >
+          <span class="more-nav-item-icon">📜</span>
       
-              <span>
-                <strong>Board</strong>
-                <small>Leaderboard</small>
-              </span>
-            </button>
-      
-      
-            <button
-              type="button"
-              class="more-nav-item"
-              data-more-view="history"
-            >
-              <span class="more-nav-item-icon">📜</span>
-      
-              <span>
-                <strong>History</strong>
-                <small>Your records</small>
-              </span>
-            </button>
+          <span>
+            <strong>History</strong>
+            <small>Your study records</small>
+          </span>
+        </button>
       
       
-            <a
-              class="more-nav-item"
-              href="study-squad.html"
-            >
-              <span class="more-nav-item-icon">👥</span>
+        <a
+          class="more-nav-item"
+          href="study-squad.html"
+        >
+          <span class="more-nav-item-icon">👥</span>
       
-              <span>
-                <strong>Study Squad</strong>
-                <small>Learn together</small>
-              </span>
-            </a>
-      
-          </div>
-      
-        </div>
+          <span>
+            <strong>Study Squad</strong>
+            <small>Learn together</small>
+          </span>
+        </a>
       
       </div>
 
@@ -5894,94 +5876,100 @@ document
         "click",
         async () => {
 
+          /* Remove active from navigation */
           document
             .querySelectorAll(".nav button")
             .forEach(
               b =>
-                b.classList.remove(
-                  "active"
-                )
+                b.classList.remove("active")
             );
 
 
+          /* Remove active from all views */
           document
             .querySelectorAll(".view")
             .forEach(
               v =>
-                v.classList.remove(
-                  "active"
-                )
+                v.classList.remove("active")
             );
 
 
-          btn.classList.add(
-            "active"
-          );
+          /* Activate clicked button */
+          btn.classList.add("active");
 
 
-          $(btn.dataset.view)
-            .classList.add(
-              "active"
+          /* Get requested view */
+          const view =
+            btn.dataset.view;
+
+
+          /* Activate view */
+          const target =
+            $(view);
+
+          if(target){
+            target.classList.add("active");
+          }
+
+
+          /* Close More menu */
+          const moreMenu =
+            document.getElementById(
+              "moreNavMenu"
             );
 
+          const moreBtn =
+            document.getElementById(
+              "moreNavBtn"
+            );
 
-          if(
-            btn.dataset.view ===
-            "tasks"
-          ){
+          if(moreMenu){
+            moreMenu.classList.remove("open");
+          }
 
+          if(moreBtn){
+            moreBtn.classList.remove("open");
+
+            moreBtn.setAttribute(
+              "aria-expanded",
+              "false"
+            );
+          }
+
+
+          /* Tasks */
+          if(view === "tasks"){
             await renderTasks();
-
           }
 
 
-          if(
-            btn.dataset.view ===
-            "tests"
-          ){
-
+          /* Tests */
+          if(view === "tests"){
             await renderTests();
-
           }
 
 
-          if(
-            btn.dataset.view ===
-            "personal"
-          ){
-
+          /* Personal */
+          if(view === "personal"){
             await renderPersonal();
-
           }
 
 
-          if(
-            btn.dataset.view ===
-            "shop"
-          ){
-
+          /* Shop */
+          if(view === "shop"){
             await renderShop();
-
           }
 
 
-          if(
-            btn.dataset.view ===
-            "leaderboard"
-          ){
-
+          /* Leaderboard */
+          if(view === "leaderboard"){
             await renderBoard();
-
           }
 
 
-          if(
-            btn.dataset.view ===
-            "history"
-          ){
-
+          /* History */
+          if(view === "history"){
             await renderHistory();
-
           }
 
         }
@@ -5989,6 +5977,154 @@ document
 
     }
   );
+
+
+/* ============================================
+   MORE MENU
+============================================ */
+
+(function(){
+
+  const moreBtn =
+    document.getElementById("moreNavBtn");
+
+  const moreMenu =
+    document.getElementById("moreNavMenu");
+
+  const closeBtn =
+    document.getElementById("moreCloseBtn");
+
+
+  if(!moreBtn || !moreMenu){
+    return;
+  }
+
+
+  function openMore(){
+
+    moreMenu.classList.add("open");
+
+    moreBtn.classList.add("open");
+
+    moreBtn.setAttribute(
+      "aria-expanded",
+      "true"
+    );
+
+  }
+
+
+  function closeMore(){
+
+    moreMenu.classList.remove("open");
+
+    moreBtn.classList.remove("open");
+
+    moreBtn.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+
+  }
+
+
+  /* More button */
+
+  moreBtn.addEventListener(
+    "click",
+    function(event){
+
+      event.stopPropagation();
+
+      if(
+        moreMenu.classList.contains("open")
+      ){
+
+        closeMore();
+
+      }else{
+
+        openMore();
+
+      }
+
+    }
+  );
+
+
+  /* Shop + History */
+
+  moreMenu
+    .querySelectorAll(
+      ".more-nav-item[data-view]"
+    )
+    .forEach(
+      item => {
+
+        item.addEventListener(
+          "click",
+          function(){
+
+            const view =
+              item.dataset.view;
+
+            const originalButton =
+              document.querySelector(
+                `.nav button[data-view="${view}"]`
+              );
+
+            if(originalButton){
+
+              originalButton.click();
+
+            }
+
+            closeMore();
+
+          }
+        );
+
+      }
+    );
+
+
+  /* Close button */
+
+  if(closeBtn){
+
+    closeBtn.addEventListener(
+      "click",
+      function(){
+
+        closeMore();
+
+      }
+    );
+
+  }
+
+
+  /* Click outside */
+
+  document.addEventListener(
+    "click",
+    function(event){
+
+      if(
+        moreMenu.classList.contains("open") &&
+        !moreMenu.contains(event.target) &&
+        !moreBtn.contains(event.target)
+      ){
+
+        closeMore();
+
+      }
+
+    }
+  );
+
+
+})();
 
 
 /* ============================================
@@ -7519,29 +7655,47 @@ async function clearNotificationHistory() {
    Works with the existing .nav navigation system
    ========================================================= */
 
+/* =========================================================
+   MORE MENU
+========================================================= */
+
 (function () {
 
   const moreBtn =
-    document.getElementById("moreNavBtn");
+    document.getElementById(
+      "moreNavBtn"
+    );
 
   const moreMenu =
-    document.getElementById("moreNavMenu");
+    document.getElementById(
+      "moreNavMenu"
+    );
 
   const closeBtn =
-    document.getElementById("moreCloseBtn");
+    document.getElementById(
+      "moreCloseBtn"
+    );
 
-  if (!moreBtn || !moreMenu) return;
+
+  if(
+    !moreBtn ||
+    !moreMenu
+  ){
+
+    return;
+
+  }
 
 
-  /* ---------------------------------------------------------
-     OPEN MENU
-  --------------------------------------------------------- */
+  function openMore(){
 
-  function openMoreMenu() {
+    moreMenu.classList.add(
+      "open"
+    );
 
-    moreMenu.classList.add("open");
-
-    moreBtn.classList.add("open");
+    moreBtn.classList.add(
+      "open"
+    );
 
     moreBtn.setAttribute(
       "aria-expanded",
@@ -7551,15 +7705,15 @@ async function clearNotificationHistory() {
   }
 
 
-  /* ---------------------------------------------------------
-     CLOSE MENU
-  --------------------------------------------------------- */
+  function closeMore(){
 
-  function closeMoreMenu() {
+    moreMenu.classList.remove(
+      "open"
+    );
 
-    moreMenu.classList.remove("open");
-
-    moreBtn.classList.remove("open");
+    moreBtn.classList.remove(
+      "open"
+    );
 
     moreBtn.setAttribute(
       "aria-expanded",
@@ -7569,56 +7723,23 @@ async function clearNotificationHistory() {
   }
 
 
-  /* ---------------------------------------------------------
-     MORE BUTTON
-  --------------------------------------------------------- */
-
   moreBtn.addEventListener(
     "click",
-    function (event) {
+    function(event){
 
       event.stopPropagation();
 
-      if (
-        moreMenu.classList.contains("open")
-      ) {
+      if(
+        moreMenu.classList.contains(
+          "open"
+        )
+      ){
 
-        closeMoreMenu();
+        closeMore();
 
-      } else {
+      }else{
 
-        openMoreMenu();
-
-      }
-
-    }
-  );
-
-
-  /* Keyboard accessibility */
-
-  moreBtn.addEventListener(
-    "keydown",
-    function (event) {
-
-      if (
-        event.key === "Enter" ||
-        event.key === " "
-      ) {
-
-        event.preventDefault();
-
-        if (
-          moreMenu.classList.contains("open")
-        ) {
-
-          closeMoreMenu();
-
-        } else {
-
-          openMoreMenu();
-
-        }
+        openMore();
 
       }
 
@@ -7626,19 +7747,15 @@ async function clearNotificationHistory() {
   );
 
 
-  /* ---------------------------------------------------------
-     CLOSE BUTTON
-  --------------------------------------------------------- */
-
-  if (closeBtn) {
+  if(closeBtn){
 
     closeBtn.addEventListener(
       "click",
-      function (event) {
+      function(event){
 
         event.stopPropagation();
 
-        closeMoreMenu();
+        closeMore();
 
       }
     );
@@ -7646,53 +7763,46 @@ async function clearNotificationHistory() {
   }
 
 
-  /* ---------------------------------------------------------
-     MORE MENU ITEMS
-     
-     We manually activate the existing navigation system.
-  --------------------------------------------------------- */
+  document.addEventListener(
+    "click",
+    function(event){
 
-  moreMenu
-    .querySelectorAll("[data-more-view]")
-    .forEach(function (item) {
+      if(
+        moreMenu.classList.contains(
+          "open"
+        ) &&
+        !moreMenu.contains(
+          event.target
+        ) &&
+        !moreBtn.contains(
+          event.target
+        )
+      ){
 
-      item.addEventListener(
-        "click",
-        function () {
+        closeMore();
 
-          const view =
-            item.dataset.moreView;
+      }
 
-          /*
-             Find the ORIGINAL navigation button
-             belonging to that view.
-          */
-
-          const originalButton =
-            document.querySelector(
-              `.nav button[data-view="${view}"]`
-            );
+    }
+  );
 
 
-          if (originalButton) {
+  document.addEventListener(
+    "keydown",
+    function(event){
 
-            /*
-               This triggers your EXISTING navigation
-               code instead of creating a second
-               navigation system.
-            */
+      if(
+        event.key === "Escape"
+      ){
 
-            originalButton.click();
+        closeMore();
 
-          }
+      }
 
+    }
+  );
 
-          closeMoreMenu();
-
-        }
-      );
-
-    });
+})();
 
 
   /* ---------------------------------------------------------
