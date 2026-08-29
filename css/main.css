@@ -7097,3 +7097,100 @@ select:focus {
   }
 
 }
+
+/* =========================================================
+   SCROLL REVEAL ANIMATIONS
+========================================================= */
+
+/* Initial hidden state */
+
+.scroll-reveal {
+  opacity: 0;
+
+  transform:
+    translateY(45px)
+    scale(.98);
+
+  filter: blur(3px);
+
+  transition:
+    opacity .7s ease,
+    transform .7s cubic-bezier(.22,1,.36,1),
+    filter .7s ease;
+
+  will-change:
+    opacity,
+    transform;
+}
+
+
+/* Visible state */
+
+.scroll-reveal.revealed {
+
+  opacity: 1;
+
+  transform:
+    translateY(0)
+    scale(1);
+
+  filter:
+    blur(0);
+
+}
+
+
+/* Slightly different timing for cards */
+
+.scroll-reveal:nth-child(2) {
+  transition-delay: .06s;
+}
+
+.scroll-reveal:nth-child(3) {
+  transition-delay: .12s;
+}
+
+.scroll-reveal:nth-child(4) {
+  transition-delay: .18s;
+}
+
+.scroll-reveal:nth-child(5) {
+  transition-delay: .24s;
+}
+
+
+/* Mobile */
+
+@media (max-width: 620px) {
+
+  .scroll-reveal {
+
+    transform:
+      translateY(30px)
+      scale(.985);
+
+    transition-duration:
+      .55s;
+
+  }
+
+}
+
+
+/* Accessibility */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .scroll-reveal {
+
+    opacity: 1;
+
+    transform: none;
+
+    filter: none;
+
+    transition: none;
+
+  }
+
+}
