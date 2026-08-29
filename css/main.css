@@ -7306,3 +7306,101 @@ body::after {
     transform: none !important;
     filter: none !important;
 }
+
+```css
+/* =========================================================
+   🌌 UNIVERSE BACKGROUND
+   ========================================================= */
+
+html {
+    background: #02030a !important;
+}
+
+body {
+    margin: 0 !important;
+    min-height: 100vh;
+    background: #02030a !important;
+    position: relative;
+}
+
+/* STAR FIELD — layer 1 */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+
+    background-image:
+        radial-gradient(circle, white 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(255,255,255,.8) 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(180,200,255,.7) .8px, transparent 1.3px);
+
+    background-size:
+        70px 70px,
+        110px 110px,
+        160px 160px;
+
+    background-position:
+        10px 15px,
+        40px 75px,
+        90px 30px;
+
+    opacity: .8;
+    z-index: -10;
+}
+
+/* STAR FIELD — layer 2 */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+
+    background-image:
+        radial-gradient(circle, white 1.5px, transparent 2.5px),
+        radial-gradient(circle, rgba(150,190,255,.9) 1.2px, transparent 2px);
+
+    background-size:
+        190px 190px,
+        270px 270px;
+
+    background-position:
+        80px 100px,
+        150px 45px;
+
+    opacity: .65;
+    z-index: -9;
+
+    animation: universeStars 8s ease-in-out infinite alternate;
+}
+
+@keyframes universeStars {
+    from {
+        opacity: .35;
+    }
+
+    to {
+        opacity: .75;
+    }
+}
+
+
+/* REMOVE OLD PURPLE AMBIENT LIGHTING */
+
+.ambient-lighting {
+    display: none !important;
+}
+
+.ambient-lighting *,
+.light-orb,
+.light-a,
+.light-b,
+.light-c {
+    display: none !important;
+    animation: none !important;
+}
+```
