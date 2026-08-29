@@ -385,122 +385,21 @@
   <div class="user-info" id="userInfo"></div>
 
 
-  <!-- =========================
-     BOTTOM NAVIGATION
-========================== -->
-          
-      
-      <div class="bottom-nav">
-      
-        <!-- MAIN NAVIGATION -->
-        <nav class="nav bottom-nav-main">
-      
-          <button class="bottom-nav-btn active" data-view="daily">
-            <span class="bottom-nav-icon">⌂</span>
-            <span class="bottom-nav-label">Daily</span>
-          </button>
-      
-          <button class="bottom-nav-btn" data-view="tasks">
-            <span class="bottom-nav-icon">✓</span>
-            <span class="bottom-nav-label">Tasks</span>
-          </button>
-      
-          <button class="bottom-nav-btn" data-view="tests">
-            <span class="bottom-nav-icon">▣</span>
-            <span class="bottom-nav-label">Tests</span>
-          </button>
-      
-          <button class="bottom-nav-btn" data-view="personal">
-            <span class="bottom-nav-icon">♙</span>
-            <span class="bottom-nav-label">Me</span>
-          </button>
-      
-          <!-- IMPORTANT:
-               This is NOT a button so the existing
-               .nav button system ignores it. -->
-          <div
-            class="bottom-nav-btn more-nav-btn"
-            id="moreNavBtn"
-            role="button"
-            tabindex="0"
-            aria-label="More"
-            aria-expanded="false"
-          >
-            <span class="bottom-nav-icon more-icon">☰</span>
-            <span class="bottom-nav-label">More</span>
-          </div>
-      
-        </nav>
-      
-      
-        <!-- =========================
-             MORE MENU
-        ========================== -->
-      
-          <div class="more-nav-menu" id="moreNavMenu">
-        
-            <div class="more-nav-header">
-        
-              <div>
-                <strong>More</strong>
-                <span>Everything else</span>
-              </div>
-        
-              <button
-                type="button"
-                class="more-close-btn"
-                id="moreCloseBtn"
-                aria-label="Close menu"
-              >
-                ×
-              </button>
-        
-            </div>
-        
-        
-         <div class="more-nav-grid">
-  
-        <button
-          type="button"
-          class="more-nav-item"
-          data-view="shop"
-        >
-          <span class="more-nav-item-icon">🛒</span>
-      
-          <span>
-            <strong>Shop</strong>
-            <small>Cosmetics & items</small>
-          </span>
-        </button>
-      
-      
-        <button
-          type="button"
-          class="more-nav-item"
-          data-view="history"
-        >
-          <span class="more-nav-item-icon">📜</span>
-      
-          <span>
-            <strong>History</strong>
-            <small>Your study records</small>
-          </span>
-        </button>
-      
-      
-        <a
-          class="more-nav-item"
-          href="study-squad.html"
-        >
-          <span class="more-nav-item-icon">👥</span>
-      
-          <span>
-            <strong>Study Squad</strong>
-            <small>Learn together</small>
-          </span>
-        </a>
-      
-      </div>
+  <nav class="nav">
+
+    <button class="active" data-view="daily">Daily</button>
+    <button data-view="tasks">Tasks</button>
+    <button data-view="tests">Tests</button>
+    <button data-view="personal">Me</button>
+    <button data-view="shop">Shop</button>
+    <button data-view="leaderboard">Board</button>
+    <button data-view="history">History</button>
+    <a class="nav-link" href="study-squad.html">
+    👥 Squad
+    </a>
+
+  </nav>
+
 
   <main>
 
@@ -5876,100 +5775,94 @@ document
         "click",
         async () => {
 
-          /* Remove active from navigation */
           document
             .querySelectorAll(".nav button")
             .forEach(
               b =>
-                b.classList.remove("active")
+                b.classList.remove(
+                  "active"
+                )
             );
 
 
-          /* Remove active from all views */
           document
             .querySelectorAll(".view")
             .forEach(
               v =>
-                v.classList.remove("active")
+                v.classList.remove(
+                  "active"
+                )
             );
 
 
-          /* Activate clicked button */
-          btn.classList.add("active");
+          btn.classList.add(
+            "active"
+          );
 
 
-          /* Get requested view */
-          const view =
-            btn.dataset.view;
-
-
-          /* Activate view */
-          const target =
-            $(view);
-
-          if(target){
-            target.classList.add("active");
-          }
-
-
-          /* Close More menu */
-          const moreMenu =
-            document.getElementById(
-              "moreNavMenu"
+          $(btn.dataset.view)
+            .classList.add(
+              "active"
             );
 
-          const moreBtn =
-            document.getElementById(
-              "moreNavBtn"
-            );
 
-          if(moreMenu){
-            moreMenu.classList.remove("open");
-          }
+          if(
+            btn.dataset.view ===
+            "tasks"
+          ){
 
-          if(moreBtn){
-            moreBtn.classList.remove("open");
-
-            moreBtn.setAttribute(
-              "aria-expanded",
-              "false"
-            );
-          }
-
-
-          /* Tasks */
-          if(view === "tasks"){
             await renderTasks();
+
           }
 
 
-          /* Tests */
-          if(view === "tests"){
+          if(
+            btn.dataset.view ===
+            "tests"
+          ){
+
             await renderTests();
+
           }
 
 
-          /* Personal */
-          if(view === "personal"){
+          if(
+            btn.dataset.view ===
+            "personal"
+          ){
+
             await renderPersonal();
+
           }
 
 
-          /* Shop */
-          if(view === "shop"){
+          if(
+            btn.dataset.view ===
+            "shop"
+          ){
+
             await renderShop();
+
           }
 
 
-          /* Leaderboard */
-          if(view === "leaderboard"){
+          if(
+            btn.dataset.view ===
+            "leaderboard"
+          ){
+
             await renderBoard();
+
           }
 
 
-          /* History */
-          if(view === "history"){
+          if(
+            btn.dataset.view ===
+            "history"
+          ){
+
             await renderHistory();
+
           }
 
         }
@@ -5977,154 +5870,6 @@ document
 
     }
   );
-
-
-/* ============================================
-   MORE MENU
-============================================ */
-
-(function(){
-
-  const moreBtn =
-    document.getElementById("moreNavBtn");
-
-  const moreMenu =
-    document.getElementById("moreNavMenu");
-
-  const closeBtn =
-    document.getElementById("moreCloseBtn");
-
-
-  if(!moreBtn || !moreMenu){
-    return;
-  }
-
-
-  function openMore(){
-
-    moreMenu.classList.add("open");
-
-    moreBtn.classList.add("open");
-
-    moreBtn.setAttribute(
-      "aria-expanded",
-      "true"
-    );
-
-  }
-
-
-  function closeMore(){
-
-    moreMenu.classList.remove("open");
-
-    moreBtn.classList.remove("open");
-
-    moreBtn.setAttribute(
-      "aria-expanded",
-      "false"
-    );
-
-  }
-
-
-  /* More button */
-
-  moreBtn.addEventListener(
-    "click",
-    function(event){
-
-      event.stopPropagation();
-
-      if(
-        moreMenu.classList.contains("open")
-      ){
-
-        closeMore();
-
-      }else{
-
-        openMore();
-
-      }
-
-    }
-  );
-
-
-  /* Shop + History */
-
-  moreMenu
-    .querySelectorAll(
-      ".more-nav-item[data-view]"
-    )
-    .forEach(
-      item => {
-
-        item.addEventListener(
-          "click",
-          function(){
-
-            const view =
-              item.dataset.view;
-
-            const originalButton =
-              document.querySelector(
-                `.nav button[data-view="${view}"]`
-              );
-
-            if(originalButton){
-
-              originalButton.click();
-
-            }
-
-            closeMore();
-
-          }
-        );
-
-      }
-    );
-
-
-  /* Close button */
-
-  if(closeBtn){
-
-    closeBtn.addEventListener(
-      "click",
-      function(){
-
-        closeMore();
-
-      }
-    );
-
-  }
-
-
-  /* Click outside */
-
-  document.addEventListener(
-    "click",
-    function(event){
-
-      if(
-        moreMenu.classList.contains("open") &&
-        !moreMenu.contains(event.target) &&
-        !moreBtn.contains(event.target)
-      ){
-
-        closeMore();
-
-      }
-
-    }
-  );
-
-
-})();
 
 
 /* ============================================
@@ -7650,202 +7395,6 @@ async function clearNotificationHistory() {
   }
 
 }
-/* =========================================================
-   BOTTOM NAVIGATION — MORE MENU
-   Works with the existing .nav navigation system
-   ========================================================= */
-
-/* =========================================================
-   MORE MENU
-========================================================= */
-
-(function () {
-
-  const moreBtn =
-    document.getElementById(
-      "moreNavBtn"
-    );
-
-  const moreMenu =
-    document.getElementById(
-      "moreNavMenu"
-    );
-
-  const closeBtn =
-    document.getElementById(
-      "moreCloseBtn"
-    );
-
-
-  if(
-    !moreBtn ||
-    !moreMenu
-  ){
-
-    return;
-
-  }
-
-
-  function openMore(){
-
-    moreMenu.classList.add(
-      "open"
-    );
-
-    moreBtn.classList.add(
-      "open"
-    );
-
-    moreBtn.setAttribute(
-      "aria-expanded",
-      "true"
-    );
-
-  }
-
-
-  function closeMore(){
-
-    moreMenu.classList.remove(
-      "open"
-    );
-
-    moreBtn.classList.remove(
-      "open"
-    );
-
-    moreBtn.setAttribute(
-      "aria-expanded",
-      "false"
-    );
-
-  }
-
-
-  moreBtn.addEventListener(
-    "click",
-    function(event){
-
-      event.stopPropagation();
-
-      if(
-        moreMenu.classList.contains(
-          "open"
-        )
-      ){
-
-        closeMore();
-
-      }else{
-
-        openMore();
-
-      }
-
-    }
-  );
-
-
-  if(closeBtn){
-
-    closeBtn.addEventListener(
-      "click",
-      function(event){
-
-        event.stopPropagation();
-
-        closeMore();
-
-      }
-    );
-
-  }
-
-
-  document.addEventListener(
-    "click",
-    function(event){
-
-      if(
-        moreMenu.classList.contains(
-          "open"
-        ) &&
-        !moreMenu.contains(
-          event.target
-        ) &&
-        !moreBtn.contains(
-          event.target
-        )
-      ){
-
-        closeMore();
-
-      }
-
-    }
-  );
-
-
-  document.addEventListener(
-    "keydown",
-    function(event){
-
-      if(
-        event.key === "Escape"
-      ){
-
-        closeMore();
-
-      }
-
-    }
-  );
-
-})();
-
-
-  /* ---------------------------------------------------------
-     CLOSE WHEN CLICKING OUTSIDE
-  --------------------------------------------------------- */
-
-  document.addEventListener(
-    "click",
-    function (event) {
-
-      if (
-        moreMenu.classList.contains("open") &&
-        !moreMenu.contains(event.target) &&
-        !moreBtn.contains(event.target)
-      ) {
-
-        closeMoreMenu();
-
-      }
-
-    }
-  );
-
-
-  /* ---------------------------------------------------------
-     ESCAPE KEY
-  --------------------------------------------------------- */
-
-  document.addEventListener(
-    "keydown",
-    function (event) {
-
-      if (event.key === "Escape") {
-
-        closeMoreMenu();
-
-      }
-
-    }
-  );
-
-})();
-  
 </script>
 <script src="js/ai.js"></script>
 <script src="js/dragon.js"></script>
