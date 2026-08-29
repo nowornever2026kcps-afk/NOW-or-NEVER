@@ -7395,6 +7395,302 @@ async function clearNotificationHistory() {
   }
 
 }
+
+/* =========================================================
+   AI BOT — DRAGGABLE FLOATING BUTTON
+========================================================= */
+
+(function () {
+
+  const bot =
+    document.querySelector(
+      '#aiCompanion, #ai-companion, .ai-companion, .ai-bot, .ai-fab'
+    );
+
+  if (!bot) return;
+
+
+  let dragging = false;
+
+  let startX = 0;
+  let startY = 0;
+
+  let startLeft = 0;
+  let startTop = 0;
+
+
+  /* ---------------------------------------------------------
+     FIND CURRENT POSITION
+  --------------------------------------------------------- */
+
+  function getPosition() {
+
+    const rect =
+      bot.getBoundingClientRect();
+
+    return {
+      left: rect.left,
+      top: rect.top
+    };
+
+  }
+
+
+  /* ---------------------------------------------------------
+     START DRAG
+  --------------------------------------------------------- */
+
+  function startDrag(event) {
+
+    /*
+       Don't interfere with normal clicking
+       unless the user actually moves the bot.
+    */
+
+    dragging = false;
+
+
+    const point =
+      event.touches
+        ? event.touches[0]
+        : event;
+
+
+    const pos =
+      getPosition();
+
+
+    startX = point.clientX;
+    startY = point.clientY;
+
+    startLeft = pos.left;
+    startTop = pos.top;
+
+
+    bot.style.transition = "none";
+
+    bot.setPointerCapture?.(
+      event.pointerId
+    );
+
+  }
+
+
+  /* ---------------------------------------------------------
+     MOVE
+  --------------------------------------------------------- */
+
+  function moveDrag(event) {
+
+    if (
+      event.buttons === 0 &&
+      event.type === "pointermove"
+    ) {
+      return;
+    }
+
+
+    const point =
+      event.touches
+        ? event.touches[0]
+        : event;
+
+
+    const dx =
+      point.clientX - startX;
+
+    const dy =
+      point.clientY - startY;
+
+
+    /*
+       Don't activate dragging for tiny movements.
+    */
+
+    if (
+      Math.abs(dx) < 5 &&
+      Math.abs(dy) < 5 &&
+      !dragging
+    ) {
+
+      return;
+
+    }
+
+
+    dragging = true;
+
+
+    let newLeft =
+      startLeft + dx;
+
+    let newTop =
+      startTop + dy;
+
+
+    /* Keep bot inside screen */
+
+    const rect =
+      bot.getBoundingClientRect();
+
+
+    const maxLeft =
+      window.innerWidth -
+      rect.width -
+      5;
+
+    const maxTop =
+      window.innerHeight -
+      rect.height -
+      5;
+
+
+    newLeft =
+      Math.max(
+        5,
+        Math.min(
+          newLeft,
+          maxLeft
+        )
+      );
+
+
+    newTop =
+      Math.max(
+        5,
+        Math.min(
+          newTop,
+          maxTop
+        )
+      );
+
+
+    bot.style.position = "fixed";
+
+    bot.style.left =
+      `${newLeft}px`;
+
+    bot.style.top =
+      `${newTop}px`;
+
+    bot.style.right = "auto";
+
+    bot.style.bottom = "auto";
+
+
+    event.preventDefault();
+
+  }
+
+
+  /* ---------------------------------------------------------
+     END DRAG
+  --------------------------------------------------------- */
+
+  function endDrag() {
+
+    bot.style.transition = "";
+
+    /*
+       Save the position so it stays where
+       the user placed it after scrolling.
+    */
+
+    if (dragging) {
+
+      localStorage.setItem(
+        "aiBotPosition",
+        JSON.stringify({
+          left: bot.offsetLeft,
+          top: bot.offsetTop
+        })
+      );
+
+    }
+
+  }
+
+
+  /* ---------------------------------------------------------
+     POINTER EVENTS
+  --------------------------------------------------------- */
+
+  bot.addEventListener(
+    "pointerdown",
+    startDrag
+  );
+
+  bot.addEventListener(
+    "pointermove",
+    moveDrag
+  );
+
+  bot.addEventListener(
+    "pointerup",
+    endDrag
+  );
+
+  bot.addEventListener(
+    "pointercancel",
+    endDrag
+  );
+
+
+  /* ---------------------------------------------------------
+     TOUCH
+  --------------------------------------------------------- */
+
+  bot.style.touchAction =
+    "none";
+
+
+  /* ---------------------------------------------------------
+     RESTORE LAST POSITION
+  --------------------------------------------------------- */
+
+  try {
+
+    const saved =
+      localStorage.getItem(
+        "aiBotPosition"
+      );
+
+
+    if (saved) {
+
+      const pos =
+        JSON.parse(saved);
+
+
+      bot.style.position =
+        "fixed";
+
+      bot.style.left =
+        `${pos.left}px`;
+
+      bot.style.top =
+        `${pos.top}px`;
+
+      bot.style.right =
+        "auto";
+
+      bot.style.bottom =
+        "auto";
+
+    }
+
+  } catch (error) {
+
+    console.warn(
+      "Could not restore AI bot position:",
+      error
+    );
+
+  }
+
+})();
+
+  
 </script>
 <script src="js/ai.js"></script>
 <script src="js/dragon.js"></script>
