@@ -7195,3 +7195,142 @@ select:focus {
 
 }
 
+/* =========================================
+   SIMPLE PURPLE FLOATING CIRCLES
+========================================= */
+
+.purple-particles{
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  pointer-events:none;
+  z-index:-1;
+}
+
+.purple-particles span{
+  position:absolute;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:rgba(139,92,246,.35);
+  box-shadow:0 0 18px rgba(139,92,246,.35);
+  animation:purpleFloat 12s ease-in-out infinite;
+}
+
+/* different positions and speeds */
+
+.purple-particles span:nth-child(1){
+  left:8%;
+  top:20%;
+  animation-duration:13s;
+}
+
+.purple-particles span:nth-child(2){
+  left:22%;
+  top:70%;
+  width:12px;
+  height:12px;
+  animation-duration:16s;
+}
+
+.purple-particles span:nth-child(3){
+  left:38%;
+  top:35%;
+  width:24px;
+  height:24px;
+  animation-duration:14s;
+}
+
+.purple-particles span:nth-child(4){
+  left:55%;
+  top:75%;
+  width:14px;
+  height:14px;
+  animation-duration:17s;
+}
+
+.purple-particles span:nth-child(5){
+  left:72%;
+  top:25%;
+  width:20px;
+  height:20px;
+  animation-duration:15s;
+}
+
+.purple-particles span:nth-child(6){
+  left:88%;
+  top:60%;
+  width:11px;
+  height:11px;
+  animation-duration:12s;
+}
+
+.purple-particles span:nth-child(7){
+  left:15%;
+  top:45%;
+  width:9px;
+  height:9px;
+  animation-duration:18s;
+}
+
+.purple-particles span:nth-child(8){
+  left:48%;
+  top:15%;
+  width:13px;
+  height:13px;
+  animation-duration:16s;
+}
+
+.purple-particles span:nth-child(9){
+  left:65%;
+  top:50%;
+  width:16px;
+  height:16px;
+  animation-duration:14s;
+}
+
+.purple-particles span:nth-child(10){
+  left:82%;
+  top:82%;
+  width:9px;
+  height:9px;
+  animation-duration:19s;
+}
+
+.purple-particles span:nth-child(11){
+  left:30%;
+  top:88%;
+  width:15px;
+  height:15px;
+  animation-duration:15s;
+}
+
+.purple-particles span:nth-child(12){
+  left:94%;
+  top:15%;
+  width:13px;
+  height:13px;
+  animation-duration:17s;
+}
+
+@keyframes purpleFloat{
+  0%,100%{
+    transform:translate(0,0);
+    opacity:.35;
+  }
+
+  25%{
+    transform:translate(25px,-35px);
+    opacity:.65;
+  }
+
+  50%{
+    transform:translate(-20px,-60px);
+    opacity:.4;
+  }
+
+  75%{
+    transform:translate(30px,-25px);
+    opacity:.7;
+  }
+}
