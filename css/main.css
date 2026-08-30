@@ -7205,16 +7205,28 @@ select:focus {
   pointer-events: none;
   overflow: hidden;
   z-index: 0;
+  .particle {
+    position: absolute;
+    
+    // Generates unique random positions for 50 particles
+    @for $i from 1 through 50 {
+      &:nth-child(#{$i}) {
+        left: random(100) * 1%;
+        top: random(100) * 1%;
+      }
+    }
+  }
 }
 
 .purple-particles span {
   position: absolute;
   display: block;
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 23px;
   border-radius: 50%;
   background: #8b5cf6;
   box-shadow: 0 0 20px rgba(139, 92, 246, 0.7);
+  opacity: 0.5;
 
   animation: purpleFloat 10s ease-in-out infinite;
 }
