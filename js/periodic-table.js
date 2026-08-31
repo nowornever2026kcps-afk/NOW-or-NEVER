@@ -1325,7 +1325,7 @@ const PT_ELEMENTS = [
     symbol: "Eu",
     Name: "Europium",
     "Atomic Number": "63",
-    Symbol": "Eu",
+    "Symbol": "Eu",
     "Short EC": "[Xe] 4f⁷ 6s²",
     "Atomic Radius": "180 pm",
     "Electronegativity": "1.20",
