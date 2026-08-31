@@ -8040,6 +8040,12 @@ moreMenu
           "active"
         );
 
+        if (view === "periodic-table-view") {
+              requestAnimationFrame(() => {
+                renderPeriodicTable();
+              });
+            }
+
 
         /* Update active bottom button */
 
