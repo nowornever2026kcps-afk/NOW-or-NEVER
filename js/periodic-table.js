@@ -3700,3 +3700,122 @@ window.addEventListener(
 showExamCards();
 
 renderPeriodicTable();
+
+
+/* =========================================================
+   NOW-or-NEVER PERIODIC TABLE INITIALIZATION
+   ========================================================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const grid = document.getElementById("periodic-table-grid");
+
+    if (!grid) {
+        console.warn(
+            "Periodic Table: #periodic-table-grid not found"
+        );
+        return;
+    }
+
+    console.log(
+        "Periodic Table: initializing...",
+        PT_ELEMENTS.length,
+        "elements"
+    );
+
+    grid.innerHTML = "";
+
+    PT_ELEMENTS.forEach((element) => {
+
+        const card = document.createElement("button");
+
+        card.type = "button";
+        card.className = "periodic-element";
+
+        card.dataset.atomicNumber =
+            element["Atomic Number"];
+
+        card.innerHTML = `
+            <span class="element-number">
+                ${element["Atomic Number"]}
+            </span>
+
+            <strong class="element-symbol">
+                ${element.symbol}
+            </strong>
+
+            <span class="element-name">
+                ${element.Name}
+            </span>
+        `;
+
+        card.addEventListener("click", () => {
+
+            const info =
+                document.getElementById(
+                    "periodic-table-info"
+                );
+
+            if (!info) return;
+
+            info.innerHTML = `
+                <div class="element-details">
+
+                    <h2>
+                        ${element.Name}
+                        (${element.symbol})
+                    </h2>
+
+                    <p>
+                        <strong>Atomic Number:</strong>
+                        ${element["Atomic Number"]}
+                    </p>
+
+                    <p>
+                        <strong>Electronic Configuration:</strong>
+                        ${element["Short EC"]}
+                    </p>
+
+                    <p>
+                        <strong>Atomic Radius:</strong>
+                        ${element["Atomic Radius"]}
+                    </p>
+
+                    <p>
+                        <strong>Electronegativity:</strong>
+                        ${element["Electronegativity"]}
+                    </p>
+
+                    <p>
+                        <strong>Type:</strong>
+                        ${element.Type}
+                    </p>
+
+                    <p>
+                        <strong>State at STP:</strong>
+                        ${element["State at STP"]}
+                    </p>
+
+                    ${
+                        element.examFocus
+                        ? `
+                        <div class="exam-focus">
+                            <strong>🎯 NEET / JEE Focus</strong>
+                            <p>
+                                ${element.examFocus}
+                            </p>
+                        </div>
+                        `
+                        : ""
+                    }
+
+                </div>
+            `;
+
+        });
+
+        grid.appendChild(card);
+
+    });
+
+});
