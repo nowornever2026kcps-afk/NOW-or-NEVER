@@ -6,7 +6,7 @@
 #nowAiButton {
   position: fixed;
   right: 24px;
-  bottom: 46px;
+  bottom: 24px;
 
   width: 62px;
   height: 62px;
@@ -676,7 +676,7 @@
   #nowAiButton {
 
     right: 16px;
-    bottom: 16px;
+    bottom: 46px;
 
     width: 56px;
     height: 56px;
