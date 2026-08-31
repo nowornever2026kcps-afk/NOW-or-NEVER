@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="css/leaderboard.css">
 <link rel="stylesheet" href="css/dragon.css">
 <link rel="stylesheet" href="css/ai.css">
+<link rel="stylesheet" href="css/periodic-table.css">
 </head>
 <body class="starting">
 
@@ -482,6 +483,14 @@
           <small>Study records</small>
         </span>
       </button>
+
+      <button type="button" class="more-nav-item" data-more-view="periodic-table">
+      <span class="more-icon">🧪</span>
+      <span>
+        <strong>Periodic Table</strong>
+        <small>Chemistry study tool</small>
+      </span>
+    </button>
 
 
       <a
@@ -1033,6 +1042,77 @@
       </div>
 
     </section>
+
+    <!-- ========================
+            Periodic table
+    ============================-->
+    <section id="periodic-table-view" class="view periodic-view">
+          <div class="pt-shell">
+            <div class="pt-header card">
+              <div>
+                <div class="pt-eyebrow">STUDY TOOL • CHEMISTRY</div>
+                <h2>🧪 Periodic Table</h2>
+                <p>Interactive element explorer with NEET/JEE-focused revision support.</p>
+              </div>
+              <div class="pt-actions">
+                <button class="pt-btn" id="pt-trends-btn" type="button">Periodic Trends</button>
+                <button class="pt-btn" id="pt-radius-btn" type="button">Atomic Radius</button>
+                <button class="pt-btn" id="pt-en-btn" type="button">Electronegativity</button>
+              </div>
+            </div>
+        
+            <div class="pt-toolbar card">
+              <div class="pt-search-wrap">
+                <span>⌕</span>
+                <input id="pt-search" type="search" placeholder="Search element, symbol, number, group..." autocomplete="off">
+              </div>
+              <div class="pt-filters">
+                <button class="pt-filter active" data-filter="all">All</button>
+                <button class="pt-filter" data-filter="metal">Metals</button>
+                <button class="pt-filter" data-filter="nonmetal">Nonmetals</button>
+                <button class="pt-filter" data-filter="metalloid">Metalloids</button>
+                <button class="pt-filter" data-filter="noble">Noble gases</button>
+              </div>
+            </div>
+        
+            <div class="pt-layout">
+              <div class="pt-table-card card">
+                <div class="pt-legend">
+                  <span><i class="pt-dot metal"></i>Metal</span>
+                  <span><i class="pt-dot nonmetal"></i>Nonmetal</span>
+                  <span><i class="pt-dot metalloid"></i>Metalloid</span>
+                  <span><i class="pt-dot noble"></i>Noble gas</span>
+                </div>
+                <div class="periodic-table-scroll">
+                  <div id="periodic-table-grid" class="periodic-table-grid" aria-label="Interactive periodic table"></div>
+                </div>
+                <div class="pt-mobile-note">Swipe horizontally if needed. Tap any element to inspect it.</div>
+              </div>
+        
+              <aside id="pt-info-panel" class="pt-info-panel card" aria-live="polite">
+                <div class="pt-empty">
+                  <div class="pt-empty-symbol">⚛</div>
+                  <h3>Select an element</h3>
+                  <p>Click an element to see its properties and exam-focused notes.</p>
+                </div>
+              </aside>
+            </div>
+        
+            <div class="pt-exam-grid" id="pt-exam-grid"></div>
+        
+            <div class="pt-chart-card card">
+              <div class="pt-chart-head">
+                <div>
+                  <div class="pt-eyebrow">VISUAL REVISION</div>
+                  <h3 id="pt-chart-title">Atomic radius of elements</h3>
+                  <p id="pt-chart-subtitle">Values from your original Python dataset. Elements without a numeric value are skipped.</p>
+                </div>
+                <button class="pt-btn" id="pt-close-chart" type="button">Hide graph</button>
+              </div>
+              <div class="pt-chart-wrap"><canvas id="pt-chart"></canvas></div>
+            </div>
+          </div>
+        </section>
 
     <!-- =========================
          HISTORY
@@ -8106,6 +8186,7 @@ moreMenu
 
   
 </script>
+<script src="js/periodic-table.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/dragon.js"></script>
 
