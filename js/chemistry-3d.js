@@ -477,6 +477,56 @@ function initializeChapterFilter() {
     );
 }
 
+
+
+function initializeMoleculeSearch() {
+
+    const searchInput =
+        document.getElementById("moleculeSearch");
+
+    const searchButton =
+        document.getElementById("searchMoleculeBtn");
+
+
+    if (!searchInput || !searchButton) {
+        return;
+    }
+
+
+    /* Search button */
+
+    searchButton.addEventListener(
+        "click",
+        () => {
+            applyMoleculeFilters();
+        }
+    );
+
+
+    /* Enter key */
+
+    searchInput.addEventListener(
+        "keydown",
+        event => {
+
+            if (event.key === "Enter") {
+                applyMoleculeFilters();
+            }
+
+        }
+    );
+
+
+    /* Live search */
+
+    searchInput.addEventListener(
+        "input",
+        () => {
+            applyMoleculeFilters();
+        }
+    );
+
+}
 /* =========================================================
 INITIALIZE 3D VIEWER
 ========================================================= */
