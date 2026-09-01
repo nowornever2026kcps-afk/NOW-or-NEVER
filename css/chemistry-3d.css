@@ -432,3 +432,25 @@ MOBILE
 }
 
 
+.chemistry-workspace {
+    display: grid;
+    grid-template-columns: minmax(280px, 360px) 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.molecule-library {
+    height: 650px;
+    overflow: hidden;
+}
+
+#moleculeList {
+    height: calc(100% - 50px);
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.molecule-viewer-section {
+    min-width: 0;
+}
+
