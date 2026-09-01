@@ -39,8 +39,131 @@ const MOLECULE_LIBRARY = [
         cid: 6115
     }
 ];
+/*search mechanics*/
+function searchMolecules(searchTerm) {
 
-function renderMoleculeLibrary() {
+    const term =
+        searchTerm
+            .trim()
+            .toLowerCase();
+
+
+    /*
+     * If search is empty,
+     * show the complete library.
+     */
+
+    if (!term) {
+
+        renderMoleculeLibrary();
+
+        return;
+    }
+
+
+    const results =
+        MOLECULE_LIBRARY.filter(molecule => {
+
+            const name =
+                molecule.name.toLowerCase();
+
+            const formula =
+                molecule.formula.toLowerCase();
+
+            const chapter =
+                molecule.chapter.toLowerCase();
+
+            const topics =
+                molecule.topics
+                    .join(" ")
+                    .toLowerCase();
+
+
+            return (
+                name.includes(term) ||
+                formula.includes(term) ||
+                chapter.includes(term) ||
+                topics.includes(term)
+            );
+
+        });
+
+
+    renderMoleculeLibrary(results);
+}
+
+function initializeMoleculeSearch() {
+
+    const searchInput =
+        document.getElementById(
+            "moleculeSearch"
+        );
+
+    const searchButton =
+        document.getElementById(
+            "searchMoleculeBtn"
+        );
+
+
+    if (!searchInput || !searchButton) {
+        return;
+    }
+
+
+    searchButton.addEventListener(
+        "click",
+        () => {
+
+            searchMolecules(
+                searchInput.value
+            );
+
+        }
+    );
+
+
+    /*
+     * Also search when pressing Enter
+     */
+
+    searchInput.addEventListener(
+        "keydown",
+        event => {
+
+            if (event.key === "Enter") {
+
+                searchMolecules(
+                    searchInput.value
+                );
+
+            }
+
+        }
+    );
+
+
+    /*
+     * Live search while typing
+     */
+
+    searchInput.addEventListener(
+        "input",
+        () => {
+
+            searchMolecules(
+                searchInput.value
+            );
+
+        }
+    );
+
+}
+
+/* rendering */
+
+function renderMoleculeLibrary(
+    molecules = MOLECULE_LIBRARY
+) {
 
     const moleculeList =
         document.getElementById("moleculeList");
@@ -54,7 +177,7 @@ function renderMoleculeLibrary() {
 
     moleculeList.innerHTML = "";
 
-    MOLECULE_LIBRARY.forEach(molecule => {
+     molecules.forEach(molecule => {
 
         const card =
             document.createElement("div");
@@ -552,6 +675,8 @@ document.addEventListener(
         initializeChemistry3D();
 
         initializeViewerControls();
+
+        initializeMoleculeSearch();
 
     }
 );
