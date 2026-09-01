@@ -131,6 +131,22 @@ function renderMoleculeLibrary(
 
     moleculeList.innerHTML = "";
 
+    if (molecules.length === 0) {
+
+            moleculeList.innerHTML = `
+                <div class="no-molecules-found">
+                            <div class="no-molecules-icon">🧪</div>
+                            <h3>No molecules found</h3>
+                            <p>
+                                Try another molecule name,
+                                formula, chapter, or topic.
+                            </p>
+                        </div>
+                    `;
+                
+                    return;
+                }
+
      molecules.forEach(molecule => {
 
         const card =
