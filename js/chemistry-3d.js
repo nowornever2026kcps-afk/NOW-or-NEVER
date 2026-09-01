@@ -266,9 +266,31 @@ function selectMolecule(moleculeId) {
      * Load the molecule from PubChem
      */
 
-    loadMoleculeFromPubChem(
-        molecule.cid
-    );
+            loadMoleculeFromPubChem(
+                molecule.cid
+            );
+        
+            if (window.innerWidth <= 800) {
+        
+            const viewerSection =
+                document.querySelector(
+                    ".molecule-viewer-section"
+                );
+        
+            if (viewerSection) {
+        
+                setTimeout(() => {
+        
+                    viewerSection.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
+        
+                }, 150);
+        
+            }
+        
+        }
 }
 
 /* changing visulisation*/
