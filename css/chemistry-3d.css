@@ -537,3 +537,24 @@ MOBILE
     box-shadow: 0 0 18px rgba(139, 92, 246, 0.35);
 }
 
+
+.no-molecules-found {
+    text-align: center;
+    padding: 40px 20px;
+    opacity: 0.8;
+}
+
+.no-molecules-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.no-molecules-found h3 {
+    margin: 0 0 8px;
+}
+
+.no-molecules-found p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+}
