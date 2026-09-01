@@ -6,33 +6,29 @@ NOW-or-NEVER
 let chemistryViewer = null;
 
 /* =========================================================
-INITIALIZE VIEWER
+INITIALIZE 3D VIEWER
 ========================================================= */
 
 function initializeChemistry3D() {
 
- 
+
 const viewerElement =
     document.getElementById("moleculeViewer");
 
 if (!viewerElement) {
-    console.warn(
-        "3D Chemistry: viewer element not found."
+    console.error(
+        "3D Chemistry: moleculeViewer not found."
     );
     return;
 }
 
 if (typeof $3Dmol === "undefined") {
     console.error(
-        "3D Chemistry: 3Dmol.js failed to load."
+        "3D Chemistry: 3Dmol.js did not load."
     );
     return;
 }
 
-
-/*
- * Create the 3Dmol viewer
- */
 
 chemistryViewer = $3Dmol.createViewer(
     viewerElement,
@@ -42,82 +38,156 @@ chemistryViewer = $3Dmol.createViewer(
 );
 
 
-/*
- * Simple Benzene structure
- *
- * This is only a temporary test.
- * Later this will come from PubChem.
- */
-
-const benzeneSDF = `
- 
-
-Benzene
-NOW-or-NEVER
-
-6  6  0  0  0  0  0  0  0  0999 V2000
-1.3960    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-0.6980    1.2090    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
--0.6980    1.2090    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
--1.3960    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
--0.6980   -1.2090    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-0.6980   -1.2090    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-1  2  1  0  0  0  0  0  0  0  0  0
-2  3  2  0  0  0  0  0  0  0  0  0
-3  4  1  0  0  0  0  0  0  0  0  0
-4  5  2  0  0  0  0  0  0  0  0  0
-5  6  1  0  0  0  0  0  0  0  0  0
-6  1  2  0  0  0  0  0  0  0  0  0
-M  END
-`;
-
- 
-/*
- * Add molecule
- */
-
-chemistryViewer.addModel(
-    benzeneSDF,
-    "sdf"
-);
+loadMoleculeFromPubChem(241);
 
 
-/*
- * Display style
- */
+}
 
-chemistryViewer.setStyle(
-    {},
-    {
-        stick: {
-            radius: 0.18
-        },
+/* =========================================================
+LOAD MOLECULE FROM PUBCHEM
+========================================================= */
 
-        sphere: {
-            scale: 0.30
-        }
-    }
-);
-
-
-/*
- * Center molecule
- */
-
-chemistryViewer.zoomTo();
-
-
-/*
- * Render
- */
-
-chemistryViewer.render();
+async function loadMoleculeFromPubChem(cid) {
 
 
 console.log(
-    "3D Chemistry: Benzene loaded successfully."
+    "Loading PubChem CID:",
+    cid
 );
- 
+
+
+try {
+
+    const url =
+        `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/record/SDF?record_type=3d`;
+
+
+    const response =
+        await fetch(url);
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            `PubChem request failed: ${response.status}`
+        );
+
+    }
+
+
+    const sdf =
+        await response.text();
+
+
+    if (!sdf.trim()) {
+
+        throw new Error(
+            "PubChem returned empty molecular data."
+        );
+
+    }
+
+
+    console.log(
+        "PubChem 3D data received."
+    );
+
+
+    /*
+     * Remove any previous molecule
+     */
+
+    chemistryViewer.clear();
+
+
+    /*
+     * Add PubChem molecule
+     */
+
+    chemistryViewer.addModel(
+        sdf,
+        "sdf"
+    );
+
+
+    /*
+     * Ball & Stick style
+     */
+
+    chemistryViewer.setStyle(
+        {},
+        {
+            stick: {
+                radius: 0.18
+            },
+
+            sphere: {
+                scale: 0.30
+            }
+        }
+    );
+
+
+    /*
+     * Center and display molecule
+     */
+
+    chemistryViewer.zoomTo();
+
+    chemistryViewer.render();
+
+
+    /*
+     * Update information
+     */
+
+    const nameElement =
+        document.getElementById("moleculeName");
+
+    const formulaElement =
+        document.getElementById("moleculeFormula");
+
+    const infoFormulaElement =
+        document.getElementById("moleculeInfoFormula");
+
+    const cidElement =
+        document.getElementById("moleculeCID");
+
+
+    if (nameElement) {
+        nameElement.textContent =
+            "Benzene";
+    }
+
+    if (formulaElement) {
+        formulaElement.textContent =
+            "C₆H₆";
+    }
+
+    if (infoFormulaElement) {
+        infoFormulaElement.textContent =
+            "C₆H₆";
+    }
+
+    if (cidElement) {
+        cidElement.textContent =
+            "241";
+    }
+
+
+    console.log(
+        "Benzene loaded successfully."
+    );
+
+} catch (error) {
+
+    console.error(
+        "3D Chemistry error:",
+        error
+    );
+
+}
+
 
 }
 
