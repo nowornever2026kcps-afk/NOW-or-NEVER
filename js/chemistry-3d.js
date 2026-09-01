@@ -849,7 +849,7 @@ function selectMolecule(moleculeId) {
      */
 
             loadMoleculeFromPubChem(
-                molecule.cid
+                molecule
             );
         
             if (window.innerWidth <= 800) {
@@ -1174,7 +1174,16 @@ console.log(
 LOAD MOLECULE FROM PUBCHEM
 ========================================================= */
 
-async function loadMoleculeFromPubChem(cid) {
+async function loadMoleculeFromPubChem(molecule) {
+
+    const cid = molecule.cid;
+
+    console.log(
+        "Loading molecule:",
+        molecule.name,
+        "CID:",
+        cid
+    );
 
 
 console.log(
@@ -1268,43 +1277,44 @@ try {
      * Update information
      */
 
-    const nameElement =
-        document.getElementById("moleculeName");
+ const nameElement =
+    document.getElementById("moleculeName");
 
-    const formulaElement =
-        document.getElementById("moleculeFormula");
+const formulaElement =
+    document.getElementById("moleculeFormula");
 
-    const infoFormulaElement =
-        document.getElementById("moleculeInfoFormula");
+const infoFormulaElement =
+    document.getElementById("moleculeInfoFormula");
 
-    const cidElement =
-        document.getElementById("moleculeCID");
+const cidElement =
+    document.getElementById("moleculeCID");
+
+if (nameElement) {
+    nameElement.textContent =
+        molecule.name;
+}
+
+if (formulaElement) {
+    formulaElement.textContent =
+        molecule.formula;
+}
+
+if (infoFormulaElement) {
+    infoFormulaElement.textContent =
+        molecule.formula;
+}
+
+if (cidElement) {
+    cidElement.textContent =
+        molecule.cid;
+}
+
+console.log(
+    `${molecule.name} loaded successfully.`
+);
 
 
-    if (nameElement) {
-        nameElement.textContent =
-            "Benzene";
-    }
-
-    if (formulaElement) {
-        formulaElement.textContent =
-            "C₆H₆";
-    }
-
-    if (infoFormulaElement) {
-        infoFormulaElement.textContent =
-            "C₆H₆";
-    }
-
-    if (cidElement) {
-        cidElement.textContent =
-            "241";
-    }
-
-
-    console.log(
-        "Benzene loaded successfully."
-    );
+  
 
 } catch (error) {
 
