@@ -76,6 +76,13 @@ function renderMoleculeLibrary() {
             </p>
         `;
 
+        card.addEventListener(
+                "click",
+                () => {
+                    selectMolecule(molecule.id);
+                }
+            );
+
         moleculeList.appendChild(card);
 
     });
@@ -85,6 +92,107 @@ function renderMoleculeLibrary() {
 
 let chemistryViewer = null;
 
+/*finding */
+
+function selectMolecule(moleculeId) {
+
+    const molecule =
+        MOLECULE_LIBRARY.find(
+            item => item.id === moleculeId
+        );
+
+    if (!molecule) {
+        console.error(
+            "3D Chemistry: molecule not found:",
+            moleculeId
+        );
+        return;
+    }
+
+    console.log(
+        "Selected molecule:",
+        molecule.name
+    );
+
+
+    /*
+     * Update active card
+     */
+
+    document
+        .querySelectorAll(".molecule-card")
+        .forEach(card => {
+
+            card.classList.toggle(
+                "active",
+                card.dataset.moleculeId === moleculeId
+            );
+
+        });
+
+
+    /*
+     * Update information
+     */
+
+    const nameElement =
+        document.getElementById("moleculeName");
+
+    const formulaElement =
+        document.getElementById("moleculeFormula");
+
+    const chapterElement =
+        document.getElementById("moleculeChapter");
+
+    const topicsElement =
+        document.getElementById("moleculeTopics");
+
+    const infoFormulaElement =
+        document.getElementById("moleculeInfoFormula");
+
+    const cidElement =
+        document.getElementById("moleculeCID");
+
+
+    if (nameElement) {
+        nameElement.textContent =
+            molecule.name;
+    }
+
+    if (formulaElement) {
+        formulaElement.textContent =
+            molecule.formula;
+    }
+
+    if (chapterElement) {
+        chapterElement.textContent =
+            molecule.chapter;
+    }
+
+    if (topicsElement) {
+        topicsElement.textContent =
+            molecule.topics.join(", ");
+    }
+
+    if (infoFormulaElement) {
+        infoFormulaElement.textContent =
+            molecule.formula;
+    }
+
+    if (cidElement) {
+        cidElement.textContent =
+            molecule.cid;
+    }
+
+
+    /*
+     * Load the molecule from PubChem
+     */
+
+    loadMoleculeFromPubChem(
+        molecule.cid
+    );
+}
 /* =========================================================
 INITIALIZE 3D VIEWER
 ========================================================= */
@@ -117,8 +225,9 @@ chemistryViewer = $3Dmol.createViewer(
     }
 );
 
-
-loadMoleculeFromPubChem(241);
+console.log(
+    "3D Chemistry viewer initialized."
+);
 
 
 }
