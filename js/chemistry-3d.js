@@ -40,123 +40,77 @@ const MOLECULE_LIBRARY = [
     }
 ];
 /*search mechanics*/
-function searchMolecules(searchTerm) {
-
-    const term =
-        searchTerm
-            .trim()
-            .toLowerCase();
-
-
-    /*
-     * If search is empty,
-     * show the complete library.
-     */
-
-    if (!term) {
-
-        renderMoleculeLibrary();
-
-        return;
-    }
-
-
-    const results =
-        MOLECULE_LIBRARY.filter(molecule => {
-
-            const name =
-                molecule.name.toLowerCase();
-
-            const formula =
-                molecule.formula.toLowerCase();
-
-            const chapter =
-                molecule.chapter.toLowerCase();
-
-            const topics =
-                molecule.topics
-                    .join(" ")
-                    .toLowerCase();
-
-
-            return (
-                name.includes(term) ||
-                formula.includes(term) ||
-                chapter.includes(term) ||
-                topics.includes(term)
-            );
-
-        });
-
-
-    renderMoleculeLibrary(results);
-}
-
-function initializeMoleculeSearch() {
+function applyMoleculeFilters() {
 
     const searchInput =
         document.getElementById(
             "moleculeSearch"
         );
 
-    const searchButton =
+    const chapterFilter =
         document.getElementById(
-            "searchMoleculeBtn"
+            "chapterFilter"
         );
 
 
-    if (!searchInput || !searchButton) {
-        return;
-    }
+    const searchTerm =
+        (
+            searchInput?.value || ""
+        )
+        .trim()
+        .toLowerCase();
 
 
-    searchButton.addEventListener(
-        "click",
-        () => {
-
-            searchMolecules(
-                searchInput.value
-            );
-
-        }
-    );
+    const selectedChapter =
+        chapterFilter?.value || "all";
 
 
-    /*
-     * Also search when pressing Enter
-     */
+    const results =
+        MOLECULE_LIBRARY.filter(
+            molecule => {
 
-    searchInput.addEventListener(
-        "keydown",
-        event => {
+                const name =
+                    molecule.name
+                        .toLowerCase();
 
-            if (event.key === "Enter") {
+                const formula =
+                    molecule.formula
+                        .toLowerCase();
 
-                searchMolecules(
-                    searchInput.value
+                const chapter =
+                    molecule.chapter
+                        .toLowerCase();
+
+                const topics =
+                    molecule.topics
+                        .join(" ")
+                        .toLowerCase();
+
+
+                const matchesSearch =
+                    !searchTerm ||
+                    name.includes(searchTerm) ||
+                    formula.includes(searchTerm) ||
+                    chapter.includes(searchTerm) ||
+                    topics.includes(searchTerm);
+
+
+                const matchesChapter =
+                    selectedChapter === "all" ||
+                    molecule.chapter ===
+                        selectedChapter;
+
+
+                return (
+                    matchesSearch &&
+                    matchesChapter
                 );
 
             }
-
-        }
-    );
+        );
 
 
-    /*
-     * Live search while typing
-     */
-
-    searchInput.addEventListener(
-        "input",
-        () => {
-
-            searchMolecules(
-                searchInput.value
-            );
-
-        }
-    );
-
+    renderMoleculeLibrary(results);
 }
 
 /* rendering */
@@ -475,6 +429,54 @@ function initializeViewerControls() {
 
 }
 
+function initializeChapterFilter() {
+
+    const chapterFilter =
+        document.getElementById(
+            "chapterFilter"
+        );
+
+    if (!chapterFilter) {
+        return;
+    }
+
+
+    const chapters =
+        [...new Set(
+            MOLECULE_LIBRARY.map(
+                molecule => molecule.chapter
+            )
+        )];
+
+
+    chapters
+        .sort()
+        .forEach(chapter => {
+
+            const option =
+                document.createElement("option");
+
+            option.value = chapter;
+
+            option.textContent = chapter;
+
+            chapterFilter.appendChild(
+                option
+            );
+
+        });
+
+
+    chapterFilter.addEventListener(
+        "change",
+        () => {
+
+            applyMoleculeFilters();
+
+        }
+    );
+}
+
 /* =========================================================
 INITIALIZE 3D VIEWER
 ========================================================= */
@@ -677,6 +679,7 @@ document.addEventListener(
         initializeViewerControls();
 
         initializeMoleculeSearch();
+        initializeChapterFilter();
 
     }
 );
