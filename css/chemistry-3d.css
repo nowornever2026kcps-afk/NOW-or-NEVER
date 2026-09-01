@@ -100,6 +100,26 @@ font-size: 15px;
 
 }
 
+#chapterFilter {
+    padding: 14px 16px;
+
+    border: 1px solid #302442;
+    border-radius: 12px;
+
+    outline: none;
+
+    background: #120d1d;
+    color: #ffffff;
+
+    font-size: 15px;
+
+    cursor: pointer;
+}
+
+#chapterFilter:focus {
+    border-color: #8b5cf6;
+}
+
 #moleculeSearch::placeholder {
 color: #777;
 }
@@ -405,6 +425,10 @@ MOBILE
 .viewer-controls button {
     width: 100%;
 }
-
+#chapterFilter {
+    width: 100%;
+}
 
 }
+
+
