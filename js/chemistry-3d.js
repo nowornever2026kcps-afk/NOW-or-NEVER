@@ -2,6 +2,44 @@
 NOW-or-NEVER
 3D CHEMISTRY SYSTEM
 ========================================================= */
+const MOLECULE_LIBRARY = [
+    {
+        id: "benzene",
+        name: "Benzene",
+        formula: "C₆H₆",
+        chapter: "Hydrocarbons",
+        topics: ["Aromatic Hydrocarbons"],
+        cid: 241
+    },
+
+    {
+        id: "ethanol",
+        name: "Ethanol",
+        formula: "C₂H₆O",
+        chapter: "Alcohols, Phenols and Ethers",
+        topics: ["Alcohols"],
+        cid: 702
+    },
+
+    {
+        id: "acetic-acid",
+        name: "Acetic Acid",
+        formula: "C₂H₄O₂",
+        chapter: "Aldehydes, Ketones and Carboxylic Acids",
+        topics: ["Carboxylic Acids"],
+        cid: 176
+    },
+
+    {
+        id: "aniline",
+        name: "Aniline",
+        formula: "C₆H₇N",
+        chapter: "Amines",
+        topics: ["Aromatic Amines"],
+        cid: 6115
+    }
+];
+
 
 let chemistryViewer = null;
 
