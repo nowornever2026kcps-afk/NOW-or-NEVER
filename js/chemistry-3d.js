@@ -4,17 +4,18 @@ NOW-or-NEVER
 ========================================================= */
 const MOLECULE_LIBRARY = [
 
-    /* =====================================================
-       HYDROCARBONS — ALKANES
-       ===================================================== */
+    // =========================
+    // HYDROCARBONS
+    // =========================
 
     {
         id: "methane",
         name: "Methane",
         formula: "CH₄",
         chapter: "Hydrocarbons",
-        topics: ["Alkanes", "Tetrahedral Carbon"],
-        cid: 297
+        topics: ["Alkanes"],
+        cid: 297,
+        has3D: true
     },
 
     {
@@ -22,165 +23,588 @@ const MOLECULE_LIBRARY = [
         name: "Ethane",
         formula: "C₂H₆",
         chapter: "Hydrocarbons",
-        topics: ["Alkanes", "Conformations"],
-        cid: 6324
-    },
-
-    {
-        id: "propane",
-        name: "Propane",
-        formula: "C₃H₈",
-        chapter: "Hydrocarbons",
         topics: ["Alkanes"],
-        cid: 6334
+        cid: 6324,
+        has3D: true
     },
-
-    {
-        id: "butane",
-        name: "Butane",
-        formula: "C₄H₁₀",
-        chapter: "Hydrocarbons",
-        topics: ["Alkanes", "Conformations", "Isomerism"],
-        cid: 7843
-    },
-
-    {
-        id: "isobutane",
-        name: "Isobutane",
-        formula: "C₄H₁₀",
-        chapter: "Hydrocarbons",
-        topics: ["Alkanes", "Chain Isomerism"],
-        cid: 6360
-    },
-
-
-    /* =====================================================
-       HYDROCARBONS — ALKENES
-       ===================================================== */
 
     {
         id: "ethene",
         name: "Ethene",
         formula: "C₂H₄",
         chapter: "Hydrocarbons",
-        topics: ["Alkenes", "π Bond", "sp² Hybridisation"],
-        cid: 6325
+        topics: ["Alkenes"],
+        cid: 6325,
+        has3D: true
     },
-
-    {
-        id: "propene",
-        name: "Propene",
-        formula: "C₃H₆",
-        chapter: "Hydrocarbons",
-        topics: ["Alkenes", "Addition Reactions"],
-        cid: 8252
-    },
-
-    {
-        id: "but-1-ene",
-        name: "1-Butene",
-        formula: "C₄H₈",
-        chapter: "Hydrocarbons",
-        topics: ["Alkenes", "Addition Reactions"],
-        cid: 7844
-    },
-
-
-    /* =====================================================
-       HYDROCARBONS — ALKYNES
-       ===================================================== */
 
     {
         id: "ethyne",
         name: "Ethyne",
         formula: "C₂H₂",
         chapter: "Hydrocarbons",
-        topics: ["Alkynes", "Triple Bond", "sp Hybridisation"],
-        cid: 6326
+        topics: ["Alkynes"],
+        cid: 6326,
+        has3D: true
     },
-
-    {
-        id: "propyne",
-        name: "Propyne",
-        formula: "C₃H₄",
-        chapter: "Hydrocarbons",
-        topics: ["Alkynes", "Terminal Alkynes"],
-        cid: 6337
-    },
-
-
-    /* =====================================================
-       HYDROCARBONS — CYCLIC
-       ===================================================== */
-
-    {
-        id: "cyclohexane",
-        name: "Cyclohexane",
-        formula: "C₆H₁₂",
-        chapter: "Hydrocarbons",
-        topics: [
-            "Cycloalkanes",
-            "Conformations",
-            "Chair Conformation"
-        ],
-        cid: 8078
-    },
-
-
-    /* =====================================================
-       HYDROCARBONS — AROMATIC
-       ===================================================== */
 
     {
         id: "benzene",
         name: "Benzene",
         formula: "C₆H₆",
         chapter: "Hydrocarbons",
-        topics: [
-            "Aromatic Hydrocarbons",
-            "Aromaticity",
-            "Resonance"
-        ],
-        cid: 241
+        topics: ["Aromatic Hydrocarbons"],
+        cid: 241,
+        has3D: true
+    },
+
+
+    // =========================
+    // ALCOHOLS / PHENOLS
+    // =========================
+
+    {
+        id: "methanol",
+        name: "Methanol",
+        formula: "CH₃OH",
+        chapter: "Alcohols, Phenols and Ethers",
+        topics: ["Alcohols"],
+        cid: 887,
+        has3D: true
     },
 
     {
-        id: "toluene",
-        name: "Toluene",
-        formula: "C₇H₈",
-        chapter: "Hydrocarbons",
-        topics: [
-            "Aromatic Hydrocarbons",
-            "Alkyl Benzenes"
-        ],
-        cid: 1140
+        id: "ethanol",
+        name: "Ethanol",
+        formula: "C₂H₆O",
+        chapter: "Alcohols, Phenols and Ethers",
+        topics: ["Alcohols"],
+        cid: 702,
+        has3D: true
     },
 
     {
-        id: "ethylbenzene",
-        name: "Ethylbenzene",
-        formula: "C₈H₁₀",
-        chapter: "Hydrocarbons",
-        topics: [
-            "Aromatic Hydrocarbons",
-            "Alkyl Benzenes"
-        ],
-        cid: 7500
+        id: "phenol",
+        name: "Phenol",
+        formula: "C₆H₆O",
+        chapter: "Alcohols, Phenols and Ethers",
+        topics: ["Phenols"],
+        cid: 996,
+        has3D: true
+    },
+
+
+    // =========================
+    // ALDEHYDES / KETONES
+    // =========================
+
+    {
+        id: "formaldehyde",
+        name: "Formaldehyde",
+        formula: "CH₂O",
+        chapter: "Aldehydes, Ketones and Carboxylic Acids",
+        topics: ["Aldehydes"],
+        cid: 712,
+        has3D: true
     },
 
     {
-        id: "styrene",
-        name: "Styrene",
-        formula: "C₈H₈",
-        chapter: "Hydrocarbons",
-        topics: [
-            "Aromatic Hydrocarbons",
-            "Alkenyl Benzene"
-        ],
-        cid: 7501
+        id: "acetaldehyde",
+        name: "Acetaldehyde",
+        formula: "C₂H₄O",
+        chapter: "Aldehydes, Ketones and Carboxylic Acids",
+        topics: ["Aldehydes"],
+        cid: 177,
+        has3D: true
+    },
+
+    {
+        id: "acetone",
+        name: "Acetone",
+        formula: "C₃H₆O",
+        chapter: "Aldehydes, Ketones and Carboxylic Acids",
+        topics: ["Ketones"],
+        cid: 180,
+        has3D: true
+    },
+
+    {
+        id: "acetic-acid",
+        name: "Acetic Acid",
+        formula: "C₂H₄O₂",
+        chapter: "Aldehydes, Ketones and Carboxylic Acids",
+        topics: ["Carboxylic Acids"],
+        cid: 176,
+        has3D: true
+    },
+
+    {
+        id: "formic-acid",
+        name: "Formic Acid",
+        formula: "CH₂O₂",
+        chapter: "Aldehydes, Ketones and Carboxylic Acids",
+        topics: ["Carboxylic Acids"],
+        cid: 284,
+        has3D: true
+    },
+
+
+    // =========================
+    // AMINES
+    // =========================
+
+    {
+        id: "aniline",
+        name: "Aniline",
+        formula: "C₆H₇N",
+        chapter: "Amines",
+        topics: ["Aromatic Amines"],
+        cid: 6115,
+        has3D: true
+    },
+
+
+    // =========================
+    // INORGANIC ACIDS
+    // =========================
+
+    {
+        id: "hydrochloric-acid",
+        name: "Hydrochloric Acid",
+        formula: "HCl",
+        chapter: "Inorganic Acids and Bases",
+        topics: ["Strong Acids"],
+        cid: 313,
+        has3D: true
+    },
+
+    {
+        id: "sulfuric-acid",
+        name: "Sulfuric Acid",
+        formula: "H₂SO₄",
+        chapter: "Inorganic Acids and Bases",
+        topics: ["Strong Acids"],
+        cid: 1118,
+        has3D: true
+    },
+
+    {
+        id: "nitric-acid",
+        name: "Nitric Acid",
+        formula: "HNO₃",
+        chapter: "Inorganic Acids and Bases",
+        topics: ["Strong Acids"],
+        cid: 944,
+        has3D: true
+    },
+
+    {
+        id: "phosphoric-acid",
+        name: "Phosphoric Acid",
+        formula: "H₃PO₄",
+        chapter: "Inorganic Acids and Bases",
+        topics: ["Oxoacids"],
+        cid: 1004,
+        has3D: true
+    },
+
+    {
+        id: "carbonic-acid",
+        name: "Carbonic Acid",
+        formula: "H₂CO₃",
+        chapter: "Inorganic Acids and Bases",
+        topics: ["Oxoacids"],
+        cid: 767,
+        has3D: true
+    },
+
+
+    // =========================
+    // INORGANIC BASES
+    // =========================
+
+    {
+        id: "sodium-hydroxide",
+        name: "Sodium Hydroxide",
+        formula: "NaOH",
+        chapter: "s-Block Elements",
+        topics: ["Bases", "Alkali Metals"],
+        cid: 14798,
+        has3D: true
+    },
+
+    {
+        id: "potassium-hydroxide",
+        name: "Potassium Hydroxide",
+        formula: "KOH",
+        chapter: "s-Block Elements",
+        topics: ["Bases", "Alkali Metals"],
+        cid: 14797,
+        has3D: true
+    },
+
+    {
+        id: "calcium-hydroxide",
+        name: "Calcium Hydroxide",
+        formula: "Ca(OH)₂",
+        chapter: "s-Block Elements",
+        topics: ["Alkaline Earth Metals", "Bases"],
+        cid: 6093208,
+        has3D: true
+    },
+
+    {
+        id: "magnesium-hydroxide",
+        name: "Magnesium Hydroxide",
+        formula: "Mg(OH)₂",
+        chapter: "s-Block Elements",
+        topics: ["Alkaline Earth Metals", "Bases"],
+        cid: 73981,
+        has3D: true
+    },
+
+
+    // =========================
+    // IMPORTANT SALTS
+    // =========================
+
+    {
+        id: "sodium-chloride",
+        name: "Sodium Chloride",
+        formula: "NaCl",
+        chapter: "s-Block Elements",
+        topics: ["Salts", "Alkali Metals"],
+        cid: 5234,
+        has3D: true
+    },
+
+    {
+        id: "sodium-carbonate",
+        name: "Sodium Carbonate",
+        formula: "Na₂CO₃",
+        chapter: "s-Block Elements",
+        topics: ["Salts", "Washing Soda"],
+        cid: 10340,
+        has3D: true
+    },
+
+    {
+        id: "sodium-bicarbonate",
+        name: "Sodium Bicarbonate",
+        formula: "NaHCO₃",
+        chapter: "s-Block Elements",
+        topics: ["Salts", "Baking Soda"],
+        cid: 516892,
+        has3D: true
+    },
+
+    {
+        id: "calcium-carbonate",
+        name: "Calcium Carbonate",
+        formula: "CaCO₃",
+        chapter: "s-Block Elements",
+        topics: ["Salts", "Limestone", "Marble", "Chalk"],
+        cid: 10112,
+        has3D: true
+    },
+
+    {
+        id: "calcium-oxide",
+        name: "Calcium Oxide",
+        formula: "CaO",
+        chapter: "s-Block Elements",
+        topics: ["Quicklime", "Alkaline Earth Metals"],
+        cid: 14778,
+        has3D: true
+    },
+
+    {
+        id: "gypsum",
+        name: "Gypsum",
+        formula: "CaSO₄·2H₂O",
+        chapter: "s-Block Elements",
+        topics: ["Calcium Compounds"],
+        cid: 24456,
+        has3D: true
+    },
+
+    {
+        id: "plaster-of-paris",
+        name: "Plaster of Paris",
+        formula: "CaSO₄·½H₂O",
+        chapter: "s-Block Elements",
+        topics: ["Calcium Compounds"],
+        cid: 3033839,
+        has3D: true
+    },
+
+
+    // =========================
+    // IMPORTANT OXIDIZING AGENTS
+    // =========================
+
+    {
+        id: "potassium-permanganate",
+        name: "Potassium Permanganate",
+        formula: "KMnO₄",
+        chapter: "d- and f-Block Elements",
+        topics: ["Oxidizing Agents", "Permanganate"],
+        cid: 516875,
+        has3D: true
+    },
+
+    {
+        id: "potassium-dichromate",
+        name: "Potassium Dichromate",
+        formula: "K₂Cr₂O₇",
+        chapter: "d- and f-Block Elements",
+        topics: ["Oxidizing Agents", "Dichromate"],
+        cid: 24502,
+        has3D: true
+    },
+
+    {
+        id: "hydrogen-peroxide",
+        name: "Hydrogen Peroxide",
+        formula: "H₂O₂",
+        chapter: "p-Block Elements",
+        topics: ["Peroxides", "Oxidizing Agents"],
+        cid: 784
+    },
+
+
+    // =========================
+    // p-BLOCK
+    // =========================
+
+    {
+        id: "ammonia",
+        name: "Ammonia",
+        formula: "NH₃",
+        chapter: "p-Block Elements",
+        topics: ["Nitrogen", "Haber Process"],
+        cid: 222,
+        has3D: true
+    },
+
+    {
+        id: "hydrazine",
+        name: "Hydrazine",
+        formula: "N₂H₄",
+        chapter: "p-Block Elements",
+        topics: ["Nitrogen Compounds", "Reducing Agents"],
+        cid: 9321,
+        has3D: true
+    },
+
+    {
+        id: "phosphine",
+        name: "Phosphine",
+        formula: "PH₃",
+        chapter: "p-Block Elements",
+        topics: ["Phosphorus"],
+        cid: 24404,
+        has3D: true
+    },
+
+    {
+        id: "nitrous-oxide",
+        name: "Nitrous Oxide",
+        formula: "N₂O",
+        chapter: "p-Block Elements",
+        topics: ["Nitrogen Oxides"],
+        cid: 948,
+        has3D: true
+    },
+
+    {
+        id: "sulfur-dioxide",
+        name: "Sulfur Dioxide",
+        formula: "SO₂",
+        chapter: "p-Block Elements",
+        topics: ["Sulfur", "Oxides"],
+        cid: 1119,
+        has3D: true
+    },
+
+    {
+        id: "silicon-dioxide",
+        name: "Silicon Dioxide",
+        formula: "SiO₂",
+        chapter: "p-Block Elements",
+        topics: ["Silicon", "Network Solids"],
+        cid: 24261,
+        has3D: true
+    },
+
+    {
+        id: "silicon-carbide",
+        name: "Silicon Carbide",
+        formula: "SiC",
+        chapter: "p-Block Elements",
+        topics: ["Network Solids", "Carborundum"],
+        cid: 9862089,
+        has3D: true
+    },
+
+
+    // =========================
+    // OXOACIDS
+    // =========================
+
+    {
+        id: "hypophosphorous-acid",
+        name: "Hypophosphorous Acid",
+        formula: "H₃PO₂",
+        chapter: "p-Block Elements",
+        topics: ["Phosphorus Oxoacids"],
+        cid: 3085123,
+        has3D: true
+    },
+
+    {
+        id: "orthophosphorous-acid",
+        name: "Orthophosphorous Acid",
+        formula: "H₃PO₃",
+        chapter: "p-Block Elements",
+        topics: ["Phosphorus Oxoacids"],
+        cid: 107909,
+        has3D: true
+    },
+
+
+    // =========================
+    // TRANSITION METAL COMPOUNDS
+    // =========================
+
+    {
+        id: "copper-sulfate",
+        name: "Copper(II) Sulfate",
+        formula: "CuSO₄",
+        chapter: "d- and f-Block Elements",
+        topics: ["Copper Compounds", "Blue Vitriol"],
+        cid: 24462,
+        has3D: true
+    },
+
+    {
+        id: "ferrous-sulfate",
+        name: "Iron(II) Sulfate",
+        formula: "FeSO₄",
+        chapter: "d- and f-Block Elements",
+        topics: ["Iron Compounds", "Green Vitriol"],
+        cid: 24393,
+        has3D: true
+    },
+
+    {
+        id: "zinc-sulfate",
+        name: "Zinc Sulfate",
+        formula: "ZnSO₄",
+        chapter: "d- and f-Block Elements",
+        topics: ["Zinc Compounds", "White Vitriol"],
+        cid: 24424,
+        has3D: true
+    },
+
+    {
+        id: "silver-nitrate",
+        name: "Silver Nitrate",
+        formula: "AgNO₃",
+        chapter: "d- and f-Block Elements",
+        topics: ["Silver Compounds", "Tollens Test"],
+        cid: 24470,
+        has3D: true
+    },
+
+
+    // =========================
+    // COORDINATION COMPOUNDS
+    // =========================
+
+    {
+        id: "cisplatin",
+        name: "Cisplatin",
+        formula: "cis-[PtCl₂(NH₃)₂]",
+        chapter: "Coordination Compounds",
+        topics: ["Coordination Chemistry", "Medicinal Chemistry"],
+        cid: 441203,
+        has3D: true
+    },
+
+    {
+        id: "wilkinson-catalyst",
+        name: "Wilkinson's Catalyst",
+        formula: "[RhCl(PPh₃)₃]",
+        chapter: "Coordination Compounds",
+        topics: ["Organometallic Chemistry", "Catalysis"],
+        cid: 98127,
+        has3D: true
+    },
+
+
+    // =========================
+    // BIOMOLECULES
+    // =========================
+
+    {
+        id: "glucose",
+        name: "Glucose",
+        formula: "C₆H₁₂O₆",
+        chapter: "Biomolecules",
+        topics: ["Monosaccharides", "Carbohydrates"],
+        cid: 5793,
+        has3D: true
+    },
+
+    {
+        id: "fructose",
+        name: "Fructose",
+        formula: "C₆H₁₂O₆",
+        chapter: "Biomolecules",
+        topics: ["Monosaccharides", "Carbohydrates"],
+        cid: 5984,
+        has3D: true
+    },
+
+    {
+        id: "sucrose",
+        name: "Sucrose",
+        formula: "C₁₂H₂₂O₁₁",
+        chapter: "Biomolecules",
+        topics: ["Disaccharides", "Carbohydrates"],
+        cid: 5988,
+        has3D: true
+    },
+
+    {
+        id: "urea",
+        name: "Urea",
+        formula: "CH₄N₂O",
+        chapter: "Biomolecules",
+        topics: ["Nitrogen Compounds"],
+        cid: 1176,
+        has3D: true
+    },
+
+
+    // =========================
+    // HALOGEN COMPOUNDS
+    // =========================
+
+    {
+        id: "chloroform",
+        name: "Chloroform",
+        formula: "CHCl₃",
+        chapter: "Haloalkanes and Haloarenes",
+        topics: ["Haloalkanes"],
+        cid: 6212,
+        has3D: true
     }
 
 ];
+
+
 /*search mechanics*/
 function applyMoleculeFilters() {
 
