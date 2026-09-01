@@ -3,41 +3,183 @@ NOW-or-NEVER
 3D CHEMISTRY SYSTEM 
 ========================================================= */
 const MOLECULE_LIBRARY = [
+
+    /* =====================================================
+       HYDROCARBONS — ALKANES
+       ===================================================== */
+
+    {
+        id: "methane",
+        name: "Methane",
+        formula: "CH₄",
+        chapter: "Hydrocarbons",
+        topics: ["Alkanes", "Tetrahedral Carbon"],
+        cid: 297
+    },
+
+    {
+        id: "ethane",
+        name: "Ethane",
+        formula: "C₂H₆",
+        chapter: "Hydrocarbons",
+        topics: ["Alkanes", "Conformations"],
+        cid: 6324
+    },
+
+    {
+        id: "propane",
+        name: "Propane",
+        formula: "C₃H₈",
+        chapter: "Hydrocarbons",
+        topics: ["Alkanes"],
+        cid: 6334
+    },
+
+    {
+        id: "butane",
+        name: "Butane",
+        formula: "C₄H₁₀",
+        chapter: "Hydrocarbons",
+        topics: ["Alkanes", "Conformations", "Isomerism"],
+        cid: 7843
+    },
+
+    {
+        id: "isobutane",
+        name: "Isobutane",
+        formula: "C₄H₁₀",
+        chapter: "Hydrocarbons",
+        topics: ["Alkanes", "Chain Isomerism"],
+        cid: 6360
+    },
+
+
+    /* =====================================================
+       HYDROCARBONS — ALKENES
+       ===================================================== */
+
+    {
+        id: "ethene",
+        name: "Ethene",
+        formula: "C₂H₄",
+        chapter: "Hydrocarbons",
+        topics: ["Alkenes", "π Bond", "sp² Hybridisation"],
+        cid: 6325
+    },
+
+    {
+        id: "propene",
+        name: "Propene",
+        formula: "C₃H₆",
+        chapter: "Hydrocarbons",
+        topics: ["Alkenes", "Addition Reactions"],
+        cid: 8252
+    },
+
+    {
+        id: "but-1-ene",
+        name: "1-Butene",
+        formula: "C₄H₈",
+        chapter: "Hydrocarbons",
+        topics: ["Alkenes", "Addition Reactions"],
+        cid: 7844
+    },
+
+
+    /* =====================================================
+       HYDROCARBONS — ALKYNES
+       ===================================================== */
+
+    {
+        id: "ethyne",
+        name: "Ethyne",
+        formula: "C₂H₂",
+        chapter: "Hydrocarbons",
+        topics: ["Alkynes", "Triple Bond", "sp Hybridisation"],
+        cid: 6326
+    },
+
+    {
+        id: "propyne",
+        name: "Propyne",
+        formula: "C₃H₄",
+        chapter: "Hydrocarbons",
+        topics: ["Alkynes", "Terminal Alkynes"],
+        cid: 6337
+    },
+
+
+    /* =====================================================
+       HYDROCARBONS — CYCLIC
+       ===================================================== */
+
+    {
+        id: "cyclohexane",
+        name: "Cyclohexane",
+        formula: "C₆H₁₂",
+        chapter: "Hydrocarbons",
+        topics: [
+            "Cycloalkanes",
+            "Conformations",
+            "Chair Conformation"
+        ],
+        cid: 8078
+    },
+
+
+    /* =====================================================
+       HYDROCARBONS — AROMATIC
+       ===================================================== */
+
     {
         id: "benzene",
         name: "Benzene",
         formula: "C₆H₆",
         chapter: "Hydrocarbons",
-        topics: ["Aromatic Hydrocarbons"],
+        topics: [
+            "Aromatic Hydrocarbons",
+            "Aromaticity",
+            "Resonance"
+        ],
         cid: 241
     },
 
     {
-        id: "ethanol",
-        name: "Ethanol",
-        formula: "C₂H₆O",
-        chapter: "Alcohols, Phenols and Ethers",
-        topics: ["Alcohols"],
-        cid: 702
+        id: "toluene",
+        name: "Toluene",
+        formula: "C₇H₈",
+        chapter: "Hydrocarbons",
+        topics: [
+            "Aromatic Hydrocarbons",
+            "Alkyl Benzenes"
+        ],
+        cid: 1140
     },
 
     {
-        id: "acetic-acid",
-        name: "Acetic Acid",
-        formula: "C₂H₄O₂",
-        chapter: "Aldehydes, Ketones and Carboxylic Acids",
-        topics: ["Carboxylic Acids"],
-        cid: 176
+        id: "ethylbenzene",
+        name: "Ethylbenzene",
+        formula: "C₈H₁₀",
+        chapter: "Hydrocarbons",
+        topics: [
+            "Aromatic Hydrocarbons",
+            "Alkyl Benzenes"
+        ],
+        cid: 7500
     },
 
     {
-        id: "aniline",
-        name: "Aniline",
-        formula: "C₆H₇N",
-        chapter: "Amines",
-        topics: ["Aromatic Amines"],
-        cid: 6115
+        id: "styrene",
+        name: "Styrene",
+        formula: "C₈H₈",
+        chapter: "Hydrocarbons",
+        topics: [
+            "Aromatic Hydrocarbons",
+            "Alkenyl Benzene"
+        ],
+        cid: 7501
     }
+
 ];
 /*search mechanics*/
 function applyMoleculeFilters() {
