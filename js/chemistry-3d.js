@@ -40,6 +40,48 @@ const MOLECULE_LIBRARY = [
     }
 ];
 
+function renderMoleculeLibrary() {
+
+    const moleculeList =
+        document.getElementById("moleculeList");
+
+    if (!moleculeList) {
+        console.warn(
+            "3D Chemistry: moleculeList not found."
+        );
+        return;
+    }
+
+    moleculeList.innerHTML = "";
+
+    MOLECULE_LIBRARY.forEach(molecule => {
+
+        const card =
+            document.createElement("div");
+
+        card.className = "molecule-card";
+
+        card.dataset.moleculeId =
+            molecule.id;
+
+        card.innerHTML = `
+            <h3>${molecule.name}</h3>
+
+            <p>
+                ${molecule.formula}
+            </p>
+
+            <p>
+                ${molecule.chapter}
+            </p>
+        `;
+
+        moleculeList.appendChild(card);
+
+    });
+
+}
+
 
 let chemistryViewer = null;
 
@@ -234,6 +276,12 @@ PAGE LOAD
 ========================================================= */
 
 document.addEventListener(
-"DOMContentLoaded",
-initializeChemistry3D
+    "DOMContentLoaded",
+    () => {
+
+        renderMoleculeLibrary();
+
+        initializeChemistry3D();
+
+    }
 );
