@@ -11,7 +11,7 @@ INITIALIZE VIEWER
 
 function initializeChemistry3D() {
 
-```
+ 
 const viewerElement =
     document.getElementById("moleculeViewer");
 
@@ -50,7 +50,7 @@ chemistryViewer = $3Dmol.createViewer(
  */
 
 const benzeneSDF = `
-```
+ 
 
 Benzene
 NOW-or-NEVER
@@ -71,7 +71,7 @@ NOW-or-NEVER
 M  END
 `;
 
-```
+ 
 /*
  * Add molecule
  */
@@ -117,7 +117,7 @@ chemistryViewer.render();
 console.log(
     "3D Chemistry: Benzene loaded successfully."
 );
-```
+ 
 
 }
 
