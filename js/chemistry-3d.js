@@ -193,6 +193,165 @@ function selectMolecule(moleculeId) {
         molecule.cid
     );
 }
+
+/* changing visulisation*/
+
+function setMoleculeStyle(style) {
+
+    if (!chemistryViewer) {
+        return;
+    }
+
+    chemistryViewer.setStyle({}, {});
+
+    if (style === "ball-stick") {
+
+        chemistryViewer.setStyle(
+            {},
+            {
+                stick: {
+                    radius: 0.18
+                },
+                sphere: {
+                    scale: 0.30
+                }
+            }
+        );
+
+    }
+
+    else if (style === "stick") {
+
+        chemistryViewer.setStyle(
+            {},
+            {
+                stick: {
+                    radius: 0.20
+                }
+            }
+        );
+
+    }
+
+    else if (style === "spacefill") {
+
+        chemistryViewer.setStyle(
+            {},
+            {
+                sphere: {
+                    scale: 0.85
+                }
+            }
+        );
+
+    }
+
+    chemistryViewer.render();
+
+
+    /*
+     * Update active control button
+     */
+
+    document
+        .querySelectorAll(".viewer-controls button")
+        .forEach(button => {
+            button.classList.remove("active");
+        });
+
+
+    const activeButton =
+        document.querySelector(
+            `[data-style="${style}"]`
+        );
+
+    if (activeButton) {
+        activeButton.classList.add("active");
+    }
+}
+
+/* connecting buttons*/
+
+function initializeViewerControls() {
+
+    const ballStickBtn =
+        document.getElementById("ballStickBtn");
+
+    const stickBtn =
+        document.getElementById("stickBtn");
+
+    const sphereBtn =
+        document.getElementById("sphereBtn");
+
+    const resetViewBtn =
+        document.getElementById("resetViewBtn");
+
+
+    if (ballStickBtn) {
+
+        ballStickBtn.dataset.style =
+            "ball-stick";
+
+        ballStickBtn.addEventListener(
+            "click",
+            () => {
+                setMoleculeStyle("ball-stick");
+            }
+        );
+
+    }
+
+
+    if (stickBtn) {
+
+        stickBtn.dataset.style =
+            "stick";
+
+        stickBtn.addEventListener(
+            "click",
+            () => {
+                setMoleculeStyle("stick");
+            }
+        );
+
+    }
+
+
+    if (sphereBtn) {
+
+        sphereBtn.dataset.style =
+            "spacefill";
+
+        sphereBtn.addEventListener(
+            "click",
+            () => {
+                setMoleculeStyle("spacefill");
+            }
+        );
+
+    }
+
+
+    if (resetViewBtn) {
+
+        resetViewBtn.addEventListener(
+            "click",
+            () => {
+
+                if (!chemistryViewer) {
+                    return;
+                }
+
+                chemistryViewer.zoomTo();
+                chemistryViewer.render();
+
+            }
+        );
+
+    }
+
+}
+
 /* =========================================================
 INITIALIZE 3D VIEWER
 ========================================================= */
@@ -391,6 +550,8 @@ document.addEventListener(
         renderMoleculeLibrary();
 
         initializeChemistry3D();
+
+        initializeViewerControls();
 
     }
 );
