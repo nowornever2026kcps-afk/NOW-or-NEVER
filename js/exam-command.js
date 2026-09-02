@@ -1,4 +1,4 @@
- javascript
+
 /* =========================================================
    NOW-or-NEVER
    EXAM COMMAND CENTER
