@@ -1,0 +1,1646 @@
+ javascript
+/* =========================================================
+   NOW-or-NEVER
+   EXAM COMMAND CENTER
+   ---------------------------------------------------------
+   Handles:
+   - Supabase authentication
+   - Exam goal setup
+   - Saving student preferences
+   - Loading existing goals
+   - Exam-date research
+   - Countdown cards
+   - Refresh
+   ========================================================= */
+
+(() => {
+  "use strict";
+
+  /* =========================================================
+     SUPABASE
+     ========================================================= */
+
+  const SUPABASE_URL =
+    "https://kvbbgvfrllptqpbkixnv.supabase.co";
+
+  const SUPABASE_KEY =
+    "sb_publishable_YaS6ZJfi4VrAbtGymRBr6w_ocpvX0I-";
+
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    }
+  );
+
+
+  /* =========================================================
+     CONFIG
+     ========================================================= */
+
+  const EXAM_RESEARCH_FUNCTION = "exam-research";
+
+  // September 2026 -> target the next exam cycle.
+  // Before July -> current year.
+  // July onward -> next year.
+  const TARGET_EXAM_YEAR =
+    new Date().getMonth() >= 6
+      ? new Date().getFullYear() + 1
+      : new Date().getFullYear();
+
+
+  /* =========================================================
+     STATE
+     ========================================================= */
+
+  let currentSession = null;
+  let currentUser = null;
+  let currentGoals = [];
+
+  let countdownTimer = null;
+
+
+  /* =========================================================
+     DOM
+     ========================================================= */
+
+  const userLabel =
+    document.getElementById("userLabel");
+
+  const refreshBtn =
+    document.getElementById("refreshBtn");
+
+  const goalCount =
+    document.getElementById("goalCount");
+
+  const emptyState =
+    document.getElementById("emptyState");
+
+  const emptySetupBtn =
+    document.getElementById("emptySetupBtn");
+
+  const dashboardSection =
+    document.getElementById("dashboardSection");
+
+  const manageGoalsBtn =
+    document.getElementById("manageGoalsBtn");
+
+  const examGrid =
+    document.getElementById("examGrid");
+
+  const statusBanner =
+    document.getElementById("statusBanner");
+
+  const setupModal =
+    document.getElementById("setupModal");
+
+  const closeModalBtn =
+    document.getElementById("closeModalBtn");
+
+  const cancelSetupBtn =
+    document.getElementById("cancelSetupBtn");
+
+  const saveGoalsBtn =
+    document.getElementById("saveGoalsBtn");
+
+  const boardFields =
+    document.getElementById("boardFields");
+
+  const boardSelect =
+    document.getElementById("boardSelect");
+
+  const classSelect =
+    document.getElementById("classSelect");
+
+  const toast =
+    document.getElementById("toast");
+
+
+  /* =========================================================
+     HELPERS
+     ========================================================= */
+
+  function escapeHTML(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+
+  function showStatus(message, type = "info") {
+    if (!statusBanner) return;
+
+    statusBanner.textContent = message;
+    statusBanner.className =
+      `status-banner ${type}`;
+
+    statusBanner.classList.remove("hidden");
+  }
+
+
+  function hideStatus() {
+    if (!statusBanner) return;
+
+    statusBanner.classList.add("hidden");
+  }
+
+
+  function showToast(message) {
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    clearTimeout(showToast.timer);
+
+    showToast.timer = setTimeout(() => {
+      toast.classList.remove("show");
+    }, 3000);
+  }
+
+
+  function setButtonLoading(button, loading, text) {
+    if (!button) return;
+
+    if (loading) {
+      button.dataset.originalText =
+        button.textContent;
+
+      button.disabled = true;
+      button.textContent = text;
+    } else {
+      button.disabled = false;
+
+      button.textContent =
+        button.dataset.originalText ||
+        button.textContent;
+    }
+  }
+
+
+  function normalizeExamType(type) {
+    return String(type || "")
+      .trim()
+      .toLowerCase();
+  }
+
+
+  function apiExamType(type) {
+    const normalized =
+      normalizeExamType(type);
+
+    switch (normalized) {
+      case "neet":
+        return "NEET";
+
+      case "jee_main":
+        return "JEE_MAIN";
+
+      case "jee_advanced":
+        return "JEE_ADVANCED";
+
+      case "board":
+        return "BOARD";
+
+      default:
+        return normalized.toUpperCase();
+    }
+  }
+
+
+  function getExamLabel(type) {
+    switch (normalizeExamType(type)) {
+      case "neet":
+        return "NEET";
+
+      case "jee_main":
+        return "JEE Main";
+
+      case "jee_advanced":
+        return "JEE Advanced";
+
+      case "board":
+        return "Board Examination";
+
+      default:
+        return type;
+    }
+  }
+
+
+  function getExamIcon(type) {
+    switch (normalizeExamType(type)) {
+      case "neet":
+        return "🩺";
+
+      case "jee_main":
+        return "⚡";
+
+      case "jee_advanced":
+        return "🚀";
+
+      case "board":
+        return "📚";
+
+      default:
+        return "🎯";
+    }
+  }
+
+
+  function getTargetYear() {
+    return TARGET_EXAM_YEAR;
+  }
+
+
+  function formatDate(dateString) {
+    if (!dateString) {
+      return "Not officially announced";
+    }
+
+    const date =
+      new Date(`${dateString}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) {
+      return "Date unavailable";
+    }
+
+    return date.toLocaleDateString(
+      "en-IN",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      }
+    );
+  }
+
+
+  function calculateCountdown(dateString) {
+    if (!dateString) {
+      return null;
+    }
+
+    const target =
+      new Date(`${dateString}T23:59:59`);
+
+    const now = new Date();
+
+    const difference =
+      target.getTime() - now.getTime();
+
+    if (difference <= 0) {
+      return {
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+        passed: true
+      };
+    }
+
+    const totalSeconds =
+      Math.floor(difference / 1000);
+
+    const days =
+      Math.floor(totalSeconds / 86400);
+
+    const hours =
+      Math.floor(
+        (totalSeconds % 86400) / 3600
+      );
+
+    const minutes =
+      Math.floor(
+        (totalSeconds % 3600) / 60
+      );
+
+    const seconds =
+      totalSeconds % 60;
+
+    return {
+      days,
+      hours,
+      minutes,
+      seconds,
+      passed: false
+    };
+  }
+
+
+  /* =========================================================
+     AUTH
+     ========================================================= */
+
+  async function loadSession() {
+    const {
+      data,
+      error
+    } = await supabaseClient.auth.getSession();
+
+    if (error) {
+      console.error(
+        "Exam Command auth error:",
+        error
+      );
+
+      throw error;
+    }
+
+    currentSession = data.session;
+    currentUser =
+      currentSession?.user || null;
+
+    return currentSession;
+  }
+
+
+  async function requireAuth() {
+    await loadSession();
+
+    if (!currentSession || !currentUser) {
+      userLabel.textContent =
+        "Not signed in";
+
+      showStatus(
+        "Please sign in to NOW-or-NEVER before using the Exam Command Center.",
+        "error"
+      );
+
+      emptyState.classList.add("hidden");
+      dashboardSection.classList.add("hidden");
+
+      return false;
+    }
+
+    const displayName =
+      currentUser.user_metadata?.full_name ||
+      currentUser.user_metadata?.name ||
+      currentUser.email?.split("@")[0] ||
+      "Student";
+
+    userLabel.textContent =
+      `👤 ${displayName}`;
+
+    return true;
+  }
+
+
+  /* =========================================================
+     GOAL MODAL
+     ========================================================= */
+
+  function openModal() {
+    if (!setupModal) return;
+
+    setupModal.classList.remove("hidden");
+    setupModal.setAttribute(
+      "aria-hidden",
+      "false"
+    );
+
+    syncBoardFields();
+  }
+
+
+  function closeModal() {
+    if (!setupModal) return;
+
+    setupModal.classList.add("hidden");
+    setupModal.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+  }
+
+
+  function syncBoardFields() {
+    if (!boardFields) return;
+
+    const boardCheckbox =
+      document.querySelector(
+        'input[name="examGoal"][value="board"]'
+      );
+
+    const boardSelected =
+      !!boardCheckbox?.checked;
+
+    boardFields.classList.toggle(
+      "hidden",
+      !boardSelected
+    );
+  }
+
+
+  function restoreGoalCheckboxes() {
+    const checkboxes =
+      document.querySelectorAll(
+        'input[name="examGoal"]'
+      );
+
+    checkboxes.forEach(
+      checkbox => {
+        checkbox.checked =
+          currentGoals.some(
+            goal =>
+              normalizeExamType(
+                goal.exam_type
+              ) ===
+              normalizeExamType(
+                checkbox.value
+              )
+          );
+      }
+    );
+
+    syncBoardFields();
+
+    const boardGoal =
+      currentGoals.find(
+        goal =>
+          normalizeExamType(
+            goal.exam_type
+          ) === "board"
+      );
+
+    if (boardGoal) {
+      if (boardSelect && boardGoal.board) {
+        boardSelect.value =
+          boardGoal.board;
+      }
+
+      if (
+        classSelect &&
+        boardGoal.class_level
+      ) {
+        classSelect.value =
+          boardGoal.class_level;
+      }
+    }
+  }
+
+
+  /* =========================================================
+     LOAD STUDENT GOALS
+     ========================================================= */
+
+  async function loadGoals() {
+    if (!currentUser) return [];
+
+    const {
+      data,
+      error
+    } = await supabaseClient
+      .from("student_exam_preferences")
+      .select(`
+        id,
+        student_id,
+        exam_type,
+        board,
+        class_level,
+        exam_year,
+        enabled,
+        created_at,
+        updated_at
+      `)
+      .eq(
+        "student_id",
+        currentUser.id
+      )
+      .eq(
+        "enabled",
+        true
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true
+        }
+      );
+
+    if (error) {
+      console.error(
+        "Failed to load exam goals:",
+        error
+      );
+
+      throw error;
+    }
+
+    currentGoals = data || [];
+
+    return currentGoals;
+  }
+
+
+  /* =========================================================
+     SAVE STUDENT GOALS
+     ========================================================= */
+
+  async function saveGoals() {
+    if (!currentUser) {
+      throw new Error(
+        "You are not signed in."
+      );
+    }
+
+    const selected =
+      Array.from(
+        document.querySelectorAll(
+          'input[name="examGoal"]:checked'
+        )
+      ).map(
+        checkbox =>
+          normalizeExamType(
+            checkbox.value
+          )
+      );
+
+    if (!selected.length) {
+      throw new Error(
+        "Select at least one exam."
+      );
+    }
+
+    const boardSelected =
+      selected.includes("board");
+
+    const board =
+      boardSelected
+        ? boardSelect?.value || null
+        : null;
+
+    const classLevel =
+      boardSelected
+        ? classSelect?.value || null
+        : null;
+
+    const examYear =
+      getTargetYear();
+
+
+    /* ---------------------------------------------------------
+       Get existing preference rows
+       --------------------------------------------------------- */
+
+    const {
+      data: existing,
+      error: existingError
+    } = await supabaseClient
+      .from("student_exam_preferences")
+      .select("*")
+      .eq(
+        "student_id",
+        currentUser.id
+      );
+
+    if (existingError) {
+      throw existingError;
+    }
+
+
+    /* ---------------------------------------------------------
+       Disable all current goals first
+       --------------------------------------------------------- */
+
+    if (existing?.length) {
+      const {
+        error: disableError
+      } = await supabaseClient
+        .from("student_exam_preferences")
+        .update({
+          enabled: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq(
+          "student_id",
+          currentUser.id
+        );
+
+      if (disableError) {
+        throw disableError;
+      }
+    }
+
+
+    /* ---------------------------------------------------------
+       Enable / create selected goals
+       --------------------------------------------------------- */
+
+    for (const examType of selected) {
+
+      const existingGoal =
+        existing?.find(
+          goal =>
+            normalizeExamType(
+              goal.exam_type
+            ) === examType &&
+            Number(goal.exam_year) ===
+              Number(examYear)
+        );
+
+      const payload = {
+        student_id:
+          currentUser.id,
+
+        exam_type:
+          examType,
+
+        board:
+          examType === "board"
+            ? board
+            : null,
+
+        class_level:
+          examType === "board"
+            ? classLevel
+            : null,
+
+        exam_year:
+          examYear,
+
+        enabled:
+          true,
+
+        updated_at:
+          new Date().toISOString()
+      };
+
+
+      if (existingGoal) {
+
+        const {
+          error
+        } = await supabaseClient
+          .from(
+            "student_exam_preferences"
+          )
+          .update(payload)
+          .eq(
+            "id",
+            existingGoal.id
+          );
+
+        if (error) {
+          throw error;
+        }
+
+      } else {
+
+        const {
+          error
+        } = await supabaseClient
+          .from(
+            "student_exam_preferences"
+          )
+          .insert(payload);
+
+        if (error) {
+          throw error;
+        }
+      }
+    }
+
+
+    await loadGoals();
+
+    closeModal();
+
+    showToast(
+      "Exam goals saved successfully."
+    );
+
+    await renderDashboard();
+  }
+
+
+  /* =========================================================
+     EXAM DATE DATABASE
+     ========================================================= */
+
+  async function loadExamDates() {
+    if (!currentGoals.length) {
+      return [];
+    }
+
+    const years =
+      [
+        ...new Set(
+          currentGoals.map(
+            goal =>
+              Number(goal.exam_year)
+          )
+        )
+      ];
+
+    const {
+      data,
+      error
+    } = await supabaseClient
+      .from("exam_dates")
+      .select(`
+        id,
+        exam_type,
+        board,
+        class_level,
+        exam_year,
+        exam_name,
+        exam_date,
+        status,
+        source,
+        source_url,
+        verified_at,
+        confidence,
+        notes
+      `)
+      .in(
+        "exam_year",
+        years
+      );
+
+    if (error) {
+      console.error(
+        "Failed to load exam dates:",
+        error
+      );
+
+      /*
+       * Do not destroy the whole dashboard if
+       * exam_dates is temporarily unavailable.
+       */
+      return [];
+    }
+
+    return data || [];
+  }
+
+
+  function findExamDate(
+    goal,
+    examDates
+  ) {
+    const goalType =
+      normalizeExamType(
+        goal.exam_type
+      );
+
+    return examDates.find(
+      row => {
+
+        if (
+          normalizeExamType(
+            row.exam_type
+          ) !== goalType
+        ) {
+          return false;
+        }
+
+        if (
+          Number(row.exam_year) !==
+          Number(goal.exam_year)
+        ) {
+          return false;
+        }
+
+        if (goalType === "board") {
+
+          return (
+            String(row.board || "")
+              .toLowerCase() ===
+            String(goal.board || "")
+              .toLowerCase()
+          ) &&
+          String(row.class_level || "") ===
+            String(goal.class_level || "");
+        }
+
+        return true;
+      }
+    ) || null;
+  }
+
+
+  /* =========================================================
+     RESEARCH
+     ========================================================= */
+
+  async function researchExam(goal) {
+
+    if (!currentSession) {
+      await loadSession();
+    }
+
+    if (!currentSession) {
+      throw new Error(
+        "No authenticated session found."
+      );
+    }
+
+    const payload = {
+      exam_type:
+        apiExamType(
+          goal.exam_type
+        ),
+
+      exam_year:
+        Number(goal.exam_year),
+
+      board:
+        normalizeExamType(
+          goal.exam_type
+        ) === "board"
+          ? goal.board
+          : null,
+
+      class_level:
+        normalizeExamType(
+          goal.exam_type
+        ) === "board"
+          ? goal.class_level
+          : null,
+
+      force_refresh: true
+    };
+
+
+    console.log(
+      "Exam research request:",
+      payload
+    );
+
+
+    const {
+      data,
+      error
+    } = await supabaseClient.functions.invoke(
+      EXAM_RESEARCH_FUNCTION,
+      {
+        body: payload
+      }
+    );
+
+
+    if (error) {
+      console.error(
+        "Exam research error:",
+        error
+      );
+
+      throw error;
+    }
+
+
+    console.log(
+      "Exam research response:",
+      data
+    );
+
+    return data;
+  }
+
+
+  /* =========================================================
+     RENDER DASHBOARD
+     ========================================================= */
+
+  async function renderDashboard() {
+
+    hideStatus();
+
+    goalCount.textContent =
+      currentGoals.length;
+
+
+    if (!currentGoals.length) {
+
+      emptyState.classList.remove(
+        "hidden"
+      );
+
+      dashboardSection.classList.add(
+        "hidden"
+      );
+
+      examGrid.innerHTML = "";
+
+      return;
+    }
+
+
+    emptyState.classList.add(
+      "hidden"
+    );
+
+    dashboardSection.classList.remove(
+      "hidden"
+    );
+
+
+    const examDates =
+      await loadExamDates();
+
+
+    examGrid.innerHTML = "";
+
+
+    currentGoals.forEach(
+      goal => {
+
+        const examDate =
+          findExamDate(
+            goal,
+            examDates
+          );
+
+        const card =
+          createExamCard(
+            goal,
+            examDate
+          );
+
+        examGrid.appendChild(card);
+      }
+    );
+
+
+    startCountdownTimer();
+  }
+
+
+  function createExamCard(
+    goal,
+    examDate
+  ) {
+
+    const card =
+      document.createElement(
+        "article"
+      );
+
+    card.className =
+      "exam-card";
+
+
+    const type =
+      normalizeExamType(
+        goal.exam_type
+      );
+
+
+    const label =
+      getExamLabel(
+        goal.exam_type
+      );
+
+
+    const icon =
+      getExamIcon(
+        goal.exam_type
+      );
+
+
+    const hasDate =
+      !!examDate?.exam_date;
+
+
+    const status =
+      examDate?.status ||
+      "unavailable";
+
+
+    const confidence =
+      typeof examDate?.confidence ===
+        "number"
+        ? examDate.confidence
+        : null;
+
+
+    let extraInfo = "";
+
+
+    if (type === "board") {
+      extraInfo =
+        `<span>${escapeHTML(
+          goal.board || ""
+        )}</span>
+         <span>Class ${escapeHTML(
+           goal.class_level || ""
+         )}</span>`;
+    } else {
+      extraInfo =
+        `<span>${escapeHTML(
+          goal.exam_year
+        )}</span>`;
+    }
+
+
+    card.innerHTML = `
+      <div class="exam-card-top">
+        <div class="exam-icon">
+          ${icon}
+        </div>
+
+        <div class="exam-title">
+          <span class="exam-type">
+            ${escapeHTML(label)}
+          </span>
+
+          <h3>
+            ${escapeHTML(
+              examDate?.exam_name ||
+              `${label} ${goal.exam_year}`
+            )}
+          </h3>
+
+          <div class="exam-meta">
+            ${extraInfo}
+          </div>
+        </div>
+      </div>
+
+      <div class="exam-date-area">
+
+        ${
+          hasDate
+            ? `
+              <div class="date-label">
+                EXAM DATE
+              </div>
+
+              <div class="exam-date">
+                ${escapeHTML(
+                  formatDate(
+                    examDate.exam_date
+                  )
+                )}
+              </div>
+
+              <div
+                class="countdown"
+                data-countdown-date="${
+                  escapeHTML(
+                    examDate.exam_date
+                  )
+                }"
+              >
+                Calculating…
+              </div>
+            `
+            : `
+              <div class="date-unavailable">
+                <strong>
+                  Not officially announced
+                </strong>
+
+                <span>
+                  The command center will
+                  update when a usable date
+                  is available.
+                </span>
+              </div>
+            `
+        }
+
+      </div>
+
+      <div class="exam-card-footer">
+
+        <div class="research-status">
+          ${
+            status === "official"
+              ? "🟢 Official"
+              : status === "tentative"
+                ? "🟡 Tentative"
+                : "⚪ Unavailable"
+          }
+        </div>
+
+        ${
+          confidence !== null
+            ? `
+              <div class="confidence">
+                Confidence:
+                ${Math.round(confidence)}%
+              </div>
+            `
+            : ""
+        }
+
+        ${
+          examDate?.source_url
+            ? `
+              <a
+                class="source-link"
+                href="${escapeHTML(
+                  examDate.source_url
+                )}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Source ↗
+              </a>
+            `
+            : ""
+        }
+
+      </div>
+    `;
+
+
+    return card;
+  }
+
+
+  /* =========================================================
+     COUNTDOWN
+     ========================================================= */
+
+  function updateCountdowns() {
+
+    const countdowns =
+      document.querySelectorAll(
+        "[data-countdown-date]"
+      );
+
+
+    countdowns.forEach(
+      element => {
+
+        const date =
+          element.dataset
+            .countdownDate;
+
+        const countdown =
+          calculateCountdown(
+            date
+          );
+
+
+        if (!countdown) {
+          element.textContent =
+            "Countdown unavailable";
+
+          return;
+        }
+
+
+        if (countdown.passed) {
+          element.textContent =
+            "Exam date has passed";
+
+          return;
+        }
+
+
+        element.innerHTML = `
+          <span>
+            ${countdown.days}
+            <small>days</small>
+          </span>
+
+          <span>
+            ${String(
+              countdown.hours
+            ).padStart(2, "0")}
+            <small>hrs</small>
+          </span>
+
+          <span>
+            ${String(
+              countdown.minutes
+            ).padStart(2, "0")}
+            <small>min</small>
+          </span>
+
+          <span>
+            ${String(
+              countdown.seconds
+            ).padStart(2, "0")}
+            <small>sec</small>
+          </span>
+        `;
+      }
+    );
+  }
+
+
+  function startCountdownTimer() {
+
+    clearInterval(
+      countdownTimer
+    );
+
+    updateCountdowns();
+
+    countdownTimer =
+      setInterval(
+        updateCountdowns,
+        1000
+      );
+  }
+
+
+  /* =========================================================
+     REFRESH / RESEARCH
+     ========================================================= */
+
+  async function refreshCommandCenter() {
+
+    try {
+
+      setButtonLoading(
+        refreshBtn,
+        true,
+        "↻"
+      );
+
+      showStatus(
+        "Checking your exam timeline…",
+        "info"
+      );
+
+
+      const authenticated =
+        await requireAuth();
+
+      if (!authenticated) {
+        return;
+      }
+
+
+      await loadGoals();
+
+
+      if (!currentGoals.length) {
+
+        hideStatus();
+
+        await renderDashboard();
+
+        return;
+      }
+
+
+      /*
+       * First show whatever is already in exam_dates.
+       */
+      await renderDashboard();
+
+
+      /*
+       * Then ask the research Edge Function to
+       * verify/update each selected exam.
+       */
+      showStatus(
+        "Researching the latest official exam information…",
+        "info"
+      );
+
+
+      for (const goal of currentGoals) {
+
+        try {
+
+          await researchExam(
+            goal
+          );
+
+        } catch (researchError) {
+
+          console.warn(
+            `Research failed for ${goal.exam_type}:`,
+            researchError
+          );
+
+          /*
+           * Continue with other goals.
+           */
+        }
+      }
+
+
+      /*
+       * Reload the database after research.
+       */
+      await renderDashboard();
+
+
+      showStatus(
+        "Exam Command Center updated.",
+        "success"
+      );
+
+
+      setTimeout(
+        hideStatus,
+        4000
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Exam Command Center error:",
+        error
+      );
+
+
+      showStatus(
+        error?.message ||
+          "Something went wrong while loading the Exam Command Center.",
+        "error"
+      );
+
+    } finally {
+
+      setButtonLoading(
+        refreshBtn,
+        false
+      );
+    }
+  }
+
+
+  /* =========================================================
+     EVENTS
+     ========================================================= */
+
+  if (emptySetupBtn) {
+    emptySetupBtn.addEventListener(
+      "click",
+      () => {
+        restoreGoalCheckboxes();
+        openModal();
+      }
+    );
+  }
+
+
+  if (manageGoalsBtn) {
+    manageGoalsBtn.addEventListener(
+      "click",
+      () => {
+        restoreGoalCheckboxes();
+        openModal();
+      }
+    );
+  }
+
+
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener(
+      "click",
+      closeModal
+    );
+  }
+
+
+  if (cancelSetupBtn) {
+    cancelSetupBtn.addEventListener(
+      "click",
+      closeModal
+    );
+  }
+
+
+  if (setupModal) {
+
+    setupModal.addEventListener(
+      "click",
+      event => {
+
+        if (
+          event.target.matches(
+            "[data-close-modal]"
+          )
+        ) {
+          closeModal();
+        }
+      }
+    );
+  }
+
+
+  document
+    .querySelectorAll(
+      'input[name="examGoal"]'
+    )
+    .forEach(
+      checkbox => {
+
+        checkbox.addEventListener(
+          "change",
+          syncBoardFields
+        );
+      }
+    );
+
+
+  if (saveGoalsBtn) {
+
+    saveGoalsBtn.addEventListener(
+      "click",
+      async () => {
+
+        try {
+
+          setButtonLoading(
+            saveGoalsBtn,
+            true,
+            "Saving…"
+          );
+
+
+          await saveGoals();
+
+
+        } catch (error) {
+
+          console.error(
+            "Save goals error:",
+            error
+          );
+
+
+          showToast(
+            error?.message ||
+              "Could not save exam goals."
+          );
+
+        } finally {
+
+          setButtonLoading(
+            saveGoalsBtn,
+            false
+          );
+        }
+      }
+    );
+  }
+
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener(
+      "click",
+      refreshCommandCenter
+    );
+  }
+
+
+  /* =========================================================
+     AUTH STATE CHANGES
+     ========================================================= */
+
+  supabaseClient.auth.onAuthStateChange(
+    async (_event, session) => {
+
+      currentSession =
+        session;
+
+      currentUser =
+        session?.user || null;
+
+
+      if (currentUser) {
+
+        try {
+
+          await loadGoals();
+          await renderDashboard();
+
+        } catch (error) {
+
+          console.error(
+            "Auth state reload error:",
+            error
+          );
+        }
+
+      } else {
+
+        currentGoals = [];
+
+        if (userLabel) {
+          userLabel.textContent =
+            "Not signed in";
+        }
+
+        if (goalCount) {
+          goalCount.textContent =
+            "0";
+        }
+
+        emptyState?.classList.add(
+          "hidden"
+        );
+
+        dashboardSection?.classList.add(
+          "hidden"
+        );
+      }
+    }
+  );
+
+
+  /* =========================================================
+     INITIALIZE
+     ========================================================= */
+
+  async function init() {
+
+    console.log(
+      "🎯 Exam Command Center starting…"
+    );
+
+
+    try {
+
+      const authenticated =
+        await requireAuth();
+
+
+      if (!authenticated) {
+        return;
+      }
+
+
+      await loadGoals();
+
+
+      console.log(
+        "Enabled exam goals:",
+        currentGoals
+      );
+
+
+      await renderDashboard();
+
+
+      /*
+       * If goals exist, automatically perform
+       * the first research/update.
+       */
+      if (currentGoals.length) {
+
+        console.log(
+          "Running initial exam research…"
+        );
+
+        for (
+          const goal of currentGoals
+        ) {
+
+          try {
+
+            await researchExam(
+              goal
+            );
+
+          } catch (error) {
+
+            console.warn(
+              "Initial research failed:",
+              error
+            );
+          }
+        }
+
+
+        await renderDashboard();
+      }
+
+
+      console.log(
+        "✅ Exam Command Center ready."
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "❌ Exam Command Center failed:",
+        error
+      );
+
+
+      showStatus(
+        error?.message ||
+          "Unable to start the Exam Command Center.",
+        "error"
+      );
+    }
+  }
+
+
+  init();
+
+})();
+ 
