@@ -878,14 +878,27 @@
 
 
     const {
-      data,
-      error
-    } = await supabaseClient.functions.invoke(
-      EXAM_RESEARCH_FUNCTION,
-      {
-        body: payload
+        data: { session },
+        error: sessionError
+      } = await supabaseClient.auth.getSession();
+      
+      if (sessionError) {
+        throw sessionError;
       }
-    );
+      
+      if (!session?.access_token) {
+        throw new Error("No active Supabase session found.");
+      }
+      
+      const { data, error } = await supabaseClient.functions.invoke(
+        EXAM_RESEARCH_FUNCTION,
+        {
+          body: payload,
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        }
+      );
 
 
     if (error) {
