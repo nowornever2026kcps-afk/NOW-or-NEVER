@@ -834,90 +834,123 @@
 
   async function researchExam(goal) {
 
-    if (!currentSession) {
-      await loadSession();
-    }
-
-    if (!currentSession) {
-      throw new Error(
-        "No authenticated session found."
-      );
-    }
-
-    const payload = {
-      exam_type:
-        apiExamType(
-          goal.exam_type
-        ),
-
-      exam_year:
-        Number(goal.exam_year),
-
-      board:
-        normalizeExamType(
-          goal.exam_type
-        ) === "board"
-          ? goal.board
-          : null,
-
-      class_level:
-        normalizeExamType(
-          goal.exam_type
-        ) === "board"
-          ? goal.class_level
-          : null,
-
-      force_refresh: true
-    };
-
-
-    console.log(
-      "Exam research request:",
-      payload
-    );
-
-
-    const {
-        data: { session },
-        error: sessionError
-      } = await supabaseClient.auth.getSession();
-      
-      if (sessionError) {
-        throw sessionError;
-      }
-      
-      if (!session?.access_token) {
-        throw new Error("No active Supabase session found.");
-      }
-      
-      const { data, error } = await supabaseClient.functions.invoke(
-        EXAM_RESEARCH_FUNCTION,
-        {
-          body: payload,
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
-          }
-        }
-      );
-
-
-    if (error) {
-      console.error(
-        "Exam research error:",
-        error
-      );
-
-      throw error;
-    }
-
-
-    console.log(
-      "Exam research response:",
-      data
-    );
-
-    return data;
+  if (!currentSession) {
+    await loadSession();
   }
+
+  if (!currentSession) {
+    throw new Error("No authenticated session found.");
+  }
+
+  const payload = {
+    exam_type: apiExamType(goal.exam_type),
+
+    exam_year: Number(goal.exam_year),
+
+    board:
+      normalizeExamType(goal.exam_type) === "board"
+        ? goal.board
+        : null,
+
+    class_level:
+      normalizeExamType(goal.exam_type) === "board"
+        ? goal.class_level
+        : null,
+
+    force_refresh: true
+  };
+
+  console.log("Exam research request:", payload);
+
+  /*
+   * Get the latest Supabase access token.
+   */
+  const {
+    data: { session },
+    error: sessionError
+  } = await supabaseClient.auth.getSession();
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  if (!session || !session.access_token) {
+    throw new Error("No active Supabase access token found.");
+  }
+
+  console.log(
+    "Exam research auth:",
+    {
+      hasSession: true,
+      hasAccessToken: !!session.access_token,
+      userId: session.user?.id || null
+    }
+  );
+
+  /*
+   * Call the Edge Function directly.
+   *
+   * This bypasses supabase.functions.invoke()
+   * so we know exactly what Authorization header
+   * is being sent.
+   */
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/${EXAM_RESEARCH_FUNCTION}`,
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${session.access_token}`
+      },
+
+      body: JSON.stringify(payload)
+    }
+  );
+
+  const responseText = await response.text();
+
+  console.log(
+    "Exam research HTTP response:",
+    {
+      status: response.status,
+      ok: response.ok,
+      body: responseText
+    }
+  );
+
+  let data;
+
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    throw new Error(
+      `Exam research returned invalid JSON (${response.status}): ${responseText}`
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error ||
+      `Exam research failed with HTTP ${response.status}.`
+    );
+  }
+
+  if (data?.ok === false) {
+    throw new Error(
+      data?.error ||
+      "Exam research failed."
+    );
+  }
+
+  console.log(
+    "Exam research response:",
+    data
+  );
+
+  return data;
+}
 
 
   /* =========================================================
