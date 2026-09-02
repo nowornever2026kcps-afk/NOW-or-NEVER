@@ -1313,22 +1313,23 @@
             goal
           );
 
-               } catch (researchError) {
+       } catch (researchError) {
 
-                   console.error(
-                     `Research failed for ${goal.exam_type}:`,
-                     researchError
-                   );
+            console.error(
+            `Research failed for ${goal.exam_type}:`,
+               researchError
+            );
          
-                   showStatus(
+            showStatus(
                      `Research failed for ${getExamLabel(goal.exam_type)}. Check the browser console for the exact error.`,
                      "error"
-                   );
+            );
 
           /*
            * Continue with other goals.
            */
         }
+      }
           
       
 
