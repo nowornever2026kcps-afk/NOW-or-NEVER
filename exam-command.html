@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0d14">
+  <meta name="description" content="NOW-or-NEVER Exam Command Center">
+  <title>Exam Command Center — NOW-or-NEVER</title>
+  <link rel="stylesheet" href="css/exam-command.css">
+</head>
+<body>
+  <div class="ambient ambient-a" aria-hidden="true"></div>
+  <div class="ambient ambient-b" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Back to NOW-or-NEVER">
+      <span class="brand-mark">N</span>
+      <span>
+        <strong>NOW-or-NEVER</strong>
+        <small>EXAM COMMAND</small>
+      </span>
+    </a>
+
+    <div class="top-actions">
+      <span id="userLabel" class="user-label">Checking session…</span>
+      <button id="refreshBtn" class="icon-btn" type="button" title="Refresh">↻</button>
+      <a class="back-btn" href="index.html">← Dashboard</a>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">🎯 EXAM COMMAND CENTER</p>
+        <h1>Know the mission.<br><span>Own the countdown.</span></h1>
+        <p class="hero-copy">
+          Choose the exams you are preparing for. NOW-or-NEVER will match your goals
+          with the exam-date database and show only dates that are actually available.
+        </p>
+      </div>
+      <div class="hero-stat">
+        <span id="goalCount">0</span>
+        <small>active goals</small>
+      </div>
+    </section>
+
+    <section id="statusBanner" class="status-banner hidden" role="status"></section>
+
+    <section id="emptyState" class="empty-state hidden">
+      <div class="empty-icon">🎯</div>
+      <h2>Set your exam goals</h2>
+      <p>You haven't selected an exam yet. Choose what you're preparing for and build your command center.</p>
+      <button id="emptySetupBtn" class="primary-btn" type="button">Set Up Exam Goals</button>
+    </section>
+
+    <section id="dashboardSection" class="dashboard-section hidden">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">ACTIVE MISSIONS</p>
+          <h2>Your exam timeline</h2>
+        </div>
+        <button id="manageGoalsBtn" class="secondary-btn" type="button">⚙ Manage Goals</button>
+      </div>
+
+      <div id="examGrid" class="exam-grid"></div>
+    </section>
+
+    <section class="info-grid">
+      <article class="info-card">
+        <span class="info-icon">🔐</span>
+        <div>
+          <h3>Your goals are personal</h3>
+          <p>Your selected exam preferences are loaded for your account only.</p>
+        </div>
+      </article>
+      <article class="info-card">
+        <span class="info-icon">📅</span>
+        <div>
+          <h3>Dates are database-driven</h3>
+          <p>The command center does not invent a countdown when an official date is unavailable.</p>
+        </div>
+      </article>
+      <article class="info-card">
+        <span class="info-icon">🚀</span>
+        <div>
+          <h3>More systems are coming</h3>
+          <p>This foundation can later connect exams with syllabus, progress, tests, tasks and AI planning.</p>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <!-- Setup modal -->
+  <div id="setupModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">EXAM SETUP</p>
+          <h2 id="setupTitle">Set up your exam goals</h2>
+          <p>Select one or more exams. You can change them later.</p>
+        </div>
+        <button id="closeModalBtn" class="close-btn" type="button" aria-label="Close">×</button>
+      </div>
+
+      <div id="goalOptions" class="goal-options">
+        <label class="goal-option" data-exam="neet">
+          <input type="checkbox" name="examGoal" value="neet">
+          <span class="goal-icon">🩺</span>
+          <span class="goal-copy">
+            <strong>NEET</strong>
+            <small>National Eligibility cum Entrance Test</small>
+          </span>
+          <span class="checkmark">✓</span>
+        </label>
+
+        <label class="goal-option" data-exam="board">
+          <input type="checkbox" name="examGoal" value="board">
+          <span class="goal-icon">📚</span>
+          <span class="goal-copy">
+            <strong>Board Examination</strong>
+            <small>Choose your board and class</small>
+          </span>
+          <span class="checkmark">✓</span>
+        </label>
+
+        <label class="goal-option" data-exam="jee_main">
+          <input type="checkbox" name="examGoal" value="jee_main">
+          <span class="goal-icon">⚡</span>
+          <span class="goal-copy">
+            <strong>JEE Main</strong>
+            <small>Joint Entrance Examination — Main</small>
+          </span>
+          <span class="checkmark">✓</span>
+        </label>
+
+        <label class="goal-option" data-exam="jee_advanced">
+          <input type="checkbox" name="examGoal" value="jee_advanced">
+          <span class="goal-icon">🚀</span>
+          <span class="goal-copy">
+            <strong>JEE Advanced</strong>
+            <small>Joint Entrance Examination — Advanced</small>
+          </span>
+          <span class="checkmark">✓</span>
+        </label>
+      </div>
+
+      <div id="boardFields" class="board-fields hidden">
+        <div class="field">
+          <label for="boardSelect">Board</label>
+          <select id="boardSelect">
+            <option value="CBSE">CBSE</option>
+            <option value="CISCE">CISCE / ISC / ICSE</option>
+            <option value="BSE Odisha">BSE Odisha</option>
+            <option value="CHSE Odisha">CHSE Odisha</option>
+            <option value="OTHER">Other / State Board</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="classSelect">Class</label>
+          <select id="classSelect">
+            <option value="10">Class 10</option>
+            <option value="12">Class 12</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-note">
+        <strong>Important:</strong> A selected goal does not create an exam date.
+        If the database has no usable date yet, the card will show
+        <b>Not officially announced</b>.
+      </div>
+
+      <div class="modal-actions">
+        <button id="cancelSetupBtn" class="secondary-btn" type="button">Cancel</button>
+        <button id="saveGoalsBtn" class="primary-btn" type="button">Save Exam Goals</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/exam-command.js"></script>
+</body>
+</html>
