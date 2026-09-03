@@ -1213,6 +1213,47 @@
 /* ===================
 ===============*/
 
+      function shouldRefreshExamDate(examDate) {
+     if (!examDate) {
+       return true;
+     }
+   
+     // Official dates are trusted and do not need automatic refresh.
+     if (examDate.status === "official") {
+       return false;
+     }
+   
+     const verifiedAt = examDate.verified_at
+       ? new Date(examDate.verified_at)
+       : null;
+   
+     // If we don't know when it was verified, refresh it.
+     if (
+       !verifiedAt ||
+       Number.isNaN(verifiedAt.getTime())
+     ) {
+       return true;
+     }
+   
+     const ageMs =
+       Date.now() - verifiedAt.getTime();
+   
+     const ageDays =
+       ageMs / (1000 * 60 * 60 * 24);
+   
+     // Tentative information is refreshed every 7 days.
+     if (examDate.status === "tentative") {
+       return ageDays >= 7;
+     }
+   
+     // Unavailable information is retried every 3 days.
+     if (examDate.status === "unavailable") {
+       return ageDays >= 3;
+     }
+   
+     return false;
+   }
+
    async function researchMissingExamGoals(examDates) {
 
       console.trace(
@@ -1227,9 +1268,12 @@
            examDates
          );
    
-       if (existingDate) {
-         continue;
-       }
+       if (
+           existingDate &&
+           !shouldRefreshExamDate(existingDate)
+         ) {
+           continue;
+         }
    
        /*
         * Build a unique key for this exam.
@@ -1262,11 +1306,17 @@
          researchKey
        );
    
-       console.log(
-         "🔎 No exam date found. Automatically researching:",
-         goal
-       );
-   
+       if (existingDate) {
+           console.log(
+             "♻️ Exam date is stale. Automatically refreshing:",
+             existingDate
+           );
+         } else {
+           console.log(
+             "🔎 No exam date found. Automatically researching:",
+             goal
+           );
+         }
        try {
    
          await researchExam(goal);
