@@ -2007,66 +2007,61 @@
      ========================================================= */
 
   supabaseClient.auth.onAuthStateChange(
-    async (
-      _event,
-      session
-    ) => {
+  (
+    _event,
+    session
+  ) => {
 
-      currentSession =
-        session;
+    currentSession =
+      session;
 
-      currentUser =
-        session?.user ||
-        null;
-
-
-      if (currentUser) {
-
-        try {
-
-          await loadGoals();
-
-          await renderDashboard();
-
-        } catch (error) {
-
-          console.error(
-            "Auth state reload error:",
-            error
-          );
-        }
-
-      } else {
-
-        currentGoals = [];
+    currentUser =
+      session?.user ||
+      null;
 
 
-        if (userLabel) {
+    if (!currentUser) {
 
-          userLabel.textContent =
-            "Not signed in";
-        }
+      currentGoals = [];
 
 
-        if (goalCount) {
+      if (userLabel) {
 
-          goalCount.textContent =
-            "0";
-        }
-
-
-        emptyState?.classList.add(
-          "hidden"
-        );
-
-        dashboardSection?.classList.add(
-          "hidden"
-        );
+        userLabel.textContent =
+          "Not signed in";
       }
+
+
+      if (goalCount) {
+
+        goalCount.textContent =
+          "0";
+      }
+
+
+      emptyState?.classList.add(
+        "hidden"
+      );
+
+      dashboardSection?.classList.add(
+        "hidden"
+      );
+
+      return;
     }
-  );
 
-
+    /*
+     * IMPORTANT:
+     * Do NOT call renderDashboard() here.
+     *
+     * Supabase may fire auth-state events during
+     * initialization/token refresh. Rendering here
+     * can repeatedly trigger automatic exam research.
+     *
+     * Initial dashboard loading is handled separately.
+     */
+  }
+);
   /* =========================================================
      INITIALIZE
      ========================================================= */
