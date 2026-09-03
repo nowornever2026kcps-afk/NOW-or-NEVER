@@ -904,7 +904,13 @@
       return [];
     }
 
-    return data || [];
+      console.log("🔥 EXAM DATES FRONTEND QUERY:", {
+        data,
+        error,
+        count: data?.length || 0
+      });
+      
+      return data || [];
   }
 
 
@@ -1228,6 +1234,17 @@
 
     const examDates =
       await loadExamDates();
+
+     console.log("🔥 RENDER EXAM DATES:", examDates);
+
+      currentGoals.forEach(goal => {
+        console.log(
+          "🔥 MATCH TEST:",
+          goal,
+          "=>",
+          findExamDate(goal, examDates)
+        );
+      });
 
 
     if (examGrid) {
