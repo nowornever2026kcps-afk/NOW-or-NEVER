@@ -1,4 +1,3 @@
-
 /* =========================================================
    NOW-or-NEVER
    EXAM COMMAND CENTER
@@ -43,7 +42,8 @@
      CONFIG
      ========================================================= */
 
-  const EXAM_RESEARCH_FUNCTION = "exam-research-ts";
+  const EXAM_RESEARCH_FUNCTION =
+    "exam-research-ts";
 
   // September 2026 -> target the next exam cycle.
   // Before July -> current year.
@@ -135,48 +135,73 @@
   }
 
 
-  function showStatus(message, type = "info") {
+  function showStatus(
+    message,
+    type = "info"
+  ) {
     if (!statusBanner) return;
 
-    statusBanner.textContent = message;
+    statusBanner.textContent =
+      message;
+
     statusBanner.className =
       `status-banner ${type}`;
 
-    statusBanner.classList.remove("hidden");
+    statusBanner.classList.remove(
+      "hidden"
+    );
   }
 
 
   function hideStatus() {
     if (!statusBanner) return;
 
-    statusBanner.classList.add("hidden");
+    statusBanner.classList.add(
+      "hidden"
+    );
   }
 
 
   function showToast(message) {
     if (!toast) return;
 
-    toast.textContent = message;
+    toast.textContent =
+      message;
+
     toast.classList.add("show");
 
-    clearTimeout(showToast.timer);
+    clearTimeout(
+      showToast.timer
+    );
 
-    showToast.timer = setTimeout(() => {
-      toast.classList.remove("show");
-    }, 3000);
+    showToast.timer =
+      setTimeout(() => {
+        toast.classList.remove(
+          "show"
+        );
+      }, 3000);
   }
 
 
-  function setButtonLoading(button, loading, text) {
+  function setButtonLoading(
+    button,
+    loading,
+    text
+  ) {
     if (!button) return;
 
     if (loading) {
+
       button.dataset.originalText =
         button.textContent;
 
       button.disabled = true;
-      button.textContent = text;
+
+      button.textContent =
+        text;
+
     } else {
+
       button.disabled = false;
 
       button.textContent =
@@ -194,10 +219,12 @@
 
 
   function apiExamType(type) {
+
     const normalized =
       normalizeExamType(type);
 
     switch (normalized) {
+
       case "neet":
         return "NEET";
 
@@ -217,7 +244,11 @@
 
 
   function getExamLabel(type) {
-    switch (normalizeExamType(type)) {
+
+    switch (
+      normalizeExamType(type)
+    ) {
+
       case "neet":
         return "NEET";
 
@@ -237,7 +268,11 @@
 
 
   function getExamIcon(type) {
-    switch (normalizeExamType(type)) {
+
+    switch (
+      normalizeExamType(type)
+    ) {
+
       case "neet":
         return "🩺";
 
@@ -262,14 +297,21 @@
 
 
   function formatDate(dateString) {
+
     if (!dateString) {
       return "Not officially announced";
     }
 
     const date =
-      new Date(`${dateString}T00:00:00`);
+      new Date(
+        `${dateString}T00:00:00`
+      );
 
-    if (Number.isNaN(date.getTime())) {
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
       return "Date unavailable";
     }
 
@@ -284,20 +326,28 @@
   }
 
 
-  function calculateCountdown(dateString) {
+  function calculateCountdown(
+    dateString
+  ) {
+
     if (!dateString) {
       return null;
     }
 
     const target =
-      new Date(`${dateString}T23:59:59`);
+      new Date(
+        `${dateString}T23:59:59`
+      );
 
-    const now = new Date();
+    const now =
+      new Date();
 
     const difference =
-      target.getTime() - now.getTime();
+      target.getTime() -
+      now.getTime();
 
     if (difference <= 0) {
+
       return {
         days: 0,
         hours: 0,
@@ -308,19 +358,25 @@
     }
 
     const totalSeconds =
-      Math.floor(difference / 1000);
+      Math.floor(
+        difference / 1000
+      );
 
     const days =
-      Math.floor(totalSeconds / 86400);
+      Math.floor(
+        totalSeconds / 86400
+      );
 
     const hours =
       Math.floor(
-        (totalSeconds % 86400) / 3600
+        (totalSeconds % 86400) /
+        3600
       );
 
     const minutes =
       Math.floor(
-        (totalSeconds % 3600) / 60
+        (totalSeconds % 3600) /
+        60
       );
 
     const seconds =
@@ -341,12 +397,15 @@
      ========================================================= */
 
   async function loadSession() {
+
     const {
       data,
       error
-    } = await supabaseClient.auth.getSession();
+    } =
+      await supabaseClient.auth.getSession();
 
     if (error) {
+
       console.error(
         "Exam Command auth error:",
         error
@@ -355,28 +414,43 @@
       throw error;
     }
 
-    currentSession = data.session;
+    currentSession =
+      data.session;
+
     currentUser =
-      currentSession?.user || null;
+      currentSession?.user ||
+      null;
 
     return currentSession;
   }
 
 
   async function requireAuth() {
+
     await loadSession();
 
-    if (!currentSession || !currentUser) {
-      userLabel.textContent =
-        "Not signed in";
+    if (
+      !currentSession ||
+      !currentUser
+    ) {
+
+      if (userLabel) {
+        userLabel.textContent =
+          "Not signed in";
+      }
 
       showStatus(
         "Please sign in to NOW-or-NEVER before using the Exam Command Center.",
         "error"
       );
 
-      emptyState.classList.add("hidden");
-      dashboardSection.classList.add("hidden");
+      emptyState?.classList.add(
+        "hidden"
+      );
+
+      dashboardSection?.classList.add(
+        "hidden"
+      );
 
       return false;
     }
@@ -387,8 +461,10 @@
       currentUser.email?.split("@")[0] ||
       "Student";
 
-    userLabel.textContent =
-      `👤 ${displayName}`;
+    if (userLabel) {
+      userLabel.textContent =
+        `👤 ${displayName}`;
+    }
 
     return true;
   }
@@ -399,9 +475,13 @@
      ========================================================= */
 
   function openModal() {
+
     if (!setupModal) return;
 
-    setupModal.classList.remove("hidden");
+    setupModal.classList.remove(
+      "hidden"
+    );
+
     setupModal.setAttribute(
       "aria-hidden",
       "false"
@@ -412,9 +492,13 @@
 
 
   function closeModal() {
+
     if (!setupModal) return;
 
-    setupModal.classList.add("hidden");
+    setupModal.classList.add(
+      "hidden"
+    );
+
     setupModal.setAttribute(
       "aria-hidden",
       "true"
@@ -423,6 +507,7 @@
 
 
   function syncBoardFields() {
+
     if (!boardFields) return;
 
     const boardCheckbox =
@@ -441,6 +526,7 @@
 
 
   function restoreGoalCheckboxes() {
+
     const checkboxes =
       document.querySelectorAll(
         'input[name="examGoal"]'
@@ -448,6 +534,7 @@
 
     checkboxes.forEach(
       checkbox => {
+
         checkbox.checked =
           currentGoals.some(
             goal =>
@@ -472,7 +559,11 @@
       );
 
     if (boardGoal) {
-      if (boardSelect && boardGoal.board) {
+
+      if (
+        boardSelect &&
+        boardGoal.board
+      ) {
         boardSelect.value =
           boardGoal.board;
       }
@@ -493,40 +584,47 @@
      ========================================================= */
 
   async function loadGoals() {
-    if (!currentUser) return [];
+
+    if (!currentUser) {
+      return [];
+    }
 
     const {
       data,
       error
-    } = await supabaseClient
-      .from("student_exam_preferences")
-      .select(`
-        id,
-        student_id,
-        exam_type,
-        board,
-        class_level,
-        exam_year,
-        enabled,
-        created_at,
-        updated_at
-      `)
-      .eq(
-        "student_id",
-        currentUser.id
-      )
-      .eq(
-        "enabled",
-        true
-      )
-      .order(
-        "created_at",
-        {
-          ascending: true
-        }
-      );
+    } =
+      await supabaseClient
+        .from(
+          "student_exam_preferences"
+        )
+        .select(`
+          id,
+          student_id,
+          exam_type,
+          board,
+          class_level,
+          exam_year,
+          enabled,
+          created_at,
+          updated_at
+        `)
+        .eq(
+          "student_id",
+          currentUser.id
+        )
+        .eq(
+          "enabled",
+          true
+        )
+        .order(
+          "created_at",
+          {
+            ascending: true
+          }
+        );
 
     if (error) {
+
       console.error(
         "Failed to load exam goals:",
         error
@@ -535,7 +633,8 @@
       throw error;
     }
 
-    currentGoals = data || [];
+    currentGoals =
+      data || [];
 
     return currentGoals;
   }
@@ -546,7 +645,9 @@
      ========================================================= */
 
   async function saveGoals() {
+
     if (!currentUser) {
+
       throw new Error(
         "You are not signed in."
       );
@@ -565,6 +666,7 @@
       );
 
     if (!selected.length) {
+
       throw new Error(
         "Select at least one exam."
       );
@@ -594,13 +696,16 @@
     const {
       data: existing,
       error: existingError
-    } = await supabaseClient
-      .from("student_exam_preferences")
-      .select("*")
-      .eq(
-        "student_id",
-        currentUser.id
-      );
+    } =
+      await supabaseClient
+        .from(
+          "student_exam_preferences"
+        )
+        .select("*")
+        .eq(
+          "student_id",
+          currentUser.id
+        );
 
     if (existingError) {
       throw existingError;
@@ -612,18 +717,23 @@
        --------------------------------------------------------- */
 
     if (existing?.length) {
+
       const {
         error: disableError
-      } = await supabaseClient
-        .from("student_exam_preferences")
-        .update({
-          enabled: false,
-          updated_at: new Date().toISOString()
-        })
-        .eq(
-          "student_id",
-          currentUser.id
-        );
+      } =
+        await supabaseClient
+          .from(
+            "student_exam_preferences"
+          )
+          .update({
+            enabled: false,
+            updated_at:
+              new Date().toISOString()
+          })
+          .eq(
+            "student_id",
+            currentUser.id
+          );
 
       if (disableError) {
         throw disableError;
@@ -635,7 +745,9 @@
        Enable / create selected goals
        --------------------------------------------------------- */
 
-    for (const examType of selected) {
+    for (
+      const examType of selected
+    ) {
 
       const existingGoal =
         existing?.find(
@@ -643,11 +755,16 @@
             normalizeExamType(
               goal.exam_type
             ) === examType &&
-            Number(goal.exam_year) ===
-              Number(examYear)
+            Number(
+              goal.exam_year
+            ) ===
+              Number(
+                examYear
+              )
         );
 
       const payload = {
+
         student_id:
           currentUser.id,
 
@@ -679,15 +796,16 @@
 
         const {
           error
-        } = await supabaseClient
-          .from(
-            "student_exam_preferences"
-          )
-          .update(payload)
-          .eq(
-            "id",
-            existingGoal.id
-          );
+        } =
+          await supabaseClient
+            .from(
+              "student_exam_preferences"
+            )
+            .update(payload)
+            .eq(
+              "id",
+              existingGoal.id
+            );
 
         if (error) {
           throw error;
@@ -697,11 +815,12 @@
 
         const {
           error
-        } = await supabaseClient
-          .from(
-            "student_exam_preferences"
-          )
-          .insert(payload);
+        } =
+          await supabaseClient
+            .from(
+              "student_exam_preferences"
+            )
+            .insert(payload);
 
         if (error) {
           throw error;
@@ -727,6 +846,7 @@
      ========================================================= */
 
   async function loadExamDates() {
+
     if (!currentGoals.length) {
       return [];
     }
@@ -736,7 +856,9 @@
         ...new Set(
           currentGoals.map(
             goal =>
-              Number(goal.exam_year)
+              Number(
+                goal.exam_year
+              )
           )
         )
       ];
@@ -744,29 +866,31 @@
     const {
       data,
       error
-    } = await supabaseClient
-      .from("exam_dates")
-      .select(`
-        id,
-        exam_type,
-        board,
-        class_level,
-        exam_year,
-        exam_name,
-        exam_date,
-        status,
-        source,
-        source_url,
-        verified_at,
-        confidence,
-        notes
-      `)
-      .in(
-        "exam_year",
-        years
-      );
+    } =
+      await supabaseClient
+        .from("exam_dates")
+        .select(`
+          id,
+          exam_type,
+          board,
+          class_level,
+          exam_year,
+          exam_name,
+          exam_date,
+          status,
+          source,
+          source_url,
+          verified_at,
+          confidence,
+          notes
+        `)
+        .in(
+          "exam_year",
+          years
+        );
 
     if (error) {
+
       console.error(
         "Failed to load exam dates:",
         error
@@ -776,6 +900,7 @@
        * Do not destroy the whole dashboard if
        * exam_dates is temporarily unavailable.
        */
+
       return [];
     }
 
@@ -787,43 +912,58 @@
     goal,
     examDates
   ) {
+
     const goalType =
       normalizeExamType(
         goal.exam_type
       );
 
-    return examDates.find(
-      row => {
+    return (
+      examDates.find(
+        row => {
 
-        if (
-          normalizeExamType(
-            row.exam_type
-          ) !== goalType
-        ) {
-          return false;
+          if (
+            normalizeExamType(
+              row.exam_type
+            ) !== goalType
+          ) {
+            return false;
+          }
+
+          if (
+            Number(
+              row.exam_year
+            ) !==
+            Number(
+              goal.exam_year
+            )
+          ) {
+            return false;
+          }
+
+          if (
+            goalType === "board"
+          ) {
+
+            return (
+              String(
+                row.board || ""
+              ).toLowerCase() ===
+              String(
+                goal.board || ""
+              ).toLowerCase()
+            ) &&
+            String(
+              row.class_level || ""
+            ) ===
+            String(
+              goal.class_level || ""
+            );
+          }
+
+          return true;
         }
-
-        if (
-          Number(row.exam_year) !==
-          Number(goal.exam_year)
-        ) {
-          return false;
-        }
-
-        if (goalType === "board") {
-
-          return (
-            String(row.board || "")
-              .toLowerCase() ===
-            String(goal.board || "")
-              .toLowerCase()
-          ) &&
-          String(row.class_level || "") ===
-            String(goal.class_level || "");
-        }
-
-        return true;
-      }
+      )
     ) || null;
   }
 
@@ -832,125 +972,196 @@
      RESEARCH
      ========================================================= */
 
-  async function researchExam(goal) {
+  async function researchExam(
+    goal
+  ) {
 
-  if (!currentSession) {
-    await loadSession();
-  }
+    /* ---------------------------------------------------------
+       Make sure we have an authenticated session
+       --------------------------------------------------------- */
 
-  if (!currentSession) {
-    throw new Error("No authenticated session found.");
-  }
-
-  const payload = {
-    exam_type: apiExamType(goal.exam_type),
-
-    exam_year: Number(goal.exam_year),
-
-    board:
-      normalizeExamType(goal.exam_type) === "board"
-        ? goal.board
-        : null,
-
-    class_level:
-      normalizeExamType(goal.exam_type) === "board"
-        ? goal.class_level
-        : null,
-
-    force_refresh: true
-  };
-
-  console.log("Exam research request:", payload);
-
-  /*
-   * Get the latest Supabase access token.
-   */
-  const {
-    data: { session },
-    error: sessionError
-  } = await supabaseClient.auth.getSession();
-
-  if (sessionError) {
-    throw sessionError;
-  }
-
-  if (!session || !session.access_token) {
-    throw new Error("No active Supabase access token found.");
-  }
-
-  console.log(
-    "Exam research auth:",
-    {
-      hasSession: true,
-      hasAccessToken: !!session.access_token,
-      userId: session.user?.id || null
+    if (!currentSession) {
+      await loadSession();
     }
-  );
 
-  /*
-   * Call the Edge Function directly.
-   *
-   * This bypasses supabase.functions.invoke()
-   * so we know exactly what Authorization header
-   * is being sent.
-   */
-  const response = await fetch(
-    `${SUPABASE_URL}/functions/v1/${EXAM_RESEARCH_FUNCTION}`,
-    {
-      method: "POST",
+    if (!currentSession) {
 
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${session.access_token}`
+      throw new Error(
+        "No authenticated session found."
+      );
+    }
+
+
+    /* ---------------------------------------------------------
+       Build research request
+       --------------------------------------------------------- */
+
+    const payload = {
+
+      exam_type:
+        apiExamType(
+          goal.exam_type
+        ),
+
+      exam_year:
+        Number(
+          goal.exam_year
+        ),
+
+      board:
+        normalizeExamType(
+          goal.exam_type
+        ) === "board"
+          ? goal.board
+          : null,
+
+      class_level:
+        normalizeExamType(
+          goal.exam_type
+        ) === "board"
+          ? goal.class_level
+          : null,
+
+      force_refresh:
+        true
+    };
+
+
+    console.log(
+      "Exam research request:",
+      payload
+    );
+
+
+    /* ---------------------------------------------------------
+       Get the latest Supabase session
+       --------------------------------------------------------- */
+
+    const {
+      data: {
+        session
       },
+      error: sessionError
+    } =
+      await supabaseClient.auth.getSession();
 
-      body: JSON.stringify(payload)
+
+    if (sessionError) {
+      throw sessionError;
     }
-  );
 
-  const responseText = await response.text();
 
-  console.log(
-    "Exam research HTTP response:",
-    {
-      status: response.status,
-      ok: response.ok,
-      body: responseText
+    if (
+      !session ||
+      !session.access_token
+    ) {
+
+      throw new Error(
+        "No active Supabase access token found."
+      );
     }
-  );
 
-  let data;
 
-  try {
-    data = JSON.parse(responseText);
-  } catch {
-    throw new Error(
-      `Exam research returned invalid JSON (${response.status}): ${responseText}`
+    /* ---------------------------------------------------------
+       Keep local state synchronized
+       --------------------------------------------------------- */
+
+    currentSession =
+      session;
+
+    currentUser =
+      session.user || null;
+
+
+    console.log(
+      "Exam research auth:",
+      {
+        hasSession: true,
+        hasAccessToken:
+          !!session.access_token,
+        userId:
+          session.user?.id ||
+          null
+      }
     );
-  }
 
-  if (!response.ok) {
-    throw new Error(
-      data?.error ||
-      `Exam research failed with HTTP ${response.status}.`
+
+    /* ---------------------------------------------------------
+       CALL SUPABASE EDGE FUNCTION
+       
+       IMPORTANT:
+       We intentionally use the Supabase client here
+       instead of manually calling fetch().
+       
+       This allows Supabase to handle the authenticated
+       Edge Function request correctly.
+       --------------------------------------------------------- */
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.functions.invoke(
+        EXAM_RESEARCH_FUNCTION,
+        {
+          body: payload
+        }
+      );
+
+
+    console.log(
+      "Exam research function result:",
+      {
+        data,
+        error
+      }
     );
-  }
 
-  if (data?.ok === false) {
-    throw new Error(
-      data?.error ||
-      "Exam research failed."
+
+    /* ---------------------------------------------------------
+       Handle Edge Function errors
+       --------------------------------------------------------- */
+
+    if (error) {
+
+      console.error(
+        "Exam research Edge Function error:",
+        error
+      );
+
+      throw error;
+    }
+
+
+    /* ---------------------------------------------------------
+       Validate response
+       --------------------------------------------------------- */
+
+    if (!data) {
+
+      throw new Error(
+        "Exam research returned no data."
+      );
+    }
+
+
+    if (data.ok === false) {
+
+      throw new Error(
+        data.error ||
+        "Exam research failed."
+      );
+    }
+
+
+    console.log(
+      "Exam research response:",
+      data
     );
+
+
+    return data;
   }
-
-  console.log(
-    "Exam research response:",
-    data
-  );
-
-  return data;
-}
 
 
   /* =========================================================
@@ -961,31 +1172,35 @@
 
     hideStatus();
 
-    goalCount.textContent =
-      currentGoals.length;
+    if (goalCount) {
+      goalCount.textContent =
+        currentGoals.length;
+    }
 
 
     if (!currentGoals.length) {
 
-      emptyState.classList.remove(
+      emptyState?.classList.remove(
         "hidden"
       );
 
-      dashboardSection.classList.add(
+      dashboardSection?.classList.add(
         "hidden"
       );
 
-      examGrid.innerHTML = "";
+      if (examGrid) {
+        examGrid.innerHTML = "";
+      }
 
       return;
     }
 
 
-    emptyState.classList.add(
+    emptyState?.classList.add(
       "hidden"
     );
 
-    dashboardSection.classList.remove(
+    dashboardSection?.classList.remove(
       "hidden"
     );
 
@@ -994,7 +1209,9 @@
       await loadExamDates();
 
 
-    examGrid.innerHTML = "";
+    if (examGrid) {
+      examGrid.innerHTML = "";
+    }
 
 
     currentGoals.forEach(
@@ -1012,7 +1229,9 @@
             examDate
           );
 
-        examGrid.appendChild(card);
+        examGrid?.appendChild(
+          card
+        );
       }
     );
 
@@ -1069,10 +1288,12 @@
         : null;
 
 
-    let extraInfo = "";
+    let extraInfo =
+      "";
 
 
     if (type === "board") {
+
       extraInfo =
         `<span>${escapeHTML(
           goal.board || ""
@@ -1080,7 +1301,9 @@
          <span>Class ${escapeHTML(
            goal.class_level || ""
          )}</span>`;
+
     } else {
+
       extraInfo =
         `<span>${escapeHTML(
           goal.exam_year
@@ -1089,12 +1312,15 @@
 
 
     card.innerHTML = `
+
       <div class="exam-card-top">
+
         <div class="exam-icon">
           ${icon}
         </div>
 
         <div class="exam-title">
+
           <span class="exam-type">
             ${escapeHTML(label)}
           </span>
@@ -1109,14 +1335,19 @@
           <div class="exam-meta">
             ${extraInfo}
           </div>
+
         </div>
+
       </div>
+
 
       <div class="exam-date-area">
 
         ${
           hasDate
+
             ? `
+
               <div class="date-label">
                 EXAM DATE
               </div>
@@ -1139,9 +1370,13 @@
               >
                 Calculating…
               </div>
+
             `
+
             : `
+
               <div class="date-unavailable">
+
                 <strong>
                   Not officially announced
                 </strong>
@@ -1151,38 +1386,59 @@
                   update when a usable date
                   is available.
                 </span>
+
               </div>
+
             `
         }
 
       </div>
 
+
       <div class="exam-card-footer">
 
         <div class="research-status">
+
           ${
             status === "official"
+
               ? "🟢 Official"
+
               : status === "tentative"
+
                 ? "🟡 Tentative"
+
                 : "⚪ Unavailable"
           }
+
         </div>
+
 
         ${
           confidence !== null
+
             ? `
+
               <div class="confidence">
+
                 Confidence:
-                ${Math.round(confidence)}%
+                ${Math.round(
+                  confidence
+                )}%
+
               </div>
+
             `
+
             : ""
         }
 
+
         ${
           examDate?.source_url
+
             ? `
+
               <a
                 class="source-link"
                 href="${escapeHTML(
@@ -1193,7 +1449,9 @@
               >
                 Source ↗
               </a>
+
             `
+
             : ""
         }
 
@@ -1224,6 +1482,7 @@
           element.dataset
             .countdownDate;
 
+
         const countdown =
           calculateCountdown(
             date
@@ -1231,6 +1490,7 @@
 
 
         if (!countdown) {
+
           element.textContent =
             "Countdown unavailable";
 
@@ -1239,6 +1499,7 @@
 
 
         if (countdown.passed) {
+
           element.textContent =
             "Exam date has passed";
 
@@ -1247,6 +1508,7 @@
 
 
         element.innerHTML = `
+
           <span>
             ${countdown.days}
             <small>days</small>
@@ -1272,6 +1534,7 @@
             ).padStart(2, "0")}
             <small>sec</small>
           </span>
+
         `;
       }
     );
@@ -1308,6 +1571,7 @@
         "↻"
       );
 
+
       showStatus(
         "Checking your exam timeline…",
         "info"
@@ -1316,6 +1580,7 @@
 
       const authenticated =
         await requireAuth();
+
 
       if (!authenticated) {
         return;
@@ -1338,6 +1603,7 @@
       /*
        * First show whatever is already in exam_dates.
        */
+
       await renderDashboard();
 
 
@@ -1345,13 +1611,16 @@
        * Then ask the research Edge Function to
        * verify/update each selected exam.
        */
+
       showStatus(
         "Researching the latest official exam information…",
         "info"
       );
 
 
-      for (const goal of currentGoals) {
+      for (
+        const goal of currentGoals
+      ) {
 
         try {
 
@@ -1359,30 +1628,33 @@
             goal
           );
 
-       } catch (researchError) {
+        } catch (
+          researchError
+        ) {
 
-            console.error(
+          console.error(
             `Research failed for ${goal.exam_type}:`,
-               researchError
-            );
-         
-            showStatus(
-                     `Research failed for ${getExamLabel(goal.exam_type)}. Check the browser console for the exact error.`,
-                     "error"
-            );
+            researchError
+          );
+
+
+          showStatus(
+            `Research failed for ${getExamLabel(goal.exam_type)}. Check the browser console for the exact error.`,
+            "error"
+          );
+
 
           /*
            * Continue with other goals.
            */
         }
       }
-          
-      
 
 
       /*
        * Reload the database after research.
        */
+
       await renderDashboard();
 
 
@@ -1408,9 +1680,10 @@
 
       showStatus(
         error?.message ||
-          "Something went wrong while loading the Exam Command Center.",
+        "Something went wrong while loading the Exam Command Center.",
         "error"
       );
+
 
     } finally {
 
@@ -1427,10 +1700,13 @@
      ========================================================= */
 
   if (emptySetupBtn) {
+
     emptySetupBtn.addEventListener(
       "click",
       () => {
+
         restoreGoalCheckboxes();
+
         openModal();
       }
     );
@@ -1438,10 +1714,13 @@
 
 
   if (manageGoalsBtn) {
+
     manageGoalsBtn.addEventListener(
       "click",
       () => {
+
         restoreGoalCheckboxes();
+
         openModal();
       }
     );
@@ -1449,6 +1728,7 @@
 
 
   if (closeModalBtn) {
+
     closeModalBtn.addEventListener(
       "click",
       closeModal
@@ -1457,6 +1737,7 @@
 
 
   if (cancelSetupBtn) {
+
     cancelSetupBtn.addEventListener(
       "click",
       closeModal
@@ -1475,6 +1756,7 @@
             "[data-close-modal]"
           )
         ) {
+
           closeModal();
         }
       }
@@ -1525,8 +1807,9 @@
 
           showToast(
             error?.message ||
-              "Could not save exam goals."
+            "Could not save exam goals."
           );
+
 
         } finally {
 
@@ -1541,6 +1824,7 @@
 
 
   if (refreshBtn) {
+
     refreshBtn.addEventListener(
       "click",
       refreshCommandCenter
@@ -1553,13 +1837,17 @@
      ========================================================= */
 
   supabaseClient.auth.onAuthStateChange(
-    async (_event, session) => {
+    async (
+      _event,
+      session
+    ) => {
 
       currentSession =
         session;
 
       currentUser =
-        session?.user || null;
+        session?.user ||
+        null;
 
 
       if (currentUser) {
@@ -1567,6 +1855,7 @@
         try {
 
           await loadGoals();
+
           await renderDashboard();
 
         } catch (error) {
@@ -1581,15 +1870,20 @@
 
         currentGoals = [];
 
+
         if (userLabel) {
+
           userLabel.textContent =
             "Not signed in";
         }
 
+
         if (goalCount) {
+
           goalCount.textContent =
             "0";
         }
+
 
         emptyState?.classList.add(
           "hidden"
@@ -1641,11 +1935,13 @@
        * If goals exist, automatically perform
        * the first research/update.
        */
+
       if (currentGoals.length) {
 
         console.log(
           "Running initial exam research…"
         );
+
 
         for (
           const goal of currentGoals
@@ -1686,14 +1982,17 @@
 
       showStatus(
         error?.message ||
-          "Unable to start the Exam Command Center.",
+        "Unable to start the Exam Command Center.",
         "error"
       );
     }
   }
 
 
+  /* =========================================================
+     START
+     ========================================================= */
+
   init();
 
 })();
- 
