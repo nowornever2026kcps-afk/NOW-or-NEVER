@@ -1205,7 +1205,50 @@
     return data;
   }
 
+/* ===================
+===============*/
 
+   async function researchMissingExamGoals(examDates) {
+   
+     for (const goal of currentGoals) {
+   
+       const existingDate =
+         findExamDate(
+           goal,
+           examDates
+         );
+   
+       if (existingDate) {
+         continue;
+       }
+   
+       console.log(
+         "🔎 No exam date found. Automatically researching:",
+         goal
+       );
+   
+       try {
+   
+         await researchExam(goal);
+   
+         console.log(
+           "✅ Automatic exam research completed:",
+           goal
+         );
+   
+       } catch (error) {
+   
+         console.error(
+           "❌ Automatic exam research failed:",
+           goal,
+           error
+         );
+   
+       }
+     }
+   }
+
+   
   /* =========================================================
      RENDER DASHBOARD
      ========================================================= */
@@ -1247,20 +1290,45 @@
     );
 
 
-    const examDates =
-      await loadExamDates();
-
-     console.log("🔥 RENDER EXAM DATES:", examDates);
-
-      currentGoals.forEach(goal => {
-        console.log(
-          "🔥 MATCH TEST:",
-          goal,
-          "=>",
-          findExamDate(goal, examDates)
-        );
-      });
-
+    let examDates = await loadExamDates();
+   
+   console.log(
+     "🔥 RENDER EXAM DATES:",
+     examDates
+   );
+   
+   /* ---------------------------------------------------------
+      Automatically research exams that have no database match
+      --------------------------------------------------------- */
+   
+   await researchMissingExamGoals(
+     examDates
+   );
+   
+   /*
+    * Research may have created new exam_dates rows,
+    * so load them again before rendering.
+    */
+   
+   examDates =
+     await loadExamDates();
+   
+   console.log(
+     "🔥 EXAM DATES AFTER AUTO RESEARCH:",
+     examDates
+   );
+   
+   currentGoals.forEach(goal => {
+     console.log(
+       "🔥 MATCH TEST:",
+       goal,
+       "=>",
+       findExamDate(
+         goal,
+         examDates
+       )
+     );
+   });
 
     if (examGrid) {
       examGrid.innerHTML = "";
