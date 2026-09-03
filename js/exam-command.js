@@ -2062,102 +2062,79 @@
      */
   }
 );
-  /* =========================================================
-     INITIALIZE
-     ========================================================= */
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
 
-  async function init() {
+async function init() {
+
+  console.log(
+    "🎯 Exam Command Center starting…"
+  );
+
+
+  try {
+
+    const authenticated =
+      await requireAuth();
+
+
+    if (!authenticated) {
+      return;
+    }
+
+
+    await loadGoals();
+
 
     console.log(
-      "🎯 Exam Command Center starting…"
+      "Enabled exam goals:",
+      currentGoals
     );
 
 
-    try {
+    /*
+     * renderDashboard() now handles:
+     *
+     * 1. Loading existing exam dates
+     * 2. Detecting missing exams
+     * 3. Automatically researching missing exams
+     * 4. Reloading the saved results
+     * 5. Rendering the dashboard
+     *
+     * The old "research every exam on startup"
+     * system has intentionally been removed.
+     */
 
-      const authenticated =
-        await requireAuth();
-
-
-      if (!authenticated) {
-        return;
-      }
-
-
-      await loadGoals();
-
-
-      console.log(
-        "Enabled exam goals:",
-        currentGoals
-      );
+    await renderDashboard();
 
 
-      await renderDashboard();
+    console.log(
+      "✅ Exam Command Center ready."
+    );
 
 
-      /*
-       * If goals exist, automatically perform
-       * the first research/update.
-       */
+  } catch (error) {
 
-      if (currentGoals.length) {
-
-        console.log(
-          "Running initial exam research…"
-        );
+    console.error(
+      "❌ Exam Command Center failed:",
+      error
+    );
 
 
-        for (
-          const goal of currentGoals
-        ) {
-
-          try {
-
-            await researchExam(
-              goal
-            );
-
-          } catch (error) {
-
-            console.warn(
-              "Initial research failed:",
-              error
-            );
-          }
-        }
-
-
-        await renderDashboard();
-      }
-
-
-      console.log(
-        "✅ Exam Command Center ready."
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        "❌ Exam Command Center failed:",
-        error
-      );
-
-
-      showStatus(
-        error?.message ||
-        "Unable to start the Exam Command Center.",
-        "error"
-      );
-    }
+    showStatus(
+      error?.message ||
+      "Unable to start the Exam Command Center.",
+      "error"
+    );
   }
+}
 
 
-  /* =========================================================
-     START
-     ========================================================= */
+/* =========================================================
+   START
+   ========================================================= */
 
-  init();
+init();
 
 })();
