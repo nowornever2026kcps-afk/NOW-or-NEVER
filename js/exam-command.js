@@ -1215,6 +1215,10 @@
 
    async function researchMissingExamGoals(examDates) {
 
+      console.trace(
+           "🚨 researchMissingExamGoals() CALLED"
+         );
+
      for (const goal of currentGoals) {
    
        const existingDate =
