@@ -1266,6 +1266,15 @@
        try {
    
          await researchExam(goal);
+          console.log(
+           "🔄 Exam research saved. Dashboard will reload exam dates:",
+           {
+             exam_type: goal.exam_type,
+             board: goal.board || null,
+             class_level: goal.class_level || null,
+             exam_year: goal.exam_year
+           }
+         );
    
          console.log(
            "✅ Automatic exam research completed:",
