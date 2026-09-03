@@ -1170,6 +1170,16 @@
       data
     );
 
+     console.log(
+        "🔥 RESEARCH RESULT:",
+        data.research
+      );
+      
+     console.log(
+        "🔥 SAVED DATABASE RESULT:",
+        data.saved
+      );
+
 
     return data;
   }
