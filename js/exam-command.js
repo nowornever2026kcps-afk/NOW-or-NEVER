@@ -43,7 +43,7 @@
      CONFIG
      ========================================================= */
 
-  const EXAM_RESEARCH_FUNCTION = "exam-research";
+  const EXAM_RESEARCH_FUNCTION = "exam-research-ts";
 
   // September 2026 -> target the next exam cycle.
   // Before July -> current year.
