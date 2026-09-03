@@ -1122,16 +1122,27 @@
        Handle Edge Function errors
        --------------------------------------------------------- */
 
-    if (error) {
-
-      console.error(
-        "Exam research Edge Function error:",
-        error
-      );
-
-      throw error;
-    }
-
+     if (error) {
+       console.error("Exam research Edge Function error:", error);
+   
+       // Show the actual response returned by the Edge Function
+       try {
+           if (error.context) {
+               const errorBody = await error.context.json();
+               console.error(
+                   "🔥 EDGE FUNCTION RESPONSE BODY:",
+                   errorBody
+               );
+           }
+       } catch (parseError) {
+           console.error(
+               "Could not read Edge Function response body:",
+               parseError
+           );
+       }
+   
+       throw error;
+   }
 
     /* ---------------------------------------------------------
        Validate response
