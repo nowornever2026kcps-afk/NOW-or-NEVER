@@ -63,6 +63,11 @@
   let currentGoals = [];
 
   let countdownTimer = null;
+   /*
+ * Tracks exams that have already been automatically researched
+ * during this page session.
+ */
+   const autoResearchAttempted = new Set();
 
 
   /* =========================================================
@@ -1209,7 +1214,7 @@
 ===============*/
 
    async function researchMissingExamGoals(examDates) {
-   
+
      for (const goal of currentGoals) {
    
        const existingDate =
@@ -1221,6 +1226,37 @@
        if (existingDate) {
          continue;
        }
+   
+       /*
+        * Build a unique key for this exam.
+        */
+       const researchKey =
+         normalizeExamType(goal.exam_type) === "board"
+           ? `board|${goal.board || ""}|${goal.class_level || ""}|${goal.exam_year}`
+           : `${normalizeExamType(goal.exam_type)}|${goal.exam_year}`;
+   
+       /*
+        * Don't repeatedly research the same missing exam
+        * during this page session.
+        */
+       if (autoResearchAttempted.has(researchKey)) {
+   
+         console.log(
+           "⏭️ Automatic research already attempted:",
+           researchKey
+         );
+   
+         continue;
+       }
+   
+       /*
+        * Mark it BEFORE calling the AI.
+        * This prevents duplicate requests if rendering
+        * happens again while research is running.
+        */
+       autoResearchAttempted.add(
+         researchKey
+       );
    
        console.log(
          "🔎 No exam date found. Automatically researching:",
