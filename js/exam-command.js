@@ -909,6 +909,20 @@
         error,
         count: data?.length || 0
       });
+     console.table(
+        (data || []).filter(row =>
+          [2, 17, 15].includes(row.id)
+        ).map(row => ({
+          id: row.id,
+          exam_type: row.exam_type,
+          exam_year: row.exam_year,
+          exam_name: row.exam_name,
+          exam_date: row.exam_date,
+          status: row.status,
+          confidence: row.confidence,
+          notes: row.notes
+        }))
+      );
       
       return data || [];
   }
