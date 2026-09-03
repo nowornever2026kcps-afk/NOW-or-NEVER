@@ -1194,10 +1194,7 @@
         "🔥 RESEARCH RESULT:",
         data.research
       );
-     console.log(
-        "🔥 FULL RESEARCH JSON:",
-        JSON.stringify(research, null, 2)
-      );
+    
       
      console.log(
         "🔥 SAVED DATABASE RESULT:",
