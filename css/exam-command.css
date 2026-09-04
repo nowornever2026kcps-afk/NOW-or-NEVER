@@ -1936,3 +1936,464 @@ a { color: inherit; text-decoration: none; }
   }
 
 }
+
+/* =========================================================
+   EXAM AI PANEL
+   ========================================================= */
+
+.exam-ai-panel {
+  margin-top: 18px;
+  padding: 20px;
+
+  border: 1px solid rgba(169, 140, 255, 0.20);
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(169, 140, 255, 0.09),
+      rgba(255, 255, 255, 0.025)
+    ),
+    rgba(14, 16, 26, 0.88);
+
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.24),
+    0 0 35px rgba(139, 92, 246, 0.05);
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+
+  animation: examAiPanelIn 0.24s ease;
+}
+
+.exam-ai-panel.hidden {
+  display: none;
+}
+
+
+/* ---------------------------------------------------------
+   Header
+   --------------------------------------------------------- */
+
+.exam-ai-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.exam-ai-kicker {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: var(--purple);
+
+  font-size: 0.68rem;
+  font-weight: 900;
+
+  letter-spacing: 0.14em;
+}
+
+.exam-ai-header h3 {
+  margin: 0;
+
+  font-size: 1.2rem;
+  line-height: 1.3;
+}
+
+.exam-ai-header p {
+  margin: 5px 0 0;
+
+  color: var(--muted);
+
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+
+/* ---------------------------------------------------------
+   Close button
+   --------------------------------------------------------- */
+
+.exam-ai-close {
+  flex: 0 0 auto;
+
+  width: 34px;
+  height: 34px;
+
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.055);
+
+  color: inherit;
+
+  font-size: 1.4rem;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+
+.exam-ai-close:hover {
+  transform: scale(1.06);
+
+  background: rgba(255, 255, 255, 0.12);
+}
+
+
+/* ---------------------------------------------------------
+   Messages
+   --------------------------------------------------------- */
+
+.exam-ai-messages {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+
+  max-height: 460px;
+
+  overflow-y: auto;
+
+  padding: 4px 3px 8px;
+
+  scroll-behavior: smooth;
+}
+
+
+/* Welcome message */
+
+.exam-ai-welcome {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 11px;
+
+  padding: 14px;
+
+  border: 1px solid rgba(169, 140, 255, 0.12);
+  border-radius: 15px;
+
+  background: rgba(169, 140, 255, 0.055);
+}
+
+.exam-ai-welcome-icon {
+  width: 36px;
+  height: 36px;
+
+  flex: 0 0 36px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 11px;
+
+  background: rgba(169, 140, 255, 0.13);
+
+  font-size: 1.1rem;
+}
+
+.exam-ai-welcome strong {
+  display: block;
+
+  font-size: 0.86rem;
+}
+
+.exam-ai-welcome p {
+  margin: 4px 0 0;
+
+  color: var(--muted);
+
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+
+/* ---------------------------------------------------------
+   Composer
+   --------------------------------------------------------- */
+
+.exam-ai-composer {
+  margin-top: 12px;
+
+  padding: 10px;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 15px;
+
+  background: rgba(0, 0, 0, 0.16);
+}
+
+#examAiInput {
+  display: block;
+
+  width: 100%;
+
+  min-height: 82px;
+
+  resize: vertical;
+
+  border: 0;
+  outline: 0;
+
+  padding: 10px;
+
+  background: transparent;
+
+  color: var(--text);
+
+  font: inherit;
+
+  font-size: 0.86rem;
+
+  line-height: 1.5;
+}
+
+#examAiInput::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.exam-ai-composer-footer {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 7px 8px 2px;
+}
+
+#examAiHint {
+  color: var(--muted);
+
+  font-size: 0.68rem;
+}
+
+
+/* ---------------------------------------------------------
+   Send button
+   --------------------------------------------------------- */
+
+.exam-ai-send {
+  min-width: 92px;
+
+  padding: 9px 14px;
+
+  border: 1px solid rgba(169, 140, 255, 0.28);
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #b69cff,
+      #755bd9
+    );
+
+  color: white;
+
+  font-size: 0.78rem;
+
+  font-weight: 800;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 8px 20px rgba(117, 91, 217, 0.20);
+
+  transition:
+    transform 0.18s ease,
+    filter 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.exam-ai-send:hover {
+  transform: translateY(-1px);
+
+  filter: brightness(1.08);
+}
+
+.exam-ai-send:disabled {
+  opacity: 0.55;
+
+  cursor: wait;
+
+  transform: none;
+}
+
+
+/* ---------------------------------------------------------
+   Chat bubbles
+   --------------------------------------------------------- */
+
+.exam-ai-user-message,
+.exam-ai-assistant-message {
+  max-width: 86%;
+
+  padding: 11px 13px;
+
+  border-radius: 14px;
+
+  font-size: 0.82rem;
+
+  line-height: 1.55;
+
+  white-space: pre-wrap;
+
+  overflow-wrap: anywhere;
+}
+
+.exam-ai-user-message {
+  align-self: flex-end;
+
+  background:
+    rgba(139, 92, 246, 0.18);
+
+  border:
+    1px solid
+    rgba(139, 92, 246, 0.24);
+}
+
+.exam-ai-assistant-message {
+  align-self: flex-start;
+
+  background:
+    rgba(255, 255, 255, 0.045);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.08);
+}
+
+
+/* ---------------------------------------------------------
+   Error message
+   --------------------------------------------------------- */
+
+.exam-ai-error {
+  align-self: flex-start;
+
+  padding: 10px 12px;
+
+  border-radius: 13px;
+
+  background:
+    rgba(255, 115, 115, 0.08);
+
+  border:
+    1px solid
+    rgba(255, 115, 115, 0.18);
+
+  color: #ffb4b4;
+
+  font-size: 0.76rem;
+
+  line-height: 1.5;
+}
+
+
+/* ---------------------------------------------------------
+   Animation
+   --------------------------------------------------------- */
+
+@keyframes examAiPanelIn {
+
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0);
+  }
+
+}
+
+
+/* =========================================================
+   EXAM AI — MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  .exam-ai-panel {
+    padding: 14px;
+
+    border-radius: 16px;
+  }
+
+  .exam-ai-header {
+    gap: 10px;
+  }
+
+  .exam-ai-header h3 {
+    font-size: 1rem;
+  }
+
+  .exam-ai-header p {
+    font-size: 0.72rem;
+  }
+
+  .exam-ai-messages {
+    max-height: 390px;
+  }
+
+  .exam-ai-user-message,
+  .exam-ai-assistant-message {
+    max-width: 94%;
+
+    font-size: 0.78rem;
+  }
+
+  .exam-ai-composer-footer {
+    align-items: stretch;
+
+    flex-direction: column;
+  }
+
+  #examAiHint {
+    order: 2;
+  }
+
+  .exam-ai-send {
+    width: 100%;
+  }
+
+}
+
+
+@media (max-width: 430px) {
+
+  .exam-ai-panel {
+    margin-top: 14px;
+
+    padding: 12px;
+  }
+
+  .exam-ai-close {
+    width: 31px;
+    height: 31px;
+  }
+
+  #examAiInput {
+    min-height: 76px;
+
+    font-size: 0.82rem;
+  }
+
+}
