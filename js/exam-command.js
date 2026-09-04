@@ -583,6 +583,542 @@
     }
   }
 
+/* =========================================================
+   SYLLABUS PROGRESS
+   ========================================================= */
+
+   const syllabusSection =
+     document.getElementById("syllabusSection");
+   
+   const syllabusVersionName =
+     document.getElementById("syllabusVersionName");
+   
+   const syllabusFallbackNotice =
+     document.getElementById("syllabusFallbackNotice");
+   
+   const syllabusProgressPercent =
+     document.getElementById("syllabusProgressPercent");
+   
+   const syllabusProgressCount =
+     document.getElementById("syllabusProgressCount");
+   
+   const syllabusProgressFill =
+     document.getElementById("syllabusProgressFill");
+   
+   const syllabusSubjectGrid =
+     document.getElementById("syllabusSubjectGrid");
+   
+   const syllabusTopicContainer =
+     document.getElementById("syllabusTopicContainer");
+   
+   
+   let currentSyllabus = null;
+   let currentSyllabusTopics = [];
+   
+   
+   /* ---------------------------------------------------------
+      Resolve the correct syllabus version
+      --------------------------------------------------------- */
+   
+   async function resolveSyllabusVersion(goal) {
+   
+     if (!currentUser) {
+       throw new Error(
+         "No authenticated student found."
+       );
+     }
+   
+     const {
+       data,
+       error
+     } = await supabaseClient.rpc(
+       "resolve_student_syllabus_version",
+       {
+         p_exam_type:
+           normalizeExamType(goal.exam_type),
+   
+         p_exam_year:
+           Number(goal.exam_year),
+   
+         p_board:
+           normalizeExamType(goal.exam_type) === "board"
+             ? goal.board || null
+             : null,
+   
+         p_class_level:
+           normalizeExamType(goal.exam_type) === "board"
+             ? goal.class_level || null
+             : null
+       }
+     );
+   
+     console.log(
+       "📚 Syllabus resolver result:",
+       {
+         data,
+         error
+       }
+     );
+   
+     if (error) {
+       throw error;
+     }
+   
+     if (!data || !data.length) {
+       throw new Error(
+         "No syllabus is available for this exam yet."
+       );
+     }
+   
+     currentSyllabus = data[0];
+   
+     return currentSyllabus;
+   }
+   
+   
+   /* ---------------------------------------------------------
+      Load syllabus topics + student progress
+      --------------------------------------------------------- */
+   
+   async function loadSyllabusProgress(goal) {
+   
+     const syllabus =
+       await resolveSyllabusVersion(goal);
+   
+     const {
+       data,
+       error
+     } = await supabaseClient.rpc(
+       "get_student_syllabus_progress",
+       {
+         p_exam_type:
+           normalizeExamType(goal.exam_type),
+   
+         p_exam_year:
+           Number(syllabus.actual_exam_year),
+   
+         p_board:
+           normalizeExamType(goal.exam_type) === "board"
+             ? goal.board || null
+             : null,
+   
+         p_class_level:
+           normalizeExamType(goal.exam_type) === "board"
+             ? goal.class_level || null
+             : null
+       }
+     );
+   
+     console.log(
+       "📚 Syllabus progress result:",
+       {
+         data,
+         error
+       }
+     );
+   
+     if (error) {
+       throw error;
+     }
+   
+     currentSyllabusTopics =
+       data || [];
+   
+     renderSyllabus(syllabus, currentSyllabusTopics);
+   
+     return currentSyllabusTopics;
+   }
+   
+   
+   /* ---------------------------------------------------------
+      Render syllabus
+      --------------------------------------------------------- */
+   
+   function renderSyllabus(
+     syllabus,
+     topics
+   ) {
+   
+     if (!syllabusSection) {
+       return;
+     }
+   
+     syllabusSection.classList.remove(
+       "hidden"
+     );
+   
+   
+     /* -------------------------------------------------------
+        Version information
+        ------------------------------------------------------- */
+   
+     if (syllabusVersionName) {
+   
+       syllabusVersionName.textContent =
+         syllabus.syllabus_version_name ||
+         "Syllabus";
+     }
+   
+   
+     /* -------------------------------------------------------
+        Fallback notice
+        ------------------------------------------------------- */
+   
+     if (
+       syllabusFallbackNotice
+     ) {
+   
+       if (
+         syllabus.is_fallback &&
+         syllabus.fallback_notice
+       ) {
+   
+         syllabusFallbackNotice.textContent =
+           syllabus.fallback_notice;
+   
+         syllabusFallbackNotice.classList.remove(
+           "hidden"
+         );
+   
+       } else {
+   
+         syllabusFallbackNotice.textContent =
+           "";
+   
+         syllabusFallbackNotice.classList.add(
+           "hidden"
+         );
+       }
+     }
+   
+   
+     /* -------------------------------------------------------
+        Calculate overall progress
+        ------------------------------------------------------- */
+   
+     const trackableTopics =
+       topics.filter(
+         topic =>
+           topic.topic_type === "topic" ||
+           topic.topic_type === "subtopic"
+       );
+   
+     const completedTopics =
+       trackableTopics.filter(
+         topic =>
+           topic.progress_status ===
+           "completed"
+       );
+   
+     const total =
+       trackableTopics.length;
+   
+     const completed =
+       completedTopics.length;
+   
+     const percentage =
+       total > 0
+         ? Math.round(
+             (completed / total) * 100
+           )
+         : 0;
+   
+   
+     if (syllabusProgressPercent) {
+   
+       syllabusProgressPercent.textContent =
+         `${percentage}%`;
+     }
+   
+   
+     if (syllabusProgressCount) {
+   
+       syllabusProgressCount.textContent =
+         `${completed} / ${total} topics completed`;
+     }
+   
+   
+     if (syllabusProgressFill) {
+   
+       syllabusProgressFill.style.width =
+         `${percentage}%`;
+     }
+   
+   
+     /* -------------------------------------------------------
+        Subject summary
+        ------------------------------------------------------- */
+   
+     renderSyllabusSubjects(
+       trackableTopics
+     );
+   
+   
+     /* -------------------------------------------------------
+        Detailed topics
+        ------------------------------------------------------- */
+   
+     renderSyllabusTopics(
+       topics
+     );
+   }
+   
+   
+   /* ---------------------------------------------------------
+      Render subject cards
+      --------------------------------------------------------- */
+   
+   function renderSyllabusSubjects(
+     topics
+   ) {
+   
+     if (!syllabusSubjectGrid) {
+       return;
+     }
+   
+     const subjects =
+       [...new Set(
+         topics.map(
+           topic => topic.subject
+         )
+       )];
+   
+   
+     syllabusSubjectGrid.innerHTML =
+       subjects.map(subject => {
+   
+         const subjectTopics =
+           topics.filter(
+             topic =>
+               topic.subject === subject
+           );
+   
+         const completed =
+           subjectTopics.filter(
+             topic =>
+               topic.progress_status ===
+               "completed"
+           ).length;
+   
+         const total =
+           subjectTopics.length;
+   
+         const percentage =
+           total > 0
+             ? Math.round(
+                 (completed / total) * 100
+               )
+             : 0;
+   
+         return `
+           <div class="syllabus-subject-card">
+   
+             <div class="syllabus-subject-header">
+   
+               <strong>
+                 ${escapeHTML(subject)}
+               </strong>
+   
+               <span>
+                 ${percentage}%
+               </span>
+   
+             </div>
+   
+             <div class="syllabus-subject-count">
+               ${completed} / ${total} completed
+             </div>
+   
+             <div class="syllabus-progress-bar">
+   
+               <div
+                 class="syllabus-progress-fill"
+                 style="width: ${percentage}%"
+               ></div>
+   
+             </div>
+   
+           </div>
+         `;
+   
+       }).join("");
+   }
+   
+   
+   /* ---------------------------------------------------------
+      Render detailed syllabus
+      --------------------------------------------------------- */
+   
+   function renderSyllabusTopics(
+     topics
+   ) {
+   
+     if (!syllabusTopicContainer) {
+       return;
+     }
+   
+     const subjects =
+       [...new Set(
+         topics.map(
+           topic => topic.subject
+         )
+       )];
+   
+   
+     syllabusTopicContainer.innerHTML =
+       subjects.map(subject => {
+   
+         const subjectTopics =
+           topics.filter(
+             topic =>
+               topic.subject === subject
+           );
+   
+         const chapters =
+           subjectTopics.filter(
+             topic =>
+               topic.topic_type === "chapter"
+           );
+   
+   
+         return `
+           <div class="syllabus-subject-section">
+   
+             <div class="syllabus-subject-title">
+               <h3>
+                 ${escapeHTML(subject)}
+               </h3>
+             </div>
+   
+             ${chapters.map(chapter => {
+   
+               const children =
+                 subjectTopics.filter(
+                   topic =>
+                     topic.parent_topic_id ===
+                     chapter.topic_id
+                 );
+   
+               return `
+                 <div
+                   class="syllabus-chapter"
+                   data-topic-id="${chapter.topic_id}"
+                 >
+   
+                   <div class="syllabus-chapter-header">
+   
+                     <strong>
+                       ${escapeHTML(
+                         chapter.topic_name
+                       )}
+                     </strong>
+   
+                     <span>
+                       ${children.length} topics
+                     </span>
+   
+                   </div>
+   
+                   <div class="syllabus-topic-list">
+   
+                     ${children.map(topic => `
+   
+                       <div
+                         class="syllabus-topic-row"
+                         data-topic-id="${topic.topic_id}"
+                       >
+   
+                         <span class="syllabus-topic-name">
+                           ${escapeHTML(
+                             topic.topic_name
+                           )}
+                         </span>
+   
+                         <span class="syllabus-topic-status">
+                           ${escapeHTML(
+                             topic.progress_status
+                           )}
+                         </span>
+   
+                       </div>
+   
+                     `).join("")}
+   
+                   </div>
+   
+                 </div>
+               `;
+   
+             }).join("")}
+   
+           </div>
+         `;
+   
+       }).join("");
+   }
+   
+   
+   /* ---------------------------------------------------------
+      Load syllabus for the first active exam
+      --------------------------------------------------------- */
+   
+   async function loadSyllabusForCurrentGoal() {
+   
+     if (!currentUser) {
+       return;
+     }
+   
+     if (!currentGoals.length) {
+   
+       syllabusSection?.classList.add(
+         "hidden"
+       );
+   
+       return;
+     }
+   
+   
+     /*
+      * For now we use the first selected exam.
+      *
+      * We will later add an exam selector so the
+      * student can switch between NEET / JEE / CBSE.
+      */
+   
+     const goal =
+       currentGoals[0];
+   
+   
+     console.log(
+       "📚 Loading syllabus for:",
+       goal
+     );
+   
+   
+     try {
+   
+       await loadSyllabusProgress(
+         goal
+       );
+   
+       console.log(
+         "✅ Syllabus loaded successfully."
+       );
+   
+     } catch (error) {
+   
+       console.error(
+         "❌ Failed to load syllabus:",
+         error
+       );
+   
+       syllabusSection?.classList.add(
+         "hidden"
+       );
+     }
+   }
+
+
 
   /* =========================================================
      LOAD STUDENT GOALS
