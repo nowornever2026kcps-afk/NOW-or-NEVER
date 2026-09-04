@@ -1992,338 +1992,290 @@ function renderSyllabusSubjects(topics) {
                 );
             
               actionButtons.forEach(button => {
+
+                button.addEventListener("click", async () => {
             
-                button.addEventListener(
-                  "click",
-                  () => {
+                    const action = button.dataset.syllabusAction;
             
                     if (!selectedSyllabusTopic) {
-                      return;
+                        return;
                     }
             
-                    const action =
-                      button.dataset.syllabusAction;
+                    const topic = selectedSyllabusTopic;
             
-                    const topicName =
-                      selectedSyllabusTopic.topic_name;
+                    /* =========================================================
+                       LEARN
+                       ========================================================= */
             
-                    console.log(
-                      "🎯 Syllabus action:",
-                      action,
-                      topicName
-                    );
+                    if (action === "learn") {
+            
+                        console.log(
+                            "📖 Learn topic:",
+                            topic.topic_name
+                        );
+            
+                        alert(
+                            `Learn: ${topic.topic_name}`
+                        );
+            
+                        return;
+                    }
             
             
                     /* =========================================================
-                        SYLLABUS ACTION BUTTONS
-                        ========================================================= */
-                     
-                     if (syllabusActionPanel) {
-                     
-                       const actionButtons =
-                         syllabusActionPanel.querySelectorAll(
-                           "[data-syllabus-action]"
-                         );
-                     
-                     
-                       actionButtons.forEach(button => {
-                     
-                         button.addEventListener(
-                           "click",
-                           async () => {
-                     
-                             if (!selectedSyllabusTopic) {
-                               return;
-                             }
-                     
-                     
-                             const action =
-                               button.dataset.syllabusAction;
-                     
-                     
-                             const topic =
-                               selectedSyllabusTopic;
-                     
-                     
-                             console.log(
-                               "🎯 Syllabus action:",
-                               {
-                                 action,
-                                 topicId: topic.topic_id,
-                                 topicName: topic.topic_name
-                               }
-                             );
-                     
-                     
-                             /* -------------------------------------------------
-                                LEARN
-                                ------------------------------------------------- */
-                     
-                             if (action === "learn") {
-                     
-                               alert(
-                                 `📖 Learn\n\n${topic.topic_name}\n\nLearning resources will be connected here.`
-                               );
-                     
-                               return;
-                             }
-                     
-                     
-                             /* -------------------------------------------------
-                                PRACTICE
-                                ------------------------------------------------- */
-                     
-                             if (action === "practice") {
-                     
-                               alert(
-                                 `📝 Practice\n\n${topic.topic_name}\n\nTopic practice will be connected here.`
-                               );
-                     
-                               return;
-                             }
-                     
-                     
-                             /* -------------------------------------------------
-                                ASK AI
-                                ------------------------------------------------- */
-                     
-                             if (action === "ai") {
-                     
-                               alert(
-                                 `🤖 Ask AI\n\n${topic.topic_name}\n\nAI topic assistance will be connected here.`
-                               );
-                     
-                               return;
-                             }
-                     
-                     
-                             /* -------------------------------------------------
-                                MARK COMPLETE
-                                ------------------------------------------------- */
-                     
-                             if (action === "complete") {
-                                  if (!selectedSyllabusTopic) {
-                                      return;
-                                  }
-                              
-                                  const topic = selectedSyllabusTopic;
-                              
-                                  if (!topic.topic_id) {
-                                      console.error("❌ Missing syllabus topic ID:", topic);
-                                      alert("Unable to complete this topic.");
-                                      return;
-                                  }
-                              
-                                  try {
-                                      const { data, error } = await supabaseClient.rpc(
-                                          "mark_syllabus_topic_complete",
-                                          {
-                                              p_topic_id: Number(topic.topic_id)
-                                          }
-                                      );
-                              
-                                      if (error) {
-                                          console.error("❌ Failed to mark syllabus topic complete:", error);
-                                          alert("Could not save completion. Please try again.");
-                                          return;
-                                      }
-                              
-                                      console.log("✅ Syllabus topic completed:", data);
-                              
-                                      // Update the local syllabus data immediately
-                                      topic.progress_status = "completed";
-                                      topic.status = "completed";
-                                      topic.completed_at = new Date().toISOString();
-                              
-                                      // Close the action panel
-                                      if (syllabusActionPanel) {
-                                          syllabusActionPanel.classList.add("hidden");
-                                          syllabusActionPanel.setAttribute("aria-hidden", "true");
-                                      }
-                              
-                                      // Remove selected state
-                                      const selectedRows =
-                                          syllabusTopicContainer.querySelectorAll(
-                                              ".syllabus-topic-row.selected"
-                                          );
-                              
-                                      selectedRows.forEach(row => {
-                                          row.classList.remove("selected");
-                                      });
-                              
-                                      selectedSyllabusTopic = null;
-                              
-                                      // Re-render the syllabus so:
-                                      // ✓ topic changes to completed
-                                      // ✓ chapter progress updates
-                                      // ✓ subject progress updates
-                                      // ✓ overall progress updates
-                                      renderSyllabus(
-                                          currentSyllabus,
-                                          currentSyllabusTopics
-                                      );
-                              
-                                  } catch (err) {
-                                      console.error("❌ Syllabus completion error:", err);
-                                      alert("Something went wrong while saving completion.");
-                                  }
-                              
-                                  return;
-                              }
-                     
-                     
-                               /* Prevent double clicking */
-                     
-                               button.disabled = true;
-                     
-                               const originalHTML =
-                                 button.innerHTML;
-                     
-                               button.innerHTML =
-                                 `
-                                   <span class="syllabus-action-icon">
-                                     ⏳
-                                   </span>
-                     
-                                   <span class="syllabus-action-content">
-                                     <strong>Saving...</strong>
-                                     <small>Please wait</small>
-                                   </span>
-                                 `;
-                     
-                     
-                               try {
-                     
-                                 console.log(
-                                   "📚 Marking syllabus topic complete:",
-                                   {
-                                     topicId,
-                                     topicName:
-                                       topic.topic_name
-                                   }
-                                 );
-                     
-                     
-                                 const {
-                                   data,
-                                   error
-                                 } = await supabaseClient.rpc(
-                                   "mark_syllabus_topic_complete",
-                                   {
-                                     p_topic_id: topicId
-                                   }
-                                 );
-                     
-                     
-                                 if (error) {
-                     
-                                   console.error(
-                                     "❌ Failed to complete syllabus topic:",
-                                     error
-                                   );
-                     
-                                   throw error;
-                                 }
-                     
-                     
-                                 console.log(
-                                   "✅ Topic completed:",
-                                   data
-                                 );
-                     
-                     
-                                 /* ------------------------------------------------
-                                    Update local topic immediately
-                                    ------------------------------------------------ */
-                     
-                                 topic.progress_status =
-                                   "completed";
-                     
-                     
-                                 topic.status =
-                                   "completed";
-                     
-                     
-                                 topic.completed_at =
-                                   new Date().toISOString();
-                     
-                     
-                                 /* ------------------------------------------------
-                                    Close action panel
-                                    ------------------------------------------------ */
-                     
-                                 syllabusActionPanel.classList.add(
-                                   "hidden"
-                                 );
-                     
-                                 syllabusActionPanel.setAttribute(
-                                   "aria-hidden",
-                                   "true"
-                                 );
-                     
-                     
-                                 selectedSyllabusTopic =
-                                   null;
-                     
-                     
-                                 /* ------------------------------------------------
-                                    Reload complete syllabus
-                                    ------------------------------------------------ */
-                     
-                                 showToast(
-                                   `✓ ${topic.topic_name} completed!`
-                                 );
-                     
-                     
-                                 /*
-                                  * Re-render the current syllabus.
-                                  *
-                                  * This recalculates:
-                                  * - topic status
-                                  * - chapter progress
-                                  * - subject progress
-                                  * - overall progress
-                                  */
-                     
-                                 if (
-                                   currentSyllabusTopics &&
-                                   currentSyllabusTopics.length
-                                 ) {
-                     
-                                   renderSyllabus(
-                                     currentSyllabus,
-                                     currentSyllabusTopics
-                                   );
-                     
-                                 }
-                     
-                     
-                               } catch (error) {
-                     
-                                 console.error(
-                                   "❌ Syllabus completion error:",
-                                   error
-                                 );
-                     
-                     
-                                 showToast(
-                                   "Could not save completion. Please try again."
-                                 );
-                     
-                     
-                                 button.disabled = false;
-                     
-                                 button.innerHTML =
-                                   originalHTML;
-                     
-                               }
-                     
-                             }
-                     
-                           }
-                         );
-                     
-                       });
+                       PRACTICE
+                       ========================================================= */
+            
+                    if (action === "practice") {
+            
+                        console.log(
+                            "📝 Practice topic:",
+                            topic.topic_name
+                        );
+            
+                        alert(
+                            `Practice: ${topic.topic_name}`
+                        );
+            
+                        return;
+                    }
+            
+            
+                    /* =========================================================
+                       ASK AI
+                       ========================================================= */
+            
+                    if (action === "ai") {
+            
+                        console.log(
+                            "🤖 Ask AI about:",
+                            topic.topic_name
+                        );
+            
+                        alert(
+                            `Ask AI: ${topic.topic_name}`
+                        );
+            
+                        return;
+                    }
+            
+            
+                    /* =========================================================
+                       MARK COMPLETE
+                       ========================================================= */
+            
+                    if (action === "complete") {
+            
+                        const topicId = Number(topic.topic_id);
+            
+                        if (!topicId) {
+            
+                            console.error(
+                                "❌ Missing syllabus topic ID:",
+                                topic
+                            );
+            
+                            alert(
+                                "Unable to complete this topic."
+                            );
+            
+                            return;
+                        }
+            
+            
+                        /* -----------------------------------------------------
+                           Prevent double clicking
+                           ----------------------------------------------------- */
+            
+                        button.disabled = true;
+            
+                        const originalHTML =
+                            button.innerHTML;
+            
+            
+                        button.innerHTML = `
+                            <span class="syllabus-action-icon">
+                                ⏳
+                            </span>
+            
+                            <span class="syllabus-action-content">
+                                <strong>Saving...</strong>
+                                <small>Please wait</small>
+                            </span>
+                        `;
+            
+            
+                        try {
+            
+                            console.log(
+                                "📚 Marking syllabus topic complete:",
+                                {
+                                    topicId,
+                                    topicName: topic.topic_name
+                                }
+                            );
+            
+            
+                            /* -------------------------------------------------
+                               Save to Supabase
+                               ------------------------------------------------- */
+            
+                            const {
+                                data,
+                                error
+                            } = await supabaseClient.rpc(
+                                "mark_syllabus_topic_complete",
+                                {
+                                    p_topic_id: topicId
+                                }
+                            );
+            
+            
+                            if (error) {
+            
+                                console.error(
+                                    "❌ Failed to complete syllabus topic:",
+                                    error
+                                );
+            
+                                throw error;
+                            }
+            
+            
+                            console.log(
+                                "✅ Topic completed:",
+                                data
+                            );
+            
+            
+                            /* -------------------------------------------------
+                               Update local topic
+                               ------------------------------------------------- */
+            
+                            topic.progress_status =
+                                "completed";
+            
+                            topic.status =
+                                "completed";
+            
+                            topic.completed_at =
+                                new Date().toISOString();
+            
+            
+                            /* -------------------------------------------------
+                               Close action panel
+                               ------------------------------------------------- */
+            
+                            if (syllabusActionPanel) {
+            
+                                syllabusActionPanel.classList.add(
+                                    "hidden"
+                                );
+            
+                                syllabusActionPanel.setAttribute(
+                                    "aria-hidden",
+                                    "true"
+                                );
+                            }
+            
+            
+                            /* -------------------------------------------------
+                               Clear selected row
+                               ------------------------------------------------- */
+            
+                            if (syllabusTopicContainer) {
+            
+                                const selectedRows =
+                                    syllabusTopicContainer.querySelectorAll(
+                                        ".syllabus-topic-row.selected"
+                                    );
+            
+                                selectedRows.forEach(row => {
+            
+                                    row.classList.remove(
+                                        "selected"
+                                    );
+            
+                                });
+                            }
+            
+            
+                            selectedSyllabusTopic =
+                                null;
+            
+            
+                            /* -------------------------------------------------
+                               Success message
+                               ------------------------------------------------- */
+            
+                            if (typeof showToast === "function") {
+            
+                                showToast(
+                                    `✓ ${topic.topic_name} completed!`
+                                );
+            
+                            } else {
+            
+                                console.log(
+                                    `✓ ${topic.topic_name} completed!`
+                                );
+                            }
+            
+            
+                            /* -------------------------------------------------
+                               Re-render syllabus
+                               ------------------------------------------------- */
+            
+                            if (
+                                currentSyllabusTopics &&
+                                currentSyllabusTopics.length
+                            ) {
+            
+                                renderSyllabus(
+                                    currentSyllabus,
+                                    currentSyllabusTopics
+                                );
+                            }
+            
+            
+                        } catch (error) {
+            
+                            console.error(
+                                "❌ Syllabus completion error:",
+                                error
+                            );
+            
+            
+                            if (typeof showToast === "function") {
+            
+                                showToast(
+                                    "Could not save completion. Please try again."
+                                );
+            
+                            } else {
+            
+                                alert(
+                                    "Could not save completion. Please try again."
+                                );
+                            }
+            
+            
+                            /* Restore button */
+            
+                            button.disabled = false;
+            
+                            button.innerHTML =
+                                originalHTML;
+                        }
+            
+                        return;
+                    }
+            
+                });
+            
+            });
+                     
+                       
                      
                      }
             
