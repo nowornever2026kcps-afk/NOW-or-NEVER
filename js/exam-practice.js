@@ -12,6 +12,7 @@
   const PRACTICE_FUNCTION = "exam-practice";
   let panel = null;
   let state = null;
+  let clickBound = false;
 
   const $ = (id) => document.getElementById(id);
 
@@ -24,21 +25,60 @@
       .replaceAll("'", "&#039;");
   }
 
+  function normalizeSubject(value) {
+    const text = String(value || "").trim().toLowerCase();
+    if (text.includes("bio")) return "Biology";
+    if (text.includes("phys")) return "Physics";
+    if (text.includes("chem")) return "Chemistry";
+    return String(value || "").trim();
+  }
+
+  function getSelectedTopicRow() {
+    const rows = [...document.querySelectorAll(".syllabus-topic-row")];
+    return rows.find((row) => {
+      const selected = row.classList.contains("selected");
+      const topicId = row.dataset.topicId || row.getAttribute("data-topic-id");
+      return selected && topicId;
+    }) || null;
+  }
+
   function getContextFromPage() {
-    const row = document.querySelector(".syllabus-topic-row.selected[data-topic-id]");
+    const row = getSelectedTopicRow();
     if (!row) return null;
 
-    const topicId = Number(row.dataset.topicId) || null;
-    const topic = row.dataset.topicName || row.querySelector(".syllabus-topic-name")?.textContent?.trim() || "";
-    const chapter = row.closest(".syllabus-chapter")?.querySelector(".syllabus-chapter-title strong")?.textContent?.trim() || "";
-    const activeTab = document.querySelector(".syllabus-tab.active")?.dataset.subject || "";
+    const topicId = Number(row.dataset.topicId || row.getAttribute("data-topic-id")) || null;
+    const topic = String(
+      row.dataset.topicName ||
+      row.getAttribute("data-topic-name") ||
+      row.querySelector(".syllabus-topic-name, .topic-name, [data-topic-name]")?.textContent ||
+      ""
+    ).trim();
 
-    return {
-      topicId,
-      topic,
-      chapter,
-      subject: activeTab,
-    };
+    const chapterElement = row.closest(".syllabus-chapter")?.querySelector(
+      ".syllabus-chapter-title strong, .syllabus-chapter-title, .chapter-title, [data-chapter-name]"
+    );
+    const chapter = String(
+      row.dataset.chapterName ||
+      row.getAttribute("data-chapter-name") ||
+      chapterElement?.textContent ||
+      ""
+    ).trim();
+
+    const activeTab = document.querySelector(
+      ".syllabus-tab.active, .syllabus-tab[aria-selected=\"true\"]"
+    );
+    const subject = normalizeSubject(
+      row.dataset.subject ||
+      row.getAttribute("data-subject") ||
+      activeTab?.dataset.subject ||
+      activeTab?.getAttribute("data-subject") ||
+      activeTab?.textContent ||
+      ""
+    );
+
+    if (!topic) return null;
+
+    return { topicId, topic, chapter, subject };
   }
 
   async function getExamGoal() {
@@ -83,7 +123,6 @@
         </div>
         <button type="button" id="examPracticeClose" class="exam-practice-close" aria-label="Close Practice">×</button>
       </div>
-
       <div id="examPracticeBody" class="exam-practice-body"></div>
     `;
 
@@ -93,9 +132,11 @@
   }
 
   function openPanel() {
-    ensurePanel()?.classList.remove("hidden");
-    panel?.setAttribute("aria-hidden", "false");
-    panel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const target = ensurePanel();
+    if (!target) return;
+    target.classList.remove("hidden");
+    target.setAttribute("aria-hidden", "false");
+    target.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   function closePractice() {
@@ -204,6 +245,8 @@
     if (!body) return;
 
     const question = state.questions[state.index];
+    if (!question) return;
+
     const total = state.questions.length;
     const progress = Math.round((state.index / total) * 100);
 
@@ -215,11 +258,9 @@
       <div class="exam-practice-progress-track">
         <div class="exam-practice-progress-fill" style="width:${progress}%"></div>
       </div>
-
       <article class="exam-practice-question-card">
         <div class="exam-practice-question-number">Q${state.index + 1}</div>
         <div class="exam-practice-question">${renderMathText(question.question)}</div>
-
         <div class="exam-practice-options" role="radiogroup" aria-label="Answer options">
           ${question.options.map((option, index) => {
             const letter = String.fromCharCode(65 + index);
@@ -231,7 +272,6 @@
             `;
           }).join("")}
         </div>
-
         <div id="examPracticeFeedback" class="exam-practice-feedback hidden"></div>
         <button type="button" id="examPracticeNextBtn" class="exam-practice-primary hidden">${state.index === total - 1 ? "See Results" : "Next Question"} →</button>
       </article>
@@ -246,8 +286,11 @@
   }
 
   function renderMathText(value) {
-    // Escape HTML but preserve LaTeX delimiters for MathJax.
-    return escapeHTML(value).replace(/\\\\\(/g, "\\(").replace(/\\\\\)/g, "\\)").replace(/\\\\\[/g, "\\[").replace(/\\\\\]/g, "\\]");
+    return escapeHTML(value)
+      .replace(/\\\\\(/g, "\\(")
+      .replace(/\\\\\)/g, "\\)")
+      .replace(/\\\\\[/g, "\\[")
+      .replace(/\\\\\]/g, "\\]");
   }
 
   function answerQuestion(letter) {
@@ -262,7 +305,7 @@
     document.querySelectorAll(".exam-practice-option").forEach((button) => {
       const option = button.dataset.option;
       button.disabled = true;
-      if (option === question.answer) button.classList.add("correct");
+      if (option === String(question.answer || "").toUpperCase()) button.classList.add("correct");
       if (option === letter && !correct) button.classList.add("incorrect");
     });
 
@@ -280,14 +323,11 @@
   }
 
   function nextQuestion() {
-    if (!state) return;
-    if (!state.selected) return;
-
+    if (!state || !state.selected) return;
     if (state.index >= state.questions.length - 1) {
       renderResults();
       return;
     }
-
     state.index += 1;
     state.selected = null;
     renderQuestion();
@@ -311,7 +351,6 @@
         <h4>${state.score} / ${total}</h4>
         <strong>${accuracy}% Accuracy</strong>
         <p>${escapeHTML(message)}</p>
-
         <div class="exam-practice-result-actions">
           <button type="button" id="examPracticeAgainBtn" class="exam-practice-primary">Practice Again</button>
           <button type="button" id="examPracticeDoneBtn" class="exam-practice-secondary">Back to Topic</button>
@@ -321,7 +360,12 @@
 
     $("examPracticeAgainBtn")?.addEventListener("click", () => {
       state = null;
-      renderStart(getContextFromPage() || { topic: "this topic", chapter: "", subject: "", topicId: null });
+      const context = getContextFromPage();
+      if (context) {
+        renderStart(context);
+      } else {
+        closePractice();
+      }
     });
     $("examPracticeDoneBtn")?.addEventListener("click", closePractice);
   }
@@ -332,6 +376,7 @@
 
     event.preventDefault();
     event.stopPropagation();
+    event.stopImmediatePropagation();
 
     const context = getContextFromPage();
     if (!context) {
@@ -340,7 +385,11 @@
     }
 
     const target = ensurePanel();
-    if (!target) return;
+    if (!target) {
+      console.error("Exam Practice: syllabusSection was not found.");
+      window.alert("Practice panel could not be opened. Please refresh the page.");
+      return;
+    }
 
     const title = $("examPracticeTitle");
     const subtitle = $("examPracticeContext");
@@ -352,7 +401,12 @@
   }
 
   function start() {
+    if (clickBound) return;
+    clickBound = true;
+    // Capture phase lets Practice take control before the old Exam Command Center
+    // button handler displays its placeholder alert.
     document.addEventListener("click", handlePracticeClick, true);
+    console.log("✅ Exam Practice UI ready.");
   }
 
   if (document.readyState === "loading") {
