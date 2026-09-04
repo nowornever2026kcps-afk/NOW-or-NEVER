@@ -1993,7 +1993,7 @@
 
 
     startCountdownTimer();
-  }
+  
 
     await loadSyllabusForCurrentGoal();
   }
