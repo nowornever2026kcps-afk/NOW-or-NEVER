@@ -1646,38 +1646,54 @@ function renderSyllabusSubjects(topics) {
                       children.length
                         ? children.map(topic => `
       
-                            <div
-                              class="syllabus-topic-row"
-                              data-topic-id="${escapeHTML(
-                                topic.topic_id
-                              )}"
-                            >
-      
-                              <span
-                                class="syllabus-topic-name"
-                              >
-                                ${escapeHTML(
-                                  topic.topic_name
-                                )}
-                              </span>
-      
-      
-                              <span
-                                class="
-                                  syllabus-topic-status
-                                  status-${escapeHTML(
-                                    topic.progress_status
-                                  )}
-                                "
-                              >
-      
-                                ${getSyllabusStatusLabel(
-                                  topic.progress_status
-                                )}
-      
-                              </span>
-      
-                            </div>
+                           <div
+                             class="syllabus-topic-row"
+                             data-topic-id="${escapeHTML(topic.topic_id)}"
+                             data-topic-name="${escapeHTML(topic.topic_name)}"
+                             role="button"
+                             tabindex="0"
+                             aria-label="Open ${escapeHTML(topic.topic_name)}"
+                           >
+                           
+                             <div class="syllabus-topic-main">
+                           
+                               <span class="syllabus-topic-check">
+                                 ${
+                                   topic.progress_status === "completed"
+                                     ? "✓"
+                                     : "○"
+                                 }
+                               </span>
+                           
+                               <span class="syllabus-topic-name">
+                                 ${escapeHTML(topic.topic_name)}
+                               </span>
+                           
+                             </div>
+                           
+                           
+                             <div class="syllabus-topic-right">
+                           
+                               <span
+                                 class="
+                                   syllabus-topic-status
+                                   status-${escapeHTML(
+                                     topic.progress_status
+                                   )}
+                                 "
+                               >
+                                 ${getSyllabusStatusLabel(
+                                   topic.progress_status
+                                 )}
+                               </span>
+                           
+                               <span class="syllabus-topic-chevron">
+                                 ›
+                               </span>
+                           
+                             </div>
+                           
+                           </div>
       
                           `).join("")
       
@@ -1783,6 +1799,78 @@ function renderSyllabusSubjects(topics) {
                   "▼";
       
               }
+
+               /* ---------------------------------------------------------
+   Topic click controls
+   --------------------------------------------------------- */
+
+            const topicRows =
+              syllabusTopicContainer.querySelectorAll(
+                ".syllabus-topic-row[data-topic-id]"
+              );
+            
+            
+            topicRows.forEach(row => {
+            
+              function openTopic() {
+            
+                const topicId =
+                  row.dataset.topicId;
+            
+                const topicName =
+                  row.dataset.topicName;
+            
+                console.log(
+                  "📖 Syllabus topic clicked:",
+                  {
+                    topicId,
+                    topicName
+                  }
+                );
+            
+                /*
+                 * Temporary selection state.
+                 *
+                 * The actual Learn / Practice / AI / Complete
+                 * action panel will be added in the next step.
+                 */
+                topicRows.forEach(otherRow => {
+                  otherRow.classList.remove(
+                    "selected"
+                  );
+                });
+            
+                row.classList.add(
+                  "selected"
+                );
+              }
+            
+            
+              row.addEventListener(
+                "click",
+                openTopic
+              );
+            
+            
+              row.addEventListener(
+                "keydown",
+                event => {
+            
+                  if (
+                    event.key === "Enter" ||
+                    event.key === " "
+                  ) {
+            
+                    event.preventDefault();
+            
+                    openTopic();
+            
+                  }
+            
+                }
+              );
+            
+            });
       
             }
           );
