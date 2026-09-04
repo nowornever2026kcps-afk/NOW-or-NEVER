@@ -1435,3 +1435,97 @@ a { color: inherit; text-decoration: none; }
   }
 
 }
+
+
+/* =========================================================
+   SYLLABUS TAB IMPROVEMENTS
+   ========================================================= */
+
+.syllabus-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.syllabus-tab-icon {
+  font-size: 1.1rem;
+}
+
+.syllabus-tab-name {
+  font-weight: 800;
+}
+
+.syllabus-tab-count {
+  margin-left: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.syllabus-tab.active .syllabus-tab-count {
+  background: rgba(139, 92, 246, 0.2);
+  color: white;
+}
+
+.syllabus-empty-subject {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 180px;
+  padding: 30px 20px;
+  text-align: center;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.syllabus-empty-icon {
+  font-size: 2rem;
+  margin-bottom: 5px;
+}
+
+.syllabus-empty-subject strong {
+  font-size: 1rem;
+}
+
+.syllabus-empty-subject span {
+  max-width: 420px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+
+  .syllabus-tabs {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .syllabus-tab {
+    flex-direction: column;
+    gap: 3px;
+    padding: 11px 5px;
+  }
+
+  .syllabus-tab-icon {
+    font-size: 1.2rem;
+  }
+
+  .syllabus-tab-name {
+    font-size: 0.75rem;
+  }
+
+  .syllabus-tab-count {
+    font-size: 0.62rem;
+    padding: 1px 5px;
+  }
+
+}
