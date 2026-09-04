@@ -72,6 +72,77 @@
   function escapeHTML(value) {
     return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
   }
+
+  function renderExamAiMarkdown(value) {
+    let text = String(value ?? "").replace(/\r\n?/g, "\n").trim();
+    if (!text) return "";
+
+    const codeBlocks = [];
+    text = text.replace(/```(?:[a-zA-Z0-9_+-]+)?\n?([\s\S]*?)```/g, (_, code) => {
+      const index = codeBlocks.push(`<pre class="exam-ai-code"><code>${escapeHTML(code.trimEnd())}</code></pre>`) - 1;
+      return `@@EXAM_AI_CODE_${index}@@`;
+    });
+
+    let html = escapeHTML(text);
+
+    html = html.replace(/^######\s+(.+)$/gm, "<h6>$1</h6>");
+    html = html.replace(/^#####\s+(.+)$/gm, "<h5>$1</h5>");
+    html = html.replace(/^####\s+(.+)$/gm, "<h4>$1</h4>");
+    html = html.replace(/^###\s+(.+)$/gm, "<h3>$1</h3>");
+    html = html.replace(/^##\s+(.+)$/gm, "<h3>$1</h3>");
+    html = html.replace(/^#\s+(.+)$/gm, "<h3>$1</h3>");
+
+    html = html.replace(/^\s*[-*]\s+(.+)$/gm, "<li>$1</li>");
+    html = html.replace(/(?:<li>[\s\S]*?<\/li>)(?:\n(?:<li>[\s\S]*?<\/li>))+/g, match => `<ul>${match.replace(/\n/g, "")}</ul>`);
+
+    html = html.replace(/^\s*\d+[.)]\s+(.+)$/gm, "<li>$1</li>");
+    html = html.replace(/(?:<li>[\s\S]*?<\/li>)(?:\n(?:<li>[\s\S]*?<\/li>))+/g, match => `<ol>${match.replace(/\n/g, "")}</ol>`);
+
+    html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    html = html.replace(/__(.+?)__/g, "<strong>$1</strong>");
+    html = html.replace(/`([^`\n]+)`/g, "<code class=\"exam-ai-inline-code\">$1</code>");
+    html = html.replace(/\*([^*\n]+)\*/g, "<em>$1</em>");
+    html = html.replace(/_([^_\n]+)_/g, "<em>$1</em>");
+
+    html = html.replace(/\n{2,}/g, "</p><p>");
+    html = html.replace(/\n/g, "<br>");
+    html = `<div class="exam-ai-markdown"><p>${html}</p></div>`;
+    html = html.replace(/<p>\s*(<h[3-6]>)/g, "$1").replace(/(<\/h[3-6]>)\s*<\/p>/g, "$1");
+    html = html.replace(/<p>\s*(<ul>|<ol>)/g, "$1").replace(/(<\/ul>|<\/ol>)\s*<\/p>/g, "$1");
+
+    codeBlocks.forEach((block, index) => {
+      html = html.replace(`@@EXAM_AI_CODE_${index}@@`, block);
+    });
+
+    return html;
+  }
+
+  function ensureExamAiMarkdownStyles() {
+    if (document.getElementById("examAiMarkdownStyles")) return;
+    const style = document.createElement("style");
+    style.id = "examAiMarkdownStyles";
+    style.textContent = `
+      .exam-ai-markdown { line-height: 1.65; }
+      .exam-ai-markdown p { margin: 0 0 10px; }
+      .exam-ai-markdown p:last-child { margin-bottom: 0; }
+      .exam-ai-markdown h3,
+      .exam-ai-markdown h4,
+      .exam-ai-markdown h5,
+      .exam-ai-markdown h6 { margin: 12px 0 7px; color: var(--text); line-height: 1.3; }
+      .exam-ai-markdown h3 { font-size: .98rem; }
+      .exam-ai-markdown h4 { font-size: .9rem; }
+      .exam-ai-markdown ul,
+      .exam-ai-markdown ol { margin: 7px 0 11px 20px; padding: 0; }
+      .exam-ai-markdown li { margin: 4px 0; padding-left: 2px; }
+      .exam-ai-markdown strong { color: #fff; font-weight: 800; }
+      .exam-ai-markdown em { color: #ddd5ff; }
+      .exam-ai-inline-code { padding: 2px 5px; border-radius: 5px; background: rgba(169,140,255,.11); color: #d8ccff; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; }
+      .exam-ai-code { margin: 10px 0; padding: 11px 12px; overflow-x: auto; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; background: rgba(0,0,0,.25); }
+      .exam-ai-code code { color: #e9e5ff; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .78rem; white-space: pre; }
+    `;
+    document.head.appendChild(style);
+  }
+
   function normalizeExamType(value) { return String(value || "").trim().toLowerCase(); }
   function apiExamType(value) {
     const type = normalizeExamType(value);
@@ -477,9 +548,14 @@
   }
   function appendExamAiMessage(text, role) {
     if (!examAiMessages) return null;
+    ensureExamAiMarkdownStyles();
     const element = document.createElement("div");
     element.className = role === "user" ? "exam-ai-user-message" : "exam-ai-assistant-message";
-    element.textContent = String(text || "");
+    if (role === "assistant") {
+      element.innerHTML = renderExamAiMarkdown(text);
+    } else {
+      element.textContent = String(text || "");
+    }
     examAiMessages.appendChild(element);
     examAiMessages.scrollTop = examAiMessages.scrollHeight;
     return element;
@@ -681,6 +757,7 @@
   });
   refreshBtn?.addEventListener("click", refreshCommandCenter);
   bindExamAi();
+  ensureExamAiMarkdownStyles();
 
   supabaseClient.auth.onAuthStateChange((_event, session) => {
     currentSession = session;
