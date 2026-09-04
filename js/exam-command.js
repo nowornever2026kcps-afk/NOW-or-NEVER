@@ -1846,29 +1846,7 @@ function renderSyllabusSubjects(topics) {
               }
             
             
-              row.addEventListener(
-                "click",
-                openTopic
-              );
-            
-            
-              row.addEventListener(
-                "keydown",
-                event => {
-            
-                  if (
-                    event.key === "Enter" ||
-                    event.key === " "
-                  ) {
-            
-                    event.preventDefault();
-            
-                    openTopic();
-            
-                  }
-            
-                }
-              );
+         
             
             });
       
