@@ -5982,12 +5982,12 @@ document
             if (btn.id === "examNavBtn") {
                 window.location.href = "exam-command.html";
                 return;
-              }
+            }
           
-              document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
-              document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-              btn.classList.add("active");
-              $(btn.dataset.view).classList.add("active");
+            document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+            btn.classList.add("active");
+            $(btn.dataset.view).classList.add("active");
 
 
           if(
