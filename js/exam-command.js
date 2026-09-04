@@ -2451,7 +2451,7 @@ function renderSyllabusSubjects(topics) {
             
               });
             
-            }
+            
 
 
          
@@ -4151,4 +4151,3 @@ async function init() {
 
 init();
 
-})();
