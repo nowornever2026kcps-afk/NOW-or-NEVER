@@ -1895,7 +1895,236 @@ function renderSyllabusSubjects(topics) {
             return "○ Not started";
         }
       }
-   /* ---------------------------------------------------------
+
+
+            /* =========================================================
+            SYLLABUS TOPIC ACTION PANEL
+            ========================================================= */
+         
+         const syllabusActionPanel =
+           document.getElementById(
+             "syllabusTopicActionPanel"
+           );
+         
+         const syllabusActionTopicName =
+           document.getElementById(
+             "syllabusActionTopicName"
+           );
+         
+         const syllabusActionClose =
+           document.getElementById(
+             "syllabusActionClose"
+           );
+         
+         
+         let selectedSyllabusTopic = null;
+         
+         
+         /* ---------------------------------------------------------
+            Open topic action panel
+            --------------------------------------------------------- */
+         
+         function openSyllabusTopicActionPanel(topic) {
+         
+           if (
+             !syllabusActionPanel ||
+             !syllabusActionTopicName
+           ) {
+             return;
+           }
+         
+           selectedSyllabusTopic = topic;
+         
+           syllabusActionTopicName.textContent =
+             topic.topic_name || "Selected Topic";
+         
+           syllabusActionPanel.classList.remove(
+             "hidden"
+           );
+         
+           syllabusActionPanel.setAttribute(
+             "aria-hidden",
+             "false"
+           );
+         
+           /*
+            * Scroll the action panel into view
+            * on smaller screens.
+            */
+         
+           setTimeout(() => {
+         
+             syllabusActionPanel.scrollIntoView({
+               behavior: "smooth",
+               block: "nearest"
+             });
+         
+           }, 50);
+         
+         
+           console.log(
+             "📖 Topic action panel opened:",
+             {
+               topicId: topic.topic_id,
+               topicName: topic.topic_name,
+               subject: topic.subject,
+               status: topic.progress_status
+             }
+           );
+         }
+         
+         
+         /* ---------------------------------------------------------
+            Connect topic rows to action panel
+            --------------------------------------------------------- */
+         
+         topicRows.forEach(row => {
+         
+           const topicId =
+             row.dataset.topicId;
+         
+           const topic =
+             subjectTopics.find(
+               item =>
+                 String(item.topic_id) ===
+                 String(topicId)
+             );
+         
+           if (!topic) {
+             return;
+           }
+         
+           /*
+            * Replace the temporary Step 1 click
+            * with the real action panel behavior.
+            */
+         
+           row.addEventListener("click", () => {
+         
+             openSyllabusTopicActionPanel(topic);
+         
+           });
+         
+         });
+         
+         
+         /* ---------------------------------------------------------
+            Close button
+            --------------------------------------------------------- */
+         
+         if (syllabusActionClose) {
+         
+           syllabusActionClose.addEventListener(
+             "click",
+             () => {
+         
+               if (!syllabusActionPanel) {
+                 return;
+               }
+         
+               syllabusActionPanel.classList.add(
+                 "hidden"
+               );
+         
+               syllabusActionPanel.setAttribute(
+                 "aria-hidden",
+                 "true"
+               );
+         
+               selectedSyllabusTopic = null;
+         
+             }
+           );
+         
+         }
+         
+         
+         /* ---------------------------------------------------------
+            Action buttons
+            --------------------------------------------------------- */
+         
+         if (syllabusActionPanel) {
+         
+           const actionButtons =
+             syllabusActionPanel.querySelectorAll(
+               "[data-syllabus-action]"
+             );
+         
+         
+           actionButtons.forEach(button => {
+         
+             button.addEventListener(
+               "click",
+               () => {
+         
+                 if (!selectedSyllabusTopic) {
+                   return;
+                 }
+         
+                 const action =
+                   button.dataset.syllabusAction;
+         
+                 console.log(
+                   "🎯 Syllabus action selected:",
+                   {
+                     action,
+                     topicId:
+                       selectedSyllabusTopic.topic_id,
+                     topicName:
+                       selectedSyllabusTopic.topic_name
+                   }
+                 );
+         
+         
+                 /* -------------------------------------------------
+                    TEMPORARY ACTIONS
+         
+                    We will connect these to the real systems
+                    in the next steps.
+                    ------------------------------------------------- */
+         
+                 if (action === "learn") {
+         
+                   alert(
+                     `📖 Learn\n\n${selectedSyllabusTopic.topic_name}\n\nLearning resources will be connected here.`
+                   );
+         
+                 }
+         
+         
+                 if (action === "practice") {
+         
+                   alert(
+                     `📝 Practice\n\n${selectedSyllabusTopic.topic_name}\n\nTopic practice will be connected here.`
+                   );
+         
+                 }
+         
+         
+                 if (action === "ai") {
+         
+                   alert(
+                     `🤖 Ask AI\n\n${selectedSyllabusTopic.topic_name}\n\nAI topic assistance will be connected here.`
+                   );
+         
+                 }
+         
+         
+                 if (action === "complete") {
+         
+                   alert(
+                     `✓ Mark Complete\n\n${selectedSyllabusTopic.topic_name}\n\nCompletion saving will be connected in Step 3.`
+                   );
+         
+                 }
+         
+               }
+             );
+         
+           });
+         
+         }
+            /* ---------------------------------------------------------
       Load syllabus for the first active exam
       --------------------------------------------------------- */
    
