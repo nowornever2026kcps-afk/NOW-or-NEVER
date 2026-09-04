@@ -16,6 +16,8 @@
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
 
+  window.examSupabaseClient = supabaseClient;
+
   window.debugSupabaseClient = supabaseClient;
 
   let currentSession = null;
