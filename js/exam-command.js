@@ -434,6 +434,18 @@
     bindSyllabusActionButtons(rows);
   }
 
+  function getExamAiChapter(topic) {
+    if (!topic) return "";
+    const directChapter = topic.chapter_name || topic.chapter || topic.parent_topic_name;
+    if (directChapter) return String(directChapter).trim();
+    const parentId = topic.parent_topic_id;
+    if (parentId !== null && parentId !== undefined && String(parentId) !== "") {
+      const parent = currentSyllabusTopics.find(item => String(item.topic_id) === String(parentId));
+      if (parent && normalizeExamType(parent.topic_type) === "chapter") return String(parent.topic_name || "").trim();
+    }
+    return "";
+  }
+
   function resetExamAiMessages() {
     if (!examAiMessages) return;
     examAiMessages.innerHTML = `<div class="exam-ai-welcome"><span class="exam-ai-welcome-icon">🤖</span><div><strong>Hi! I'm your Exam AI.</strong><p>Ask me anything about the selected topic.</p></div></div>`;
@@ -446,12 +458,12 @@
   function openExamAi(topic) {
     if (!examAiPanel || !topic) return;
     selectedSyllabusTopic = topic;
+    const chapter = getExamAiChapter(topic);
     if (examAiTopicName) examAiTopicName.textContent = topic.topic_name || "Selected Topic";
     if (examAiContext) {
       const subject = subjectName(topic.subject);
-      const chapter = topic.chapter_name || topic.chapter || topic.parent_topic_name || "Selected chapter";
       const exam = currentGoals[0] ? getExamLabel(currentGoals[0].exam_type) : "Exam";
-      examAiContext.textContent = `${exam} ${currentGoals[0]?.exam_year || ""} • ${subject} • ${chapter}`;
+      examAiContext.textContent = `${exam} ${currentGoals[0]?.exam_year || ""} • ${subject}${chapter ? ` • ${chapter}` : ""}`;
     }
     resetExamAiMessages();
     if (examAiInput) {
@@ -504,6 +516,12 @@
       return;
     }
     const goal = currentGoals[0] || {};
+    const chapter = getExamAiChapter(topic);
+    if (!chapter) {
+      appendExamAiError("Could not determine the chapter for this topic. Please refresh the syllabus and try again.");
+      console.error("❌ Exam AI missing chapter context:", topic);
+      return;
+    }
     appendExamAiMessage(message, "user");
     if (examAiInput) examAiInput.value = "";
     const loading = appendExamAiLoading();
@@ -517,7 +535,7 @@
             exam_type: apiExamType(goal.exam_type),
             exam_year: Number(goal.exam_year || TARGET_EXAM_YEAR),
             subject: subjectName(topic.subject),
-            chapter: topic.chapter_name || topic.chapter || topic.parent_topic_name || "",
+            chapter,
             topic: topic.topic_name || "",
             topic_id: Number(topic.topic_id) || null,
             completion_status: topic.progress_status || "not_started"
