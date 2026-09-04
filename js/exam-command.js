@@ -686,28 +686,30 @@
        await resolveSyllabusVersion(goal);
    
      const {
-       data,
-       error
-     } = await supabaseClient.rpc(
-       "get_student_syllabus_progress",
-       {
-         p_exam_type:
-           normalizeExamType(goal.exam_type),
-   
-         p_exam_year:
-           Number(syllabus.actual_exam_year),
-   
-         p_board:
-           normalizeExamType(goal.exam_type) === "board"
-             ? goal.board || null
-             : null,
-   
-         p_class_level:
-           normalizeExamType(goal.exam_type) === "board"
-             ? goal.class_level || null
-             : null
-       }
-     );
+        data,
+        error
+      } = await supabaseClient
+        .rpc(
+          "get_student_syllabus_progress",
+          {
+            p_exam_type:
+              normalizeExamType(goal.exam_type),
+      
+            p_exam_year:
+              Number(syllabus.actual_exam_year),
+      
+            p_board:
+              normalizeExamType(goal.exam_type) === "board"
+                ? goal.board || null
+                : null,
+      
+            p_class_level:
+              normalizeExamType(goal.exam_type) === "board"
+                ? goal.class_level || null
+                : null
+          }
+        )
+        .range(0, 4999);
    
      console.log(
        "📚 Syllabus progress result:",
