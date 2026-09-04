@@ -495,86 +495,115 @@
   try {
     console.log(
       "📚 Loading syllabus for selected exams:",
-      currentGoals.map(goal => goal.exam_type)
+      currentGoals.map(goal => ({
+        exam_type: goal.exam_type,
+        exam_year: goal.exam_year
+      }))
     );
 
     const allTopics = [];
     const syllabusVersions = [];
 
-    for (const goal of currentGoals) {
+    const syllabusGoals = currentGoals.filter(goal => {
       const examType = normalizeExamType(goal.exam_type);
 
-      // Only syllabus-bearing entrance exams
-      if (
-        examType !== "neet" &&
-        examType !== "jee_main" &&
-        examType !== "jee_advanced" &&
-        examType !== "jee"
-      ) {
-        continue;
-      }
+      return (
+        examType === "neet" ||
+        examType === "jee_main" ||
+        examType === "jee_advanced" ||
+        examType === "jee"
+      );
+    });
 
-      console.log("📚 Loading syllabus for exam:", goal);
+    if (!syllabusGoals.length) {
+      syllabusSection?.classList.add("hidden");
+      return;
+    }
+
+    for (const goal of syllabusGoals) {
+      const examType = normalizeExamType(goal.exam_type);
+      const examYear = Number(
+        goal.exam_year || TARGET_EXAM_YEAR
+      );
+
+      console.log(
+        `📚 Resolving ${examType.toUpperCase()} ${examYear} syllabus...`
+      );
 
       try {
-        await resolveSyllabusVersion(goal);
+        const resolvedVersion = await resolveSyllabusVersion(goal);
 
-        const examYear = Number(
-          goal.exam_year || TARGET_EXAM_YEAR
-        );
-
-        const {
-          data,
-          error
-        } = await supabaseClient.rpc(
-          "get_student_syllabus_progress",
-          {
-            p_exam_type: examType,
-            p_exam_year: examYear,
-            p_board: null,
-            p_class_level: null
-          }
-        );
-
-        if (error) {
-          console.error(
-            `❌ Failed loading ${examType} syllabus:`,
-            error
-          );
-          continue;
+        if (resolvedVersion) {
+          syllabusVersions.push(resolvedVersion);
         }
 
-        const rows = Array.isArray(data) ? data : [];
+        const PAGE_SIZE = 1000;
+        let from = 0;
 
-        console.log(
-          `✅ ${examType} syllabus topics:`,
-          rows.length
-        );
+        while (true) {
+          console.log(
+            `📚 Loading ${examType} ${examYear} rows ${from} → ${
+              from + PAGE_SIZE - 1
+            }`
+          );
 
-        allTopics.push(...rows);
+          const {
+            data,
+            error
+          } = await supabaseClient
+            .rpc("get_student_syllabus_progress", {
+              p_exam_type: examType,
+              p_exam_year: examYear,
+              p_board: null,
+              p_class_level: null
+            })
+            .range(from, from + PAGE_SIZE - 1);
 
-        if (currentSyllabus) {
-          syllabusVersions.push(currentSyllabus);
+          if (error) {
+            throw error;
+          }
+
+          const rows = Array.isArray(data)
+            ? data
+            : [];
+
+          console.log(
+            `📚 ${examType} batch:`,
+            rows.length
+          );
+
+          allTopics.push(...rows);
+
+          if (rows.length < PAGE_SIZE) {
+            break;
+          }
+
+          from += PAGE_SIZE;
         }
 
       } catch (error) {
         console.error(
-          `❌ Failed resolving ${examType} syllabus:`,
+          `❌ Failed loading ${examType} ${examYear} syllabus:`,
           error
         );
       }
     }
 
     /*
-     * Remove duplicate topics.
+     * ========================================================
+     * REMOVE DUPLICATES SAFELY
+     * ========================================================
      *
-     * This is particularly useful because Physics and Chemistry
-     * can appear for both JEE and NEET.
+     * Use syllabus version + topic ID.
+     *
+     * This prevents collisions when NEET and JEE contain
+     * similarly numbered Physics/Chemistry topics.
      */
+
     const uniqueTopics = Array.from(
       new Map(
         allTopics.map(topic => [
-          `${topic.subject}|${topic.topic_id}`,
+          `${topic.syllabus_version_id || ""}|${topic.topic_id}`,
           topic
         ])
       ).values()
@@ -583,7 +612,7 @@
     currentSyllabusTopics = uniqueTopics;
 
     console.log(
-      "📚 COMBINED SYLLABUS:",
+      "✅ COMBINED SYLLABUS TOPICS:",
       uniqueTopics.length
     );
 
@@ -598,16 +627,36 @@
       ]
     );
 
-    const fallbackSyllabus =
-      syllabusVersions[0] ||
-      {
+    /*
+     * ========================================================
+     * SELECT DISPLAY VERSION
+     * ========================================================
+     *
+     * If multiple exams are selected, the UI represents a
+     * combined syllabus. Don't pretend that one version is
+     * the entire syllabus.
+     */
+
+    let displayVersion;
+
+    if (syllabusVersions.length === 1) {
+      displayVersion = syllabusVersions[0];
+    } else {
+      displayVersion = {
+        syllabus_version_name: "Combined Exam Syllabus",
+        is_official: syllabusVersions.every(
+          version => version?.is_official !== false
+        ),
+        is_current: true
+      };
+    }
+
+    renderSyllabus(
+      displayVersion || {
         syllabus_version_name: "Exam Syllabus",
         is_official: true,
         is_current: true
-      };
-
-    renderSyllabus(
-      fallbackSyllabus,
+      },
       uniqueTopics
     );
 
