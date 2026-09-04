@@ -2102,24 +2102,74 @@ function renderSyllabusSubjects(topics) {
                                 ------------------------------------------------- */
                      
                              if (action === "complete") {
-                     
-                               const topicId =
-                                 Number(topic.topic_id);
-                     
-                     
-                               if (!Number.isFinite(topicId)) {
-                     
-                                 console.error(
-                                   "❌ Invalid syllabus topic ID:",
-                                   topic.topic_id
-                                 );
-                     
-                                 showToast(
-                                   "Unable to complete this topic."
-                                 );
-                     
-                                 return;
-                               }
+                                  if (!selectedSyllabusTopic) {
+                                      return;
+                                  }
+                              
+                                  const topic = selectedSyllabusTopic;
+                              
+                                  if (!topic.topic_id) {
+                                      console.error("❌ Missing syllabus topic ID:", topic);
+                                      alert("Unable to complete this topic.");
+                                      return;
+                                  }
+                              
+                                  try {
+                                      const { data, error } = await supabaseClient.rpc(
+                                          "mark_syllabus_topic_complete",
+                                          {
+                                              p_topic_id: Number(topic.topic_id)
+                                          }
+                                      );
+                              
+                                      if (error) {
+                                          console.error("❌ Failed to mark syllabus topic complete:", error);
+                                          alert("Could not save completion. Please try again.");
+                                          return;
+                                      }
+                              
+                                      console.log("✅ Syllabus topic completed:", data);
+                              
+                                      // Update the local syllabus data immediately
+                                      topic.progress_status = "completed";
+                                      topic.status = "completed";
+                                      topic.completed_at = new Date().toISOString();
+                              
+                                      // Close the action panel
+                                      if (syllabusActionPanel) {
+                                          syllabusActionPanel.classList.add("hidden");
+                                          syllabusActionPanel.setAttribute("aria-hidden", "true");
+                                      }
+                              
+                                      // Remove selected state
+                                      const selectedRows =
+                                          syllabusTopicContainer.querySelectorAll(
+                                              ".syllabus-topic-row.selected"
+                                          );
+                              
+                                      selectedRows.forEach(row => {
+                                          row.classList.remove("selected");
+                                      });
+                              
+                                      selectedSyllabusTopic = null;
+                              
+                                      // Re-render the syllabus so:
+                                      // ✓ topic changes to completed
+                                      // ✓ chapter progress updates
+                                      // ✓ subject progress updates
+                                      // ✓ overall progress updates
+                                      renderSyllabus(
+                                          currentSyllabus,
+                                          currentSyllabusTopics
+                                      );
+                              
+                                  } catch (err) {
+                                      console.error("❌ Syllabus completion error:", err);
+                                      alert("Something went wrong while saving completion.");
+                                  }
+                              
+                                  return;
+                              }
                      
                      
                                /* Prevent double clicking */
