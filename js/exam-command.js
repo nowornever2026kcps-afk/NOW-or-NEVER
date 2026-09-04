@@ -1995,6 +1995,15 @@
     startCountdownTimer();
   }
 
+   
+    /* ---------------------------------------------------------
+       Load syllabus progress
+       --------------------------------------------------------- */
+
+    await loadSyllabusForCurrentGoal();
+
+
+
 
   function createExamCard(
     goal,
