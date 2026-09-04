@@ -1448,8 +1448,21 @@ function renderSyllabusSubjects(topics) {
       /* ---------------------------------------------------------
          Render detailed syllabus
          --------------------------------------------------------- */
+      /* =========================================================
+   SYLLABUS TOPIC ACTION PANEL STATE
+   ========================================================= */
       
+      const syllabusActionPanel =
+        document.getElementById("syllabusTopicActionPanel");
       
+      const syllabusActionTopicName =
+        document.getElementById("syllabusActionTopicName");
+      
+      const syllabusActionClose =
+        document.getElementById("syllabusActionClose");
+      
+      let selectedSyllabusTopic = null;
+            
          /* =========================================================
             RENDER SYLLABUS TOPICS
             ---------------------------------------------------------
