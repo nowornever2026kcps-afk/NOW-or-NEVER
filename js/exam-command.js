@@ -683,6 +683,37 @@
       --------------------------------------------------------- */
    
    async function loadSyllabusProgress(goal) {
+
+
+      console.log("========== SYLLABUS DEBUG ==========");
+
+      const debugResult = await supabaseClient.rpc(
+        "get_student_syllabus_progress",
+        {
+          p_exam_type: "neet",
+          p_exam_year: 2027,
+          p_board: null,
+          p_class_level: null
+        }
+      );
+      
+      console.log("RPC ERROR:", debugResult.error);
+      console.log("RPC TOTAL ROWS:", debugResult.data?.length);
+      
+      console.log(
+        "RPC SUBJECTS:",
+        [
+          ...new Set(
+            (debugResult.data || []).map(
+              row => row.subject
+            )
+          )
+        ]
+      );
+      
+      console.table(debugResult.data);
+      
+      console.log("========== END SYLLABUS DEBUG ==========");
    
      const syllabus =
        await resolveSyllabusVersion(goal);
