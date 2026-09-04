@@ -1,41 +1,24 @@
 /* =========================================================
    NOW-or-NEVER — EXAM COMMAND CENTER
-   ---------------------------------------------------------
-   Responsibilities:
-   - Supabase authentication/session handling
-   - Exam goal setup and persistence
-   - Exam-date database loading
-   - Optional live exam-date research
-   - Countdown rendering
-   - Syllabus resolution and progress
-   - Biology / Physics / Chemistry tabs
-   - Chapter expand/collapse
-   - Topic selection and completion
+   Restored feature-rich implementation.
+   Syntax-safe single-scope implementation.
    ========================================================= */
 
 (() => {
   "use strict";
 
   /* =========================================================
-     CONFIGURATION
+     SUPABASE / CONFIG
      ========================================================= */
 
   const SUPABASE_URL = "https://kvbbgvfrllptqpbkixnv.supabase.co";
   const SUPABASE_KEY = "sb_publishable_YaS6ZJfi4VrAbtGymRBr6w_ocpvX0I-";
   const EXAM_RESEARCH_FUNCTION = "exam-research-ts";
+  const TARGET_EXAM_YEAR = new Date().getMonth() >= 6
+    ? new Date().getFullYear() + 1
+    : new Date().getFullYear();
 
-  // In the second half of the calendar year, the active target is next year.
-  const now = new Date();
-  const TARGET_EXAM_YEAR = now.getMonth() >= 6
-    ? now.getFullYear() + 1
-    : now.getFullYear();
-
-  if (!window.supabase || typeof window.supabase.createClient !== "function") {
-    console.error("Exam Command Center: Supabase library is not loaded.");
-    return;
-  }
-
-  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
@@ -43,29 +26,27 @@
     }
   });
 
-  // Useful from the browser console when debugging this page.
-  window.debugSupabaseClient = db;
+  window.debugSupabaseClient = supabaseClient;
 
   /* =========================================================
      STATE
      ========================================================= */
 
-  let session = null;
-  let user = null;
-  let goals = [];
+  let currentSession = null;
+  let currentUser = null;
+  let currentGoals = [];
   let examDates = [];
-  let syllabus = null;
-  let syllabusTopics = [];
-  let selectedTopic = null;
-  let activeSubject = "Biology";
   let countdownTimer = null;
-  let syllabusActionBound = false;
+
+  let currentSyllabus = null;
+  let currentSyllabusTopics = [];
+  let selectedSyllabusTopic = null;
 
   // Prevent repeated automatic research during one page session.
-  const researchedThisSession = new Set();
+  const autoResearchAttempted = new Set();
 
   /* =========================================================
-     DOM HELPERS
+     DOM
      ========================================================= */
 
   const $ = id => document.getElementById(id);
@@ -75,7 +56,7 @@
   const goalCount = $("goalCount");
   const emptyState = $("emptyState");
   const emptySetupBtn = $("emptySetupBtn");
-  const dashboard = $("dashboardSection");
+  const dashboardSection = $("dashboardSection");
   const manageGoalsBtn = $("manageGoalsBtn");
   const examGrid = $("examGrid");
   const statusBanner = $("statusBanner");
@@ -87,6 +68,7 @@
   const boardSelect = $("boardSelect");
   const classSelect = $("classSelect");
   const toast = $("toast");
+
   const syllabusSection = $("syllabusSection");
   const syllabusVersionName = $("syllabusVersionName");
   const syllabusFallbackNotice = $("syllabusFallbackNotice");
@@ -95,15 +77,15 @@
   const syllabusProgressFill = $("syllabusProgressFill");
   const syllabusSubjectGrid = $("syllabusSubjectGrid");
   const syllabusTopicContainer = $("syllabusTopicContainer");
-  const actionPanel = $("syllabusTopicActionPanel");
-  const actionTopicName = $("syllabusActionTopicName");
-  const actionClose = $("syllabusActionClose");
+  const syllabusActionPanel = $("syllabusTopicActionPanel");
+  const syllabusActionTopicName = $("syllabusActionTopicName");
+  const syllabusActionClose = $("syllabusActionClose");
 
   /* =========================================================
-     GENERIC HELPERS
+     HELPERS
      ========================================================= */
 
-  function esc(value) {
+  function escapeHTML(value) {
     return String(value ?? "")
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
@@ -112,12 +94,12 @@
       .replaceAll("'", "&#039;");
   }
 
-  function typeOf(value) {
-    return String(value ?? "").trim().toLowerCase();
+  function normalizeExamType(value) {
+    return String(value || "").trim().toLowerCase();
   }
 
-  function apiType(value) {
-    const type = typeOf(value);
+  function apiExamType(value) {
+    const type = normalizeExamType(value);
     const map = {
       neet: "NEET",
       jee_main: "JEE_MAIN",
@@ -127,30 +109,60 @@
     return map[type] || type.toUpperCase();
   }
 
-  function labelFor(value) {
+  function getExamLabel(value) {
+    const type = normalizeExamType(value);
     const map = {
       neet: "NEET",
       jee_main: "JEE Main",
       jee_advanced: "JEE Advanced",
       board: "Board Examination"
     };
-    return map[typeOf(value)] || String(value || "Exam");
+    return map[type] || value || "Exam";
   }
 
-  function iconFor(value) {
+  function getExamIcon(value) {
+    const type = normalizeExamType(value);
     const map = {
       neet: "🩺",
       jee_main: "⚡",
       jee_advanced: "🚀",
       board: "📚"
     };
-    return map[typeOf(value)] || "🎯";
+    return map[type] || "🎯";
   }
 
-  function showStatus(message, kind = "info") {
+  function formatDate(value) {
+    if (!value) return "Not officially announced";
+    const date = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return "Date unavailable";
+    return date.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+  }
+
+  function calculateCountdown(value) {
+    if (!value) return null;
+    const target = new Date(`${value}T23:59:59`).getTime();
+    const difference = target - Date.now();
+    if (difference <= 0) {
+      return { days: 0, hours: 0, minutes: 0, seconds: 0, passed: true };
+    }
+    const seconds = Math.floor(difference / 1000);
+    return {
+      days: Math.floor(seconds / 86400),
+      hours: Math.floor((seconds % 86400) / 3600),
+      minutes: Math.floor((seconds % 3600) / 60),
+      seconds: seconds % 60,
+      passed: false
+    };
+  }
+
+  function showStatus(message, type = "info") {
     if (!statusBanner) return;
     statusBanner.textContent = message;
-    statusBanner.className = `status-banner ${kind}`;
+    statusBanner.className = `status-banner ${type}`;
     statusBanner.classList.remove("hidden");
   }
 
@@ -163,117 +175,100 @@
     toast.textContent = message;
     toast.classList.add("show");
     clearTimeout(showToast.timer);
-    showToast.timer = setTimeout(() => {
-      toast.classList.remove("show");
-    }, 3000);
+    showToast.timer = setTimeout(() => toast.classList.remove("show"), 3000);
   }
 
-  function loading(button, busy, text) {
+  function setButtonLoading(button, loading, text) {
     if (!button) return;
-
-    if (busy) {
-      if (!button.dataset.originalText) {
-        button.dataset.originalText = button.textContent;
-      }
+    if (loading) {
+      button.dataset.originalText = button.textContent;
       button.disabled = true;
       if (text) button.textContent = text;
-      return;
-    }
-
-    button.disabled = false;
-    if (button.dataset.originalText) {
-      button.textContent = button.dataset.originalText;
-      delete button.dataset.originalText;
+    } else {
+      button.disabled = false;
+      if (button.dataset.originalText) {
+        button.textContent = button.dataset.originalText;
+      }
     }
   }
 
-  function formatDate(value) {
-    if (!value) return "Not officially announced";
-
-    const date = new Date(`${value}T00:00:00`);
-    if (Number.isNaN(date.getTime())) return "Date unavailable";
-
-    return date.toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    });
+  function subjectName(value) {
+    const subject = String(value || "").trim().toLowerCase();
+    if (subject === "biology") return "Biology";
+    if (subject === "physics") return "Physics";
+    if (subject === "chemistry") return "Chemistry";
+    return String(value || "").trim();
   }
 
-  function getCountdown(value) {
-    if (!value) return null;
-
-    const target = new Date(`${value}T23:59:59`).getTime();
-    if (Number.isNaN(target)) return null;
-
-    const diff = target - Date.now();
-    if (diff <= 0) {
-      return {
-        days: 0,
-        hours: 0,
-        minutes: 0,
-        seconds: 0,
-        passed: true
-      };
+  function getSyllabusStatusLabel(status) {
+    switch (normalizeExamType(status)) {
+      case "completed": return "✅ Completed";
+      case "studied": return "📖 Studied";
+      default: return "○ Not started";
     }
-
-    const seconds = Math.floor(diff / 1000);
-
-    return {
-      days: Math.floor(seconds / 86400),
-      hours: Math.floor((seconds % 86400) / 3600),
-      minutes: Math.floor((seconds % 3600) / 60),
-      seconds: seconds % 60,
-      passed: false
-    };
   }
 
   /* =========================================================
-     AUTHENTICATION
+     AUTH
      ========================================================= */
 
   async function loadSession() {
-    const { data, error } = await db.auth.getSession();
+    const { data, error } = await supabaseClient.auth.getSession();
     if (error) throw error;
-
-    session = data?.session || null;
-    user = session?.user || null;
-    return session;
+    currentSession = data.session;
+    currentUser = currentSession?.user || null;
+    return currentSession;
   }
 
   async function requireAuth() {
     await loadSession();
 
-    if (!user) {
+    if (!currentSession || !currentUser) {
       if (userLabel) userLabel.textContent = "Not signed in";
-      dashboard?.classList.add("hidden");
       emptyState?.classList.add("hidden");
+      dashboardSection?.classList.add("hidden");
       syllabusSection?.classList.add("hidden");
-      showStatus(
-        "Please sign in to NOW-or-NEVER before using the Exam Command Center.",
-        "error"
-      );
+      showStatus("Please sign in to NOW-or-NEVER before using the Exam Command Center.", "error");
       return false;
     }
 
-    const name =
-      user.user_metadata?.full_name ||
-      user.user_metadata?.name ||
-      user.email?.split("@")[0] ||
-      "Student";
+    const displayName = currentUser.user_metadata?.full_name
+      || currentUser.user_metadata?.name
+      || currentUser.email?.split("@")[0]
+      || "Student";
 
-    if (userLabel) userLabel.textContent = `👤 ${name}`;
+    if (userLabel) userLabel.textContent = `👤 ${displayName}`;
     return true;
   }
 
   /* =========================================================
-     EXAM GOAL MODAL
+     GOAL MODAL
      ========================================================= */
+
+  function syncBoardFields() {
+    if (!boardFields) return;
+    const boardCheckbox = document.querySelector('input[name="examGoal"][value="board"]');
+    boardFields.classList.toggle("hidden", !boardCheckbox?.checked);
+  }
+
+  function restoreGoalCheckboxes() {
+    document.querySelectorAll('input[name="examGoal"]').forEach(input => {
+      input.checked = currentGoals.some(goal =>
+        normalizeExamType(goal.exam_type) === normalizeExamType(input.value)
+      );
+    });
+
+    const boardGoal = currentGoals.find(goal => normalizeExamType(goal.exam_type) === "board");
+    if (boardGoal) {
+      if (boardSelect && boardGoal.board) boardSelect.value = boardGoal.board;
+      if (classSelect && boardGoal.class_level) classSelect.value = boardGoal.class_level;
+    }
+    syncBoardFields();
+  }
 
   function openModal() {
     if (!setupModal) return;
-
-    restoreCheckboxes();
+    restoreGoalCheckboxes();
     setupModal.classList.remove("hidden");
     setupModal.setAttribute("aria-hidden", "false");
     syncBoardFields();
@@ -281,155 +276,82 @@
 
   function closeModal() {
     if (!setupModal) return;
-
     setupModal.classList.add("hidden");
     setupModal.setAttribute("aria-hidden", "true");
   }
 
-  function syncBoardFields() {
-    const boardInput = document.querySelector(
-      'input[name="examGoal"][value="board"]'
-    );
-
-    boardFields?.classList.toggle("hidden", !boardInput?.checked);
-  }
-
-  function restoreCheckboxes() {
-    document.querySelectorAll('input[name="examGoal"]').forEach(input => {
-      input.checked = goals.some(
-        goal => typeOf(goal.exam_type) === typeOf(input.value)
-      );
-    });
-
-    const boardGoal = goals.find(
-      goal => typeOf(goal.exam_type) === "board"
-    );
-
-    if (boardGoal) {
-      if (boardSelect && boardGoal.board) {
-        boardSelect.value = boardGoal.board;
-      }
-      if (classSelect && boardGoal.class_level) {
-        classSelect.value = boardGoal.class_level;
-      }
-    }
-
-    syncBoardFields();
-  }
+  /* =========================================================
+     GOALS
+     ========================================================= */
 
   async function loadGoals() {
-    if (!user) return [];
+    if (!currentUser) return [];
 
-    const { data, error } = await db
+    const { data, error } = await supabaseClient
       .from("student_exam_preferences")
-      .select(
-        "id,student_id,exam_type,board,class_level,exam_year,enabled,created_at,updated_at"
-      )
-      .eq("student_id", user.id)
+      .select("id,student_id,exam_type,board,class_level,exam_year,enabled,created_at,updated_at")
+      .eq("student_id", currentUser.id)
       .eq("enabled", true)
       .order("created_at", { ascending: true });
 
     if (error) throw error;
-
-    goals = data || [];
-    return goals;
+    currentGoals = data || [];
+    return currentGoals;
   }
 
   async function saveGoals() {
-    if (!user) throw new Error("You are not signed in.");
+    if (!currentUser) throw new Error("You are not signed in.");
 
-    const selected = [
-      ...document.querySelectorAll('input[name="examGoal"]:checked')
-    ].map(input => typeOf(input.value));
+    const selected = [...document.querySelectorAll('input[name="examGoal"]:checked')]
+      .map(input => normalizeExamType(input.value));
 
-    if (!selected.length) {
-      throw new Error("Select at least one exam.");
+    if (!selected.length) throw new Error("Select at least one exam.");
+
+    const boardSelected = selected.includes("board");
+    const board = boardSelected ? boardSelect?.value || null : null;
+    const classLevel = boardSelected ? classSelect?.value || null : null;
+    const examYear = TARGET_EXAM_YEAR;
+
+    if (boardSelected && (!board || !classLevel)) {
+      throw new Error("Select both your board and class level.");
     }
 
-    if (selected.includes("board")) {
-      if (!boardSelect?.value) {
-        throw new Error("Please choose your board.");
-      }
-      if (!classSelect?.value) {
-        throw new Error("Please choose your class.");
-      }
-    }
-
-    const board = selected.includes("board")
-      ? boardSelect?.value || null
-      : null;
-
-    const classLevel = selected.includes("board")
-      ? classSelect?.value || null
-      : null;
-
-    const year = TARGET_EXAM_YEAR;
-    const timestamp = new Date().toISOString();
-
-    const { data: existing, error: existingError } = await db
+    const { data: existing, error: existingError } = await supabaseClient
       .from("student_exam_preferences")
       .select("*")
-      .eq("student_id", user.id);
+      .eq("student_id", currentUser.id);
 
     if (existingError) throw existingError;
 
-    // Disable the previous active set first. Existing rows are reused when
-    // possible so historical preference records are not unnecessarily cloned.
-    const { error: disableError } = await db
-      .from("student_exam_preferences")
-      .update({
-        enabled: false,
-        updated_at: timestamp
-      })
-      .eq("student_id", user.id)
-      .eq("enabled", true);
+    if (existing?.length) {
+      const { error } = await supabaseClient
+        .from("student_exam_preferences")
+        .update({ enabled: false, updated_at: new Date().toISOString() })
+        .eq("student_id", currentUser.id);
+      if (error) throw error;
+    }
 
-    if (disableError) throw disableError;
+    for (const examType of selected) {
+      const old = (existing || []).find(goal =>
+        normalizeExamType(goal.exam_type) === examType
+        && Number(goal.exam_year) === Number(examYear)
+      );
 
-    try {
-      for (const examType of selected) {
-        const old = (existing || []).find(goal =>
-          typeOf(goal.exam_type) === examType &&
-          Number(goal.exam_year) === year
-        );
+      const payload = {
+        student_id: currentUser.id,
+        exam_type: examType,
+        board: examType === "board" ? board : null,
+        class_level: examType === "board" ? classLevel : null,
+        exam_year: examYear,
+        enabled: true,
+        updated_at: new Date().toISOString()
+      };
 
-        const payload = {
-          student_id: user.id,
-          exam_type: examType,
-          board: examType === "board" ? board : null,
-          class_level: examType === "board" ? classLevel : null,
-          exam_year: year,
-          enabled: true,
-          updated_at: timestamp
-        };
+      const result = old
+        ? await supabaseClient.from("student_exam_preferences").update(payload).eq("id", old.id)
+        : await supabaseClient.from("student_exam_preferences").insert(payload);
 
-        const result = old
-          ? await db
-              .from("student_exam_preferences")
-              .update(payload)
-              .eq("id", old.id)
-          : await db
-              .from("student_exam_preferences")
-              .insert(payload);
-
-        if (result.error) throw result.error;
-      }
-    } catch (error) {
-      // Do not silently leave the user with no active goals if a later insert
-      // fails. Restore the previous active set where possible.
-      const previousActive = (existing || []).filter(goal => goal.enabled === true);
-
-      for (const previous of previousActive) {
-        await db
-          .from("student_exam_preferences")
-          .update({
-            enabled: true,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", previous.id);
-      }
-
-      throw error;
+      if (result.error) throw result.error;
     }
 
     await loadGoals();
@@ -439,123 +361,124 @@
   }
 
   /* =========================================================
-     EXAM DATE DATABASE / RESEARCH
+     EXAM DATES
      ========================================================= */
 
   async function loadExamDates() {
-    if (!goals.length) {
+    if (!currentGoals.length) {
       examDates = [];
-      return [];
+      return examDates;
     }
 
-    const years = [
-      ...new Set(goals.map(goal => Number(goal.exam_year)))
-    ];
+    const years = [...new Set(currentGoals.map(goal => Number(goal.exam_year)))];
 
-    const { data, error } = await db
+    const { data, error } = await supabaseClient
       .from("exam_dates")
-      .select(
-        "id,exam_type,board,class_level,exam_year,exam_name,exam_date,status,source,source_url,verified_at,confidence,notes"
-      )
+      .select("id,exam_type,board,class_level,exam_year,exam_name,exam_date,status,source,source_url,verified_at,confidence,notes")
       .in("exam_year", years);
 
     if (error) {
-      console.error("Exam dates query failed:", error);
+      console.error("Failed to load exam dates:", error);
       examDates = [];
-      return [];
+      return examDates;
     }
 
     examDates = data || [];
+    console.log("🔥 EXAM DATES FRONTEND QUERY:", { data: examDates, count: examDates.length });
     return examDates;
   }
 
-  function findExamDate(goal) {
-    return examDates.find(row => {
-      if (typeOf(row.exam_type) !== typeOf(goal.exam_type)) return false;
+  function findExamDate(goal, rows = examDates) {
+    const goalType = normalizeExamType(goal.exam_type);
+
+    return rows.find(row => {
+      if (normalizeExamType(row.exam_type) !== goalType) return false;
       if (Number(row.exam_year) !== Number(goal.exam_year)) return false;
 
-      if (typeOf(goal.exam_type) !== "board") return true;
+      if (goalType === "board") {
+        return String(row.board || "").toLowerCase() === String(goal.board || "").toLowerCase()
+          && String(row.class_level || "") === String(goal.class_level || "");
+      }
 
-      return (
-        String(row.board || "").toLowerCase() ===
-          String(goal.board || "").toLowerCase() &&
-        String(row.class_level || "") === String(goal.class_level || "")
-      );
+      return true;
     }) || null;
   }
 
-  function needsResearch(row) {
-    if (!row) return true;
-    if (typeOf(row.status) === "official") return false;
+  function shouldRefreshExamDate(examDate) {
+    if (!examDate) return true;
+    if (normalizeExamType(examDate.status) === "official") return false;
 
-    const verified = row.verified_at
-      ? new Date(row.verified_at)
-      : null;
+    const verifiedAt = examDate.verified_at ? new Date(examDate.verified_at) : null;
+    if (!verifiedAt || Number.isNaN(verifiedAt.getTime())) return true;
 
-    if (!verified || Number.isNaN(verified.getTime())) return true;
-
-    const ageDays = (Date.now() - verified.getTime()) / 86400000;
-
-    if (typeOf(row.status) === "tentative") return ageDays >= 7;
-    if (typeOf(row.status) === "unavailable") return ageDays >= 3;
-
+    const ageDays = (Date.now() - verifiedAt.getTime()) / 86400000;
+    if (normalizeExamType(examDate.status) === "tentative") return ageDays >= 7;
+    if (normalizeExamType(examDate.status) === "unavailable") return ageDays >= 3;
     return false;
   }
 
+  /* =========================================================
+     AI EXAM RESEARCH
+     ========================================================= */
+
   async function researchExam(goal) {
-    if (!session) await loadSession();
+    if (!currentSession) await loadSession();
+    if (!currentSession?.access_token) throw new Error("No active Supabase access token found.");
 
-    if (!session?.access_token) {
-      throw new Error("No active Supabase session.");
-    }
-
-    const body = {
-      exam_type: apiType(goal.exam_type),
+    const payload = {
+      exam_type: apiExamType(goal.exam_type),
       exam_year: Number(goal.exam_year),
-      board: typeOf(goal.exam_type) === "board"
-        ? goal.board || null
-        : null,
-      class_level: typeOf(goal.exam_type) === "board"
-        ? goal.class_level || null
-        : null,
+      board: normalizeExamType(goal.exam_type) === "board" ? goal.board || null : null,
+      class_level: normalizeExamType(goal.exam_type) === "board" ? goal.class_level || null : null,
       force_refresh: true
     };
 
-    console.log("Exam research request:", body);
+    console.log("Exam research request:", payload);
 
-    const { data, error } = await db.functions.invoke(
-      EXAM_RESEARCH_FUNCTION,
-      { body }
-    );
+    const { data, error } = await supabaseClient.functions.invoke(EXAM_RESEARCH_FUNCTION, {
+      body: payload
+    });
 
-    if (error) throw error;
-
-    if (!data || data.ok === false) {
-      throw new Error(data?.error || "Exam research failed.");
+    if (error) {
+      console.error("Exam research Edge Function error:", error);
+      try {
+        if (error.context) {
+          const body = await error.context.json();
+          console.error("🔥 EDGE FUNCTION RESPONSE BODY:", body);
+        }
+      } catch (parseError) {
+        console.error("Could not read Edge Function response body:", parseError);
+      }
+      throw error;
     }
 
+    if (!data) throw new Error("Exam research returned no data.");
+    if (data.ok === false) throw new Error(data.error || "Exam research failed.");
+
+    console.log("🔥 RESEARCH RESULT:", data.research);
+    console.log("🔥 SAVED DATABASE RESULT:", data.saved);
     return data;
   }
 
-  async function researchMissing() {
-    for (const goal of goals) {
-      const row = findExamDate(goal);
+  async function researchMissingExamGoals(rows) {
+    for (const goal of currentGoals) {
+      const existingDate = findExamDate(goal, rows);
+      if (existingDate && !shouldRefreshExamDate(existingDate)) continue;
 
-      if (!needsResearch(row)) continue;
-
-      const key = typeOf(goal.exam_type) === "board"
+      const researchKey = normalizeExamType(goal.exam_type) === "board"
         ? `board|${goal.board || ""}|${goal.class_level || ""}|${goal.exam_year}`
-        : `${typeOf(goal.exam_type)}|${goal.exam_year}`;
+        : `${normalizeExamType(goal.exam_type)}|${goal.exam_year}`;
 
-      if (researchedThisSession.has(key)) continue;
-      researchedThisSession.add(key);
+      if (autoResearchAttempted.has(researchKey)) continue;
+      autoResearchAttempted.add(researchKey);
 
       try {
+        console.log(existingDate
+          ? "♻️ Refreshing stale exam date:"
+          : "🔎 Researching missing exam date:", goal);
         await researchExam(goal);
       } catch (error) {
-        // Research failure must not destroy the dashboard. The database result
-        // that we already have remains visible to the student.
-        console.error("Automatic exam research failed:", goal, error);
+        console.error("❌ Automatic exam research failed:", goal, error);
       }
     }
   }
@@ -564,72 +487,62 @@
      EXAM CARDS / COUNTDOWN
      ========================================================= */
 
-  function renderExamCard(goal, row) {
+  function createExamCard(goal, examDate) {
     const card = document.createElement("article");
     card.className = "exam-card";
 
-    const type = typeOf(goal.exam_type);
-    const hasDate = Boolean(row?.exam_date);
-    const confidence = typeof row?.confidence === "number"
-      ? Math.round(row.confidence)
-      : null;
+    const type = normalizeExamType(goal.exam_type);
+    const label = getExamLabel(goal.exam_type);
+    const icon = getExamIcon(goal.exam_type);
+    const hasDate = Boolean(examDate?.exam_date);
+    const status = normalizeExamType(examDate?.status || "unavailable");
+    const confidence = typeof examDate?.confidence === "number" ? examDate.confidence : null;
 
-    const meta = type === "board"
-      ? `<span>${esc(goal.board || "")}</span><span>Class ${esc(goal.class_level || "")}</span>`
-      : `<span>${esc(goal.exam_year)}</span>`;
-
-    const status = typeOf(row?.status) === "official"
-      ? "🟢 Official"
-      : typeOf(row?.status) === "tentative"
-        ? "🟡 Tentative"
-        : "⚪ Unavailable";
+    const extraInfo = type === "board"
+      ? `<span>${escapeHTML(goal.board || "")}</span><span>Class ${escapeHTML(goal.class_level || "")}</span>`
+      : `<span>${escapeHTML(goal.exam_year)}</span>`;
 
     card.innerHTML = `
       <div class="exam-card-top">
-        <div class="exam-icon">${iconFor(goal.exam_type)}</div>
+        <div class="exam-icon">${icon}</div>
         <div class="exam-title">
-          <span class="exam-type">${esc(labelFor(goal.exam_type))}</span>
-          <h3>${esc(row?.exam_name || `${labelFor(goal.exam_type)} ${goal.exam_year}`)}</h3>
-          <div class="exam-meta">${meta}</div>
+          <span class="exam-type">${escapeHTML(label)}</span>
+          <h3>${escapeHTML(examDate?.exam_name || `${label} ${goal.exam_year}`)}</h3>
+          <div class="exam-meta">${extraInfo}</div>
         </div>
       </div>
 
       <div class="exam-date-area">
         ${hasDate
-          ? `
-            <div class="date-label">EXAM DATE</div>
-            <div class="exam-date">${esc(formatDate(row.exam_date))}</div>
-            <div class="countdown" data-countdown-date="${esc(row.exam_date)}">Calculating…</div>
-          `
-          : `
-            <div class="date-unavailable">
-              <strong>Not officially announced</strong>
-              <span>The command center will update when a usable date is available.</span>
-            </div>
-          `}
+          ? `<div class="date-label">EXAM DATE</div>
+             <div class="exam-date">${escapeHTML(formatDate(examDate.exam_date))}</div>
+             <div class="countdown" data-countdown-date="${escapeHTML(examDate.exam_date)}">Calculating…</div>`
+          : `<div class="date-unavailable">
+               <strong>Not officially announced</strong>
+               <span>The command center will update when a usable date is available.</span>
+             </div>`}
       </div>
 
       <div class="exam-card-footer">
-        <div class="research-status">${status}</div>
-        ${confidence !== null ? `<div class="confidence">Confidence: ${confidence}%</div>` : ""}
-        ${row?.source_url
-          ? `<a class="source-link" href="${esc(row.source_url)}" target="_blank" rel="noopener noreferrer">Source ↗</a>`
+        <div class="research-status">
+          ${status === "official" ? "🟢 Official" : status === "tentative" ? "🟡 Tentative" : "⚪ Unavailable"}
+        </div>
+        ${confidence !== null ? `<div class="confidence">Confidence: ${Math.round(confidence)}%</div>` : ""}
+        ${examDate?.source_url
+          ? `<a class="source-link" href="${escapeHTML(examDate.source_url)}" target="_blank" rel="noopener noreferrer">Source ↗</a>`
           : ""}
-      </div>
-    `;
+      </div>`;
 
     return card;
   }
 
   function updateCountdowns() {
     document.querySelectorAll("[data-countdown-date]").forEach(element => {
-      const countdown = getCountdown(element.dataset.countdownDate);
-
+      const countdown = calculateCountdown(element.dataset.countdownDate);
       if (!countdown) {
         element.textContent = "Countdown unavailable";
         return;
       }
-
       if (countdown.passed) {
         element.textContent = "Exam date has passed";
         return;
@@ -639,145 +552,152 @@
         <span>${countdown.days}<small>days</small></span>
         <span>${String(countdown.hours).padStart(2, "0")}<small>hrs</small></span>
         <span>${String(countdown.minutes).padStart(2, "0")}<small>min</small></span>
-        <span>${String(countdown.seconds).padStart(2, "0")}<small>sec</small></span>
-      `;
+        <span>${String(countdown.seconds).padStart(2, "0")}<small>sec</small></span>`;
     });
   }
 
-  function startCountdown() {
+  function startCountdownTimer() {
     clearInterval(countdownTimer);
     updateCountdowns();
     countdownTimer = setInterval(updateCountdowns, 1000);
   }
 
   /* =========================================================
-     SYLLABUS
+     SYLLABUS RESOLUTION / PAGINATED LOADING
      ========================================================= */
 
-  async function resolveSyllabus(goal) {
-    const { data, error } = await db.rpc(
-      "resolve_student_syllabus_version",
-      {
-        p_exam_type: typeOf(goal.exam_type),
-        p_exam_year: Number(goal.exam_year),
-        p_board: typeOf(goal.exam_type) === "board"
-          ? goal.board || null
-          : null,
-        p_class_level: typeOf(goal.exam_type) === "board"
-          ? goal.class_level || null
-          : null
-      }
-    );
+  async function resolveSyllabusVersion(goal) {
+    if (!currentUser) throw new Error("No authenticated student found.");
+
+    const { data, error } = await supabaseClient.rpc("resolve_student_syllabus_version", {
+      p_exam_type: normalizeExamType(goal.exam_type),
+      p_exam_year: Number(goal.exam_year),
+      p_board: normalizeExamType(goal.exam_type) === "board" ? goal.board || null : null,
+      p_class_level: normalizeExamType(goal.exam_type) === "board" ? goal.class_level || null : null
+    });
 
     if (error) throw error;
+    if (!data || !data.length) throw new Error("No syllabus is available for this exam yet.");
 
-    syllabus = Array.isArray(data) ? data[0] : data;
-
-    if (!syllabus) {
-      throw new Error("No syllabus is available for this exam yet.");
-    }
-
-    return syllabus;
+    currentSyllabus = data[0];
+    return currentSyllabus;
   }
 
-  async function loadSyllabus(goal) {
-    if (!goal || !user) return;
-
+  async function loadSyllabusProgress(goal) {
     try {
-      await resolveSyllabus(goal);
+      console.log("📚 Loading syllabus for:", goal);
+      await resolveSyllabusVersion(goal);
 
-      const { data, error } = await db.rpc(
-        "get_student_syllabus_progress",
-        {
-          p_exam_type: typeOf(goal.exam_type),
-          p_exam_year: Number(goal.exam_year),
-          p_board: typeOf(goal.exam_type) === "board"
-            ? goal.board || null
-            : null,
-          p_class_level: typeOf(goal.exam_type) === "board"
-            ? goal.class_level || null
-            : null
-        }
+      const examType = normalizeExamType(goal.exam_type);
+      const examYear = Number(goal.exam_year || TARGET_EXAM_YEAR);
+      const board = examType === "board" ? goal.board || null : null;
+      const classLevel = examType === "board" ? goal.class_level || null : null;
+
+      const PAGE_SIZE = 1000;
+      let from = 0;
+      const allRows = [];
+
+      while (true) {
+        console.log(`📚 Loading syllabus rows ${from} → ${from + PAGE_SIZE - 1}`);
+
+        const { data, error } = await supabaseClient
+          .rpc("get_student_syllabus_progress", {
+            p_exam_type: examType,
+            p_exam_year: examYear,
+            p_board: board,
+            p_class_level: classLevel
+          })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (error) throw error;
+
+        const rows = Array.isArray(data) ? data : [];
+        allRows.push(...rows);
+
+        if (rows.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+
+      currentSyllabusTopics = Array.from(
+        new Map(allRows.map(row => [row.topic_id, row])).values()
       );
 
-      if (error) throw error;
+      console.log("✅ TOTAL SYLLABUS TOPICS:", currentSyllabusTopics.length);
+      console.log("📚 SUBJECTS:", [...new Set(currentSyllabusTopics.map(row => row.subject))]);
 
-      syllabusTopics = Array.isArray(data) ? data : [];
-      selectedTopic = null;
-      activeSubject = "Biology";
-      renderSyllabus();
+      renderSyllabus(
+        currentSyllabus || {
+          syllabus_version_name: `NEET UG ${examYear}`,
+          is_official: true,
+          is_current: true
+        },
+        currentSyllabusTopics
+      );
     } catch (error) {
-      console.error("Syllabus load failed:", error);
-      syllabus = null;
-      syllabusTopics = [];
-      selectedTopic = null;
-      syllabusSection?.classList.add("hidden");
+      console.error("❌ Failed to load syllabus:", error);
+      if (syllabusTopicContainer) {
+        syllabusTopicContainer.innerHTML = `
+          <div class="syllabus-empty-subject">
+            <div class="syllabus-empty-icon">⚠️</div>
+            <strong>Unable to load syllabus</strong>
+            <span>Please refresh the page and try again.</span>
+          </div>`;
+      }
     }
   }
 
-  function subjectName(value) {
-    const subject = typeOf(value);
-
-    if (subject === "biology") return "Biology";
-    if (subject === "physics") return "Physics";
-    if (subject === "chemistry") return "Chemistry";
-
-    return String(value || "").trim();
+  async function loadSyllabusForCurrentGoal() {
+    if (!currentUser || !currentGoals.length) {
+      syllabusSection?.classList.add("hidden");
+      return;
+    }
+    await loadSyllabusProgress(currentGoals[0]);
   }
 
-  function isTrackableTopic(topic) {
-    return ["topic", "subtopic"].includes(typeOf(topic?.topic_type));
-  }
+  /* =========================================================
+     SYLLABUS RENDERING
+     ========================================================= */
 
-  function isCompleted(topic) {
-    return typeOf(topic?.progress_status || topic?.status) === "completed";
-  }
-
-  function renderSyllabus() {
+  function renderSyllabus(syllabus, topics) {
     if (!syllabusSection) return;
+
+    currentSyllabus = syllabus || {
+      syllabus_version_name: "Syllabus",
+      is_official: false,
+      is_current: false
+    };
+    currentSyllabusTopics = Array.isArray(topics) ? topics : [];
 
     syllabusSection.classList.remove("hidden");
 
     if (syllabusVersionName) {
-      syllabusVersionName.textContent =
-        syllabus?.syllabus_version_name || "Syllabus";
+      syllabusVersionName.textContent = currentSyllabus.syllabus_version_name || "Syllabus";
     }
 
     if (syllabusFallbackNotice) {
-      const fallback = Boolean(
-        syllabus?.is_fallback && syllabus?.fallback_notice
-      );
-
-      syllabusFallbackNotice.textContent = fallback
-        ? syllabus.fallback_notice
-        : "";
-
-      syllabusFallbackNotice.classList.toggle("hidden", !fallback);
+      const showFallback = currentSyllabus.is_fallback && currentSyllabus.fallback_notice;
+      syllabusFallbackNotice.textContent = showFallback ? currentSyllabus.fallback_notice : "";
+      syllabusFallbackNotice.classList.toggle("hidden", !showFallback);
     }
 
-    const trackable = syllabusTopics.filter(isTrackableTopic);
-    const completed = trackable.filter(isCompleted).length;
-    const percent = trackable.length
-      ? Math.round((completed * 100) / trackable.length)
+    const trackable = currentSyllabusTopics.filter(topic =>
+      topic.topic_type === "topic" || topic.topic_type === "subtopic"
+    );
+    const completed = trackable.filter(topic =>
+      normalizeExamType(topic.progress_status) === "completed"
+    ).length;
+    const percentage = trackable.length
+      ? Math.round(completed * 100 / trackable.length)
       : 0;
 
-    if (syllabusProgressPercent) {
-      syllabusProgressPercent.textContent = `${percent}%`;
-    }
+    if (syllabusProgressPercent) syllabusProgressPercent.textContent = `${percentage}%`;
+    if (syllabusProgressCount) syllabusProgressCount.textContent = `${completed} / ${trackable.length} topics completed`;
+    if (syllabusProgressFill) syllabusProgressFill.style.width = `${percentage}%`;
 
-    if (syllabusProgressCount) {
-      syllabusProgressCount.textContent =
-        `${completed} / ${trackable.length} topics completed`;
-    }
-
-    if (syllabusProgressFill) {
-      syllabusProgressFill.style.width = `${percent}%`;
-    }
-
-    renderSubjectTabs();
+    renderSyllabusSubjects(currentSyllabusTopics);
   }
 
-  function renderSubjectTabs() {
+  function renderSyllabusSubjects(topics) {
     if (!syllabusSubjectGrid) return;
 
     const subjects = [
@@ -786,316 +706,265 @@
       { key: "Chemistry", icon: "🧪" }
     ];
 
+    const normalizedTopics = topics.map(topic => ({
+      ...topic,
+      subject: subjectName(topic.subject)
+    }));
+    currentSyllabusTopics = normalizedTopics;
+
     syllabusSubjectGrid.innerHTML = `
       <div class="syllabus-tabs">
-        ${subjects.map(subject => {
-          const count = syllabusTopics.filter(topic =>
-            subjectName(topic.subject) === subject.key &&
-            isTrackableTopic(topic)
+        ${subjects.map((subject, index) => {
+          const count = normalizedTopics.filter(topic =>
+            topic.subject === subject.key
+            && (topic.topic_type === "topic" || topic.topic_type === "subtopic")
           ).length;
-
-          const active = subject.key === activeSubject;
-
           return `
-            <button
-              type="button"
-              class="syllabus-tab ${active ? "active" : ""}"
-              data-subject="${esc(subject.key)}"
-              aria-selected="${active}"
-            >
+            <button type="button"
+              class="syllabus-tab ${index === 0 ? "active" : ""}"
+              data-subject="${escapeHTML(subject.key)}"
+              aria-selected="${index === 0 ? "true" : "false"}">
               <span class="syllabus-tab-icon">${subject.icon}</span>
-              <span class="syllabus-tab-name">${esc(subject.key)}</span>
+              <span class="syllabus-tab-name">${escapeHTML(subject.key)}</span>
               <span class="syllabus-tab-count">${count || "—"}</span>
-            </button>
-          `;
+            </button>`;
         }).join("")}
       </div>
-      <div id="syllabusSubjectProgress" class="syllabus-selected-subject-progress"></div>
-    `;
+      <div id="syllabusSubjectProgress" class="syllabus-selected-subject-progress"></div>`;
 
-    syllabusSubjectGrid.querySelectorAll(".syllabus-tab").forEach(tab => {
+    const tabs = syllabusSubjectGrid.querySelectorAll(".syllabus-tab");
+    tabs.forEach(tab => {
       tab.addEventListener("click", () => {
-        activeSubject = tab.dataset.subject || "Biology";
-
-        syllabusSubjectGrid.querySelectorAll(".syllabus-tab").forEach(item => {
-          const active = item === tab;
-          item.classList.toggle("active", active);
-          item.setAttribute("aria-selected", String(active));
+        tabs.forEach(other => {
+          other.classList.remove("active");
+          other.setAttribute("aria-selected", "false");
         });
-
-        closeActionPanel();
-        renderSubject(activeSubject);
+        tab.classList.add("active");
+        tab.setAttribute("aria-selected", "true");
+        renderSelectedSyllabusSubject(tab.dataset.subject, normalizedTopics);
       });
     });
 
-    renderSubject(activeSubject);
+    renderSelectedSyllabusSubject("Biology", normalizedTopics);
   }
 
-  function renderSubject(subject) {
-    const key = subjectName(subject);
-    const rows = syllabusTopics.filter(topic =>
-      subjectName(topic.subject) === key
+  function renderSelectedSyllabusSubject(subject, topics) {
+    const progressElement = $("syllabusSubjectProgress");
+    if (!progressElement) return;
+
+    const selected = subjectName(subject);
+    const subjectTopics = topics.filter(topic =>
+      subjectName(topic.subject) === selected
+      && (topic.topic_type === "topic" || topic.topic_type === "subtopic")
     );
+    const completed = subjectTopics.filter(topic =>
+      normalizeExamType(topic.progress_status) === "completed"
+    ).length;
+    const total = subjectTopics.length;
+    const percentage = total ? Math.round(completed * 100 / total) : 0;
 
-    const trackable = rows.filter(isTrackableTopic);
-    const completed = trackable.filter(isCompleted).length;
-    const percent = trackable.length
-      ? Math.round((completed * 100) / trackable.length)
-      : 0;
-
-    const progress = $("syllabusSubjectProgress");
-
-    if (progress) {
-      progress.innerHTML = `
-        <div class="syllabus-selected-subject-header">
-          <div>
-            <span class="syllabus-label">${esc(key)} Progress</span>
-            <strong>${percent}%</strong>
-          </div>
-          <span>${completed} / ${trackable.length} completed</span>
+    progressElement.innerHTML = `
+      <div class="syllabus-selected-subject-header">
+        <div>
+          <span class="syllabus-label">${escapeHTML(selected)} Progress</span>
+          <strong>${percentage}%</strong>
         </div>
-        <div class="syllabus-progress-bar">
-          <div class="syllabus-progress-fill" style="width:${percent}%"></div>
-        </div>
-      `;
-    }
+        <span>${completed} / ${total} completed</span>
+      </div>
+      <div class="syllabus-progress-bar">
+        <div class="syllabus-progress-fill" style="width:${percentage}%"></div>
+      </div>`;
 
+    renderSyllabusTopics(topics, selected);
+  }
+
+  function renderSyllabusTopics(topics, selectedSubject) {
     if (!syllabusTopicContainer) return;
 
-    const chapters = rows.filter(topic =>
-      typeOf(topic.topic_type) === "chapter"
-    );
+    const selected = subjectName(selectedSubject);
+    const subjectTopics = topics.filter(topic => subjectName(topic.subject) === selected);
+    const chapters = subjectTopics.filter(topic => topic.topic_type === "chapter");
 
     if (!chapters.length) {
       syllabusTopicContainer.innerHTML = `
         <div class="syllabus-empty-subject">
           <div class="syllabus-empty-icon">📚</div>
-          <strong>No ${esc(key)} syllabus data yet</strong>
+          <strong>No ${escapeHTML(selected)} syllabus data yet</strong>
           <span>The syllabus for this subject hasn't been added to the database yet.</span>
-        </div>
-      `;
+        </div>`;
       return;
     }
 
     syllabusTopicContainer.innerHTML = `
       <div class="syllabus-chapter-list">
         ${chapters.map((chapter, index) => {
-          const children = rows.filter(topic =>
+          const children = subjectTopics.filter(topic =>
             String(topic.parent_topic_id) === String(chapter.topic_id)
           );
-
-          const completedChildren = children.filter(isCompleted).length;
-          const chapterPercent = children.length
-            ? Math.round((completedChildren * 100) / children.length)
-            : 0;
-
-          const expanded = index === 0;
+          const completed = children.filter(topic =>
+            normalizeExamType(topic.progress_status) === "completed"
+          ).length;
+          const total = children.length;
+          const percentage = total ? Math.round(completed * 100 / total) : 0;
 
           return `
-            <div
-              class="syllabus-chapter ${expanded ? "expanded" : ""}"
-              data-topic-id="${esc(chapter.topic_id)}"
-            >
-              <button
-                type="button"
-                class="syllabus-chapter-header"
-                data-chapter-toggle
-              >
+            <div class="syllabus-chapter ${index === 0 ? "expanded" : ""}" data-topic-id="${escapeHTML(chapter.topic_id)}">
+              <button type="button" class="syllabus-chapter-header" data-chapter-toggle>
                 <div class="syllabus-chapter-title">
-                  <span class="syllabus-chapter-arrow">${expanded ? "▼" : "▶"}</span>
-                  <strong>${esc(chapter.topic_name)}</strong>
+                  <span class="syllabus-chapter-arrow">${index === 0 ? "▼" : "▶"}</span>
+                  <strong>${escapeHTML(chapter.topic_name)}</strong>
                 </div>
                 <div class="syllabus-chapter-progress">
-                  <span>${completedChildren} / ${children.length}</span>
-                  <strong>${chapterPercent}%</strong>
+                  <span>${completed} / ${total}</span>
+                  <strong>${percentage}%</strong>
                 </div>
               </button>
 
               <div class="syllabus-chapter-progress-bar">
-                <div class="syllabus-progress-fill" style="width:${chapterPercent}%"></div>
+                <div class="syllabus-progress-fill" style="width:${percentage}%"></div>
               </div>
 
-              <div class="syllabus-topic-list" ${expanded ? "" : 'style="display:none"'}>
+              <div class="syllabus-topic-list" ${index !== 0 ? 'style="display:none;"' : ""}>
                 ${children.length
-                  ? children.map(topic => {
-                      const completed = isCompleted(topic);
-                      const studied = typeOf(topic.progress_status) === "studied";
-
-                      return `
-                        <div
-                          class="syllabus-topic-row"
-                          data-topic-id="${esc(topic.topic_id)}"
-                          role="button"
-                          tabindex="0"
-                        >
-                          <div class="syllabus-topic-main">
-                            <span class="syllabus-topic-check">${completed ? "✓" : "○"}</span>
-                            <span class="syllabus-topic-name">${esc(topic.topic_name)}</span>
-                          </div>
-                          <div class="syllabus-topic-right">
-                            <span class="syllabus-topic-status status-${esc(topic.progress_status || "not_started")}">
-                              ${completed ? "✅ Completed" : studied ? "📖 Studied" : "○ Not started"}
-                            </span>
-                            <span class="syllabus-topic-chevron">›</span>
-                          </div>
-                        </div>
-                      `;
-                    }).join("")
-                  : `
-                    <div class="syllabus-topic-row">
-                      <span class="syllabus-topic-name">No topics added yet.</span>
-                    </div>
-                  `}
+                  ? children.map(topic => `
+                    <div class="syllabus-topic-row"
+                      data-topic-id="${escapeHTML(topic.topic_id)}"
+                      data-topic-name="${escapeHTML(topic.topic_name)}"
+                      role="button"
+                      tabindex="0"
+                      aria-label="Open ${escapeHTML(topic.topic_name)}">
+                      <div class="syllabus-topic-main">
+                        <span class="syllabus-topic-check">${normalizeExamType(topic.progress_status) === "completed" ? "✓" : "○"}</span>
+                        <span class="syllabus-topic-name">${escapeHTML(topic.topic_name)}</span>
+                      </div>
+                      <div class="syllabus-topic-right">
+                        <span class="syllabus-topic-status status-${escapeHTML(topic.progress_status || "not_started")}">${getSyllabusStatusLabel(topic.progress_status)}</span>
+                        <span class="syllabus-topic-chevron">›</span>
+                      </div>
+                    </div>`).join("")
+                  : `<div class="syllabus-topic-row"><span class="syllabus-topic-name">No topics added yet.</span></div>`}
               </div>
-            </div>
-          `;
+            </div>`;
         }).join("")}
-      </div>
-    `;
+      </div>`;
 
-    bindRenderedSyllabusEvents();
+    bindSyllabusTopicEvents(subjectTopics);
   }
 
-  function bindRenderedSyllabusEvents() {
-    if (!syllabusTopicContainer) return;
+  function bindSyllabusTopicEvents(subjectTopics) {
+    syllabusTopicContainer.querySelectorAll("[data-chapter-toggle]").forEach(header => {
+      header.addEventListener("click", () => {
+        const chapter = header.closest(".syllabus-chapter");
+        const list = chapter?.querySelector(".syllabus-topic-list");
+        const arrow = chapter?.querySelector(".syllabus-chapter-arrow");
+        if (!chapter || !list || !arrow) return;
 
-    syllabusTopicContainer
-      .querySelectorAll("[data-chapter-toggle]")
-      .forEach(button => {
-        button.addEventListener("click", () => {
-          const chapter = button.closest(".syllabus-chapter");
-          const list = chapter?.querySelector(".syllabus-topic-list");
-          const arrow = chapter?.querySelector(".syllabus-chapter-arrow");
-
-          if (!chapter || !list || !arrow) return;
-
-          const open = chapter.classList.toggle("expanded");
-          list.style.display = open ? "block" : "none";
-          arrow.textContent = open ? "▼" : "▶";
-        });
+        const open = chapter.classList.toggle("expanded");
+        list.style.display = open ? "block" : "none";
+        arrow.textContent = open ? "▼" : "▶";
       });
+    });
 
-    syllabusTopicContainer
-      .querySelectorAll(".syllabus-topic-row[data-topic-id]")
-      .forEach(row => {
-        const select = () => {
-          const topicId = row.dataset.topicId;
-          selectedTopic = syllabusTopics.find(topic =>
-            String(topic.topic_id) === String(topicId)
-          ) || null;
+    const rows = syllabusTopicContainer.querySelectorAll(".syllabus-topic-row[data-topic-id]");
+    rows.forEach(row => {
+      const topic = subjectTopics.find(item => String(item.topic_id) === String(row.dataset.topicId));
+      if (!topic) return;
 
-          syllabusTopicContainer
-            .querySelectorAll(".syllabus-topic-row.selected")
-            .forEach(item => item.classList.remove("selected"));
+      const openTopic = () => {
+        rows.forEach(other => other.classList.remove("selected"));
+        row.classList.add("selected");
+        selectedSyllabusTopic = topic;
 
-          row.classList.add("selected");
-          openActionPanel();
-        };
+        if (syllabusActionPanel && syllabusActionTopicName) {
+          syllabusActionTopicName.textContent = topic.topic_name || "Selected Topic";
+          syllabusActionPanel.classList.remove("hidden");
+          syllabusActionPanel.setAttribute("aria-hidden", "false");
+          syllabusActionPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      };
 
-        row.addEventListener("click", select);
-        row.addEventListener("keydown", event => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            select();
-          }
-        });
+      row.addEventListener("click", openTopic);
+      row.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openTopic();
+        }
       });
+    });
+
+    bindSyllabusActionButtons(rows);
   }
 
-  /* =========================================================
-     TOPIC ACTION PANEL
-     ========================================================= */
-
-  function openActionPanel() {
-    if (!selectedTopic || !actionPanel) return;
-
-    if (actionTopicName) {
-      actionTopicName.textContent = selectedTopic.topic_name || "Selected Topic";
+  function bindSyllabusActionButtons(topicRows) {
+    if (syllabusActionClose && syllabusActionPanel) {
+      const cleanClose = syllabusActionClose.cloneNode(true);
+      syllabusActionClose.replaceWith(cleanClose);
+      cleanClose.addEventListener("click", () => {
+        syllabusActionPanel.classList.add("hidden");
+        syllabusActionPanel.setAttribute("aria-hidden", "true");
+        selectedSyllabusTopic = null;
+        topicRows.forEach(row => row.classList.remove("selected"));
+      });
     }
 
-    actionPanel.classList.remove("hidden");
-    actionPanel.setAttribute("aria-hidden", "false");
-  }
+    if (!syllabusActionPanel) return;
 
-  function closeActionPanel() {
-    actionPanel?.classList.add("hidden");
-    actionPanel?.setAttribute("aria-hidden", "true");
-    selectedTopic = null;
+    syllabusActionPanel.querySelectorAll("[data-syllabus-action]").forEach(button => {
+      const cleanButton = button.cloneNode(true);
+      button.replaceWith(cleanButton);
 
-    syllabusTopicContainer
-      ?.querySelectorAll(".syllabus-topic-row.selected")
-      .forEach(row => row.classList.remove("selected"));
-  }
-
-  async function completeSelectedTopic(button) {
-    if (!selectedTopic?.topic_id) return;
-
-    loading(button, true, "Saving…");
-
-    try {
-      const topicId = Number(selectedTopic.topic_id);
-
-      if (!Number.isFinite(topicId)) {
-        throw new Error("Invalid syllabus topic ID.");
-      }
-
-      const { error } = await db.rpc("mark_syllabus_topic_complete", {
-        p_topic_id: topicId
-      });
-
-      if (error) throw error;
-
-      const localTopic = syllabusTopics.find(topic =>
-        String(topic.topic_id) === String(selectedTopic.topic_id)
-      );
-
-      if (localTopic) {
-        localTopic.progress_status = "completed";
-        localTopic.status = "completed";
-        localTopic.completed_at = new Date().toISOString();
-      }
-
-      showToast("✓ Topic completed!");
-      closeActionPanel();
-      renderSyllabus();
-    } catch (error) {
-      console.error("Syllabus completion failed:", error);
-      showToast(error?.message || "Could not save completion. Please try again.");
-    } finally {
-      loading(button, false);
-    }
-  }
-
-  function bindActionPanel() {
-    if (syllabusActionBound) return;
-    syllabusActionBound = true;
-
-    actionClose?.addEventListener("click", closeActionPanel);
-
-    actionPanel?.querySelectorAll("[data-syllabus-action]").forEach(button => {
-      button.addEventListener("click", async () => {
-        if (!selectedTopic) return;
-
-        const action = button.dataset.syllabusAction;
-        const topicName = selectedTopic.topic_name || "this topic";
+      cleanButton.addEventListener("click", async () => {
+        const action = cleanButton.dataset.syllabusAction;
+        const topic = selectedSyllabusTopic;
+        if (!topic) return;
 
         if (action === "learn") {
-          alert(`Learn: ${topicName}`);
+          alert(`Learn: ${topic.topic_name}`);
           return;
         }
 
         if (action === "practice") {
-          alert(`Practice: ${topicName}`);
+          alert(`Practice: ${topic.topic_name}`);
           return;
         }
 
         if (action === "ai") {
-          alert(`Ask AI: ${topicName}`);
+          alert(`Ask AI: ${topic.topic_name}`);
           return;
         }
 
-        if (action === "complete") {
-          await completeSelectedTopic(button);
+        if (action !== "complete") return;
+
+        const topicId = Number(topic.topic_id);
+        if (!topicId) {
+          showToast("Unable to complete this topic.");
+          return;
+        }
+
+        cleanButton.disabled = true;
+
+        try {
+          const { data, error } = await supabaseClient.rpc("mark_syllabus_topic_complete", {
+            p_topic_id: topicId
+          });
+          if (error) throw error;
+
+          console.log("✅ Topic completed:", data);
+          topic.progress_status = "completed";
+          topic.status = "completed";
+          topic.completed_at = new Date().toISOString();
+
+          syllabusActionPanel.classList.add("hidden");
+          syllabusActionPanel.setAttribute("aria-hidden", "true");
+          selectedSyllabusTopic = null;
+          topicRows.forEach(row => row.classList.remove("selected"));
+
+          showToast(`✓ ${topic.topic_name} completed!`);
+          renderSyllabus(currentSyllabus, currentSyllabusTopics);
+        } catch (error) {
+          console.error("❌ Syllabus completion error:", error);
+          cleanButton.disabled = false;
+          showToast("Could not save completion. Please try again.");
         }
       });
     });
@@ -1108,73 +977,72 @@
   async function renderDashboard() {
     hideStatus();
 
-    if (goalCount) {
-      goalCount.textContent = String(goals.length);
-    }
+    if (goalCount) goalCount.textContent = String(currentGoals.length);
 
-    if (!goals.length) {
+    if (!currentGoals.length) {
       emptyState?.classList.remove("hidden");
-      dashboard?.classList.add("hidden");
+      dashboardSection?.classList.add("hidden");
       syllabusSection?.classList.add("hidden");
-      examGrid && (examGrid.innerHTML = "");
-      clearInterval(countdownTimer);
+      if (examGrid) examGrid.innerHTML = "";
       return;
     }
 
     emptyState?.classList.add("hidden");
-    dashboard?.classList.remove("hidden");
+    dashboardSection?.classList.remove("hidden");
 
-    // Always display the database state first.
-    await loadExamDates();
-
-    // Then attempt live research only where the database entry needs it.
-    await researchMissing();
-
-    // Reload because successful research may have updated exam_dates.
-    await loadExamDates();
+    let rows = await loadExamDates();
+    await researchMissingExamGoals(rows);
+    rows = await loadExamDates();
 
     if (examGrid) {
       examGrid.innerHTML = "";
-
-      goals.forEach(goal => {
-        examGrid.appendChild(
-          renderExamCard(goal, findExamDate(goal))
-        );
+      currentGoals.forEach(goal => {
+        examGrid.appendChild(createExamCard(goal, findExamDate(goal, rows)));
       });
     }
 
-    startCountdown();
-
-    // Keep the first active goal as the syllabus source, matching the current
-    // database/RPC design used by the command center.
-    await loadSyllabus(goals[0]);
+    startCountdownTimer();
+    await loadSyllabusForCurrentGoal();
   }
 
-  async function refresh() {
+  async function refreshCommandCenter() {
     try {
-      loading(refreshBtn, true, "↻");
+      setButtonLoading(refreshBtn, true, "↻");
       showStatus("Checking your exam timeline…", "info");
 
       if (!await requireAuth()) return;
-
       await loadGoals();
+
+      if (!currentGoals.length) {
+        await renderDashboard();
+        return;
+      }
+
       await renderDashboard();
 
+      showStatus("Researching the latest official exam information…", "info");
+
+      for (const goal of currentGoals) {
+        try {
+          await researchExam(goal);
+        } catch (error) {
+          console.error(`Research failed for ${goal.exam_type}:`, error);
+        }
+      }
+
+      await renderDashboard();
       showStatus("Exam Command Center updated.", "success");
-      setTimeout(hideStatus, 3500);
+      setTimeout(hideStatus, 4000);
     } catch (error) {
-      console.error("Refresh failed:", error);
-      showStatus(
-        error?.message || "Unable to refresh the Exam Command Center.",
-        "error"
-      );
+      console.error("Exam Command Center error:", error);
+      showStatus(error?.message || "Something went wrong while loading the Exam Command Center.", "error");
     } finally {
-      loading(refreshBtn, false);
+      setButtonLoading(refreshBtn, false);
     }
   }
 
   /* =========================================================
-     EVENT BINDINGS
+     EVENTS
      ========================================================= */
 
   emptySetupBtn?.addEventListener("click", openModal);
@@ -1183,9 +1051,7 @@
   cancelSetupBtn?.addEventListener("click", closeModal);
 
   setupModal?.addEventListener("click", event => {
-    if (event.target.matches("[data-close-modal]")) {
-      closeModal();
-    }
+    if (event.target.matches("[data-close-modal]")) closeModal();
   });
 
   document.querySelectorAll('input[name="examGoal"]').forEach(input => {
@@ -1194,80 +1060,54 @@
 
   saveGoalsBtn?.addEventListener("click", async () => {
     try {
-      loading(saveGoalsBtn, true, "Saving…");
+      setButtonLoading(saveGoalsBtn, true, "Saving…");
       await saveGoals();
     } catch (error) {
-      console.error("Save goals failed:", error);
+      console.error("Save goals error:", error);
       showToast(error?.message || "Could not save exam goals.");
     } finally {
-      loading(saveGoalsBtn, false);
+      setButtonLoading(saveGoalsBtn, false);
     }
   });
 
-  refreshBtn?.addEventListener("click", refresh);
-
-  // Escape closes the modal/panel without affecting saved data.
-  document.addEventListener("keydown", event => {
-    if (event.key !== "Escape") return;
-
-    if (setupModal && !setupModal.classList.contains("hidden")) {
-      closeModal();
-      return;
-    }
-
-    if (actionPanel && !actionPanel.classList.contains("hidden")) {
-      closeActionPanel();
-    }
-  });
+  refreshBtn?.addEventListener("click", refreshCommandCenter);
 
   /* =========================================================
      AUTH STATE CHANGES
      ========================================================= */
 
-  db.auth.onAuthStateChange((_event, nextSession) => {
-    session = nextSession || null;
-    user = session?.user || null;
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    currentSession = session;
+    currentUser = session?.user || null;
 
-    if (!user) {
-      goals = [];
+    if (!currentUser) {
+      currentGoals = [];
       examDates = [];
-      syllabus = null;
-      syllabusTopics = [];
-      selectedTopic = null;
-
       clearInterval(countdownTimer);
-
+      if (userLabel) userLabel.textContent = "Not signed in";
       if (goalCount) goalCount.textContent = "0";
       emptyState?.classList.add("hidden");
-      dashboard?.classList.add("hidden");
+      dashboardSection?.classList.add("hidden");
       syllabusSection?.classList.add("hidden");
-
-      if (userLabel) userLabel.textContent = "Not signed in";
     }
   });
 
   /* =========================================================
-     INITIALIZATION
+     INITIALIZE
      ========================================================= */
 
   async function init() {
     console.log("🎯 Exam Command Center starting…");
 
-    bindActionPanel();
-
     try {
       if (!await requireAuth()) return;
-
       await loadGoals();
+      console.log("Enabled exam goals:", currentGoals);
       await renderDashboard();
-
       console.log("✅ Exam Command Center ready.");
     } catch (error) {
       console.error("❌ Exam Command Center failed:", error);
-      showStatus(
-        error?.message || "Unable to start the Exam Command Center.",
-        "error"
-      );
+      showStatus(error?.message || "Unable to start the Exam Command Center.", "error");
     }
   }
 
