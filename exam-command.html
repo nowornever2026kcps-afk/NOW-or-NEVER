@@ -28,11 +28,6 @@
     </div>
   </header>
 
-
-
-
-
-
   <main class="page">
     <section class="hero">
       <div>
@@ -70,203 +65,255 @@
       <div id="examGrid" class="exam-grid"></div>
     </section>
 
-
     <!-- =========================================================
      SYLLABUS PROGRESS
      ========================================================= -->
 
-      <section
-        id="syllabusSection"
-        class="command-section syllabus-section hidden"
-      >
-      
-        <div class="section-heading">
-          <div>
-            <span class="section-kicker">📚 Preparation Map</span>
-            <h2>Syllabus Progress</h2>
-            <p>
-              Track exactly what you have studied and completed.
-            </p>
-          </div>
+    <section
+      id="syllabusSection"
+      class="command-section syllabus-section hidden"
+    >
+
+      <div class="section-heading">
+        <div>
+          <span class="section-kicker">📚 Preparation Map</span>
+          <h2>Syllabus Progress</h2>
+          <p>
+            Track exactly what you have studied and completed.
+          </p>
         </div>
-      
-      
-        <!-- Syllabus information -->
-      
+      </div>
+
+      <!-- Syllabus information -->
+      <div
+        id="syllabusInfo"
+        class="syllabus-info"
+      >
+
+        <div class="syllabus-version">
+          <span class="syllabus-label">
+            Syllabus
+          </span>
+
+          <strong id="syllabusVersionName">
+            Loading syllabus...
+          </strong>
+        </div>
+
         <div
-          id="syllabusInfo"
-          class="syllabus-info"
+          id="syllabusFallbackNotice"
+          class="syllabus-fallback hidden"
         >
-      
-          <div class="syllabus-version">
+        </div>
+
+      </div>
+
+      <!-- Overall progress -->
+      <div class="syllabus-progress-card">
+
+        <div class="syllabus-progress-header">
+
+          <div>
             <span class="syllabus-label">
-              Syllabus
+              Overall Progress
             </span>
-      
-            <strong id="syllabusVersionName">
-              Loading syllabus...
+
+            <strong id="syllabusProgressPercent">
+              0%
             </strong>
           </div>
-      
+
           <div
-            id="syllabusFallbackNotice"
-            class="syllabus-fallback hidden"
+            id="syllabusProgressCount"
+            class="syllabus-progress-count"
           >
+            0 / 0 topics completed
           </div>
-      
+
         </div>
-      
-      
-        <!-- Overall progress -->
-      
-        <div class="syllabus-progress-card">
-      
-          <div class="syllabus-progress-header">
-      
+
+        <div class="syllabus-progress-bar">
+
+          <div
+            id="syllabusProgressFill"
+            class="syllabus-progress-fill"
+            style="width: 0%;"
+          ></div>
+
+        </div>
+
+      </div>
+
+      <!-- Subject cards -->
+      <div
+        id="syllabusSubjectGrid"
+        class="syllabus-subject-grid"
+      >
+      </div>
+
+      <!-- Detailed syllabus -->
+      <div
+        id="syllabusTopicContainer"
+        class="syllabus-topic-container"
+      >
+      </div>
+
+      <!-- =====================================================
+       SYLLABUS TOPIC ACTION PANEL
+       ===================================================== -->
+
+      <div
+        id="syllabusTopicActionPanel"
+        class="syllabus-topic-action-panel hidden"
+        aria-hidden="true"
+      >
+
+        <div class="syllabus-action-header">
+
+          <div>
+            <span class="syllabus-action-label">
+              SELECTED TOPIC
+            </span>
+
+            <h3 id="syllabusActionTopicName">
+              Topic
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            id="syllabusActionClose"
+            class="syllabus-action-close"
+            aria-label="Close topic actions"
+          >
+            ×
+          </button>
+
+        </div>
+
+        <div class="syllabus-action-buttons">
+
+          <button
+            type="button"
+            class="syllabus-action-btn learn"
+            data-syllabus-action="learn"
+          >
+            <span class="syllabus-action-icon">📖</span>
+
+            <span class="syllabus-action-content">
+              <strong>Learn</strong>
+              <small>Study this topic</small>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="syllabus-action-btn practice"
+            data-syllabus-action="practice"
+          >
+            <span class="syllabus-action-icon">📝</span>
+
+            <span class="syllabus-action-content">
+              <strong>Practice</strong>
+              <small>Test your knowledge</small>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="syllabus-action-btn ai"
+            data-syllabus-action="ai"
+          >
+            <span class="syllabus-action-icon">🤖</span>
+
+            <span class="syllabus-action-content">
+              <strong>Ask AI</strong>
+              <small>Ask anything about this topic</small>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="syllabus-action-btn complete"
+            data-syllabus-action="complete"
+          >
+            <span class="syllabus-action-icon">✓</span>
+
+            <span class="syllabus-action-content">
+              <strong>Mark Complete</strong>
+              <small>Finish this topic</small>
+            </span>
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- =====================================================
+       EXAM AI PANEL
+       ===================================================== -->
+
+      <div
+        id="examAiPanel"
+        class="exam-ai-panel hidden"
+        aria-hidden="true"
+      >
+
+        <div class="exam-ai-header">
+          <div>
+            <span class="exam-ai-kicker">🤖 EXAM AI</span>
+            <h3 id="examAiTopicName">Topic</h3>
+            <p id="examAiContext">Ask your question about this topic.</p>
+          </div>
+
+          <button
+            type="button"
+            id="examAiClose"
+            class="exam-ai-close"
+            aria-label="Close Exam AI"
+          >
+            ×
+          </button>
+        </div>
+
+        <div
+          id="examAiMessages"
+          class="exam-ai-messages"
+          aria-live="polite"
+        >
+          <div class="exam-ai-welcome">
+            <span class="exam-ai-welcome-icon">🤖</span>
             <div>
-              <span class="syllabus-label">
-                Overall Progress
-              </span>
-      
-              <strong id="syllabusProgressPercent">
-                0%
-              </strong>
+              <strong>Hi! I'm your Exam AI.</strong>
+              <p>Ask me anything about the selected topic.</p>
             </div>
-      
-            <div
-              id="syllabusProgressCount"
-              class="syllabus-progress-count"
+          </div>
+        </div>
+
+        <div class="exam-ai-composer">
+          <textarea
+            id="examAiInput"
+            rows="3"
+            maxlength="4000"
+            placeholder="Ask a doubt, request an explanation, or ask for exam-focused help…"
+            aria-label="Ask Exam AI"
+          ></textarea>
+
+          <div class="exam-ai-composer-footer">
+            <span id="examAiHint">Enter your question</span>
+            <button
+              type="button"
+              id="examAiSend"
+              class="exam-ai-send"
             >
-              0 / 0 topics completed
-            </div>
-      
+              Send 🤖
+            </button>
           </div>
-      
-          <div class="syllabus-progress-bar">
-      
-            <div
-              id="syllabusProgressFill"
-              class="syllabus-progress-fill"
-              style="width: 0%;"
-            ></div>
-      
-          </div>
-      
-        </div>
-      
-      
-        <!-- Subject cards -->
-      
-        <div
-          id="syllabusSubjectGrid"
-          class="syllabus-subject-grid"
-        >
-        </div>
-      
-      
-        <!-- Detailed syllabus -->
-      
-        <div
-          id="syllabusTopicContainer"
-          class="syllabus-topic-container"
-        >
         </div>
 
-        <!-- =====================================================
-     SYLLABUS TOPIC ACTION PANEL
-     ===================================================== -->
+      </div>
 
-          <div
-            id="syllabusTopicActionPanel"
-            class="syllabus-topic-action-panel hidden"
-            aria-hidden="true"
-          >
-          
-            <div class="syllabus-action-header">
-          
-              <div>
-                <span class="syllabus-action-label">
-                  SELECTED TOPIC
-                </span>
-          
-                <h3 id="syllabusActionTopicName">
-                  Topic
-                </h3>
-              </div>
-          
-              <button
-                type="button"
-                id="syllabusActionClose"
-                class="syllabus-action-close"
-                aria-label="Close topic actions"
-              >
-                ×
-              </button>
-          
-            </div>
-          
-            <div class="syllabus-action-buttons">
-          
-              <button
-                type="button"
-                class="syllabus-action-btn learn"
-                data-syllabus-action="learn"
-              >
-                <span class="syllabus-action-icon">📖</span>
-          
-                <span class="syllabus-action-content">
-                  <strong>Learn</strong>
-                  <small>Study this topic</small>
-                </span>
-              </button>
-          
-          
-              <button
-                type="button"
-                class="syllabus-action-btn practice"
-                data-syllabus-action="practice"
-              >
-                <span class="syllabus-action-icon">📝</span>
-          
-                <span class="syllabus-action-content">
-                  <strong>Practice</strong>
-                  <small>Test your knowledge</small>
-                </span>
-              </button>
-          
-          
-              <button
-                type="button"
-                class="syllabus-action-btn ai"
-                data-syllabus-action="ai"
-              >
-                <span class="syllabus-action-icon">🤖</span>
-          
-                <span class="syllabus-action-content">
-                  <strong>Ask AI</strong>
-                  <small>Ask anything about this topic</small>
-                </span>
-              </button>
-          
-          
-              <button
-                type="button"
-                class="syllabus-action-btn complete"
-                data-syllabus-action="complete"
-              >
-                <span class="syllabus-action-icon">✓</span>
-          
-                <span class="syllabus-action-content">
-                  <strong>Mark Complete</strong>
-                  <small>Finish this topic</small>
-                </span>
-              </button>
-          
-            </div>
-          
-          </div>
-      
-      </section>
+    </section>
 
     <section class="info-grid">
       <article class="info-card">
