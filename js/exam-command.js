@@ -2000,7 +2000,7 @@
        Load syllabus progress
        --------------------------------------------------------- */
 
-    await loadSyllabusForCurrentGoal();
+  
 
 
 
