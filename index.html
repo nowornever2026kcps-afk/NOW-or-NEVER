@@ -5978,6 +5978,11 @@ document
         "click",
         async () => {
 
+          // 🎯 Exam navigation
+          document.getElementById("examNavBtn")?.addEventListener("click", () => {
+              window.location.href = "exam-command.html";
+          });
+
           document
             .querySelectorAll(".nav button")
             .forEach(
