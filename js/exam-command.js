@@ -1053,13 +1053,21 @@
      }
    
    
-     /* -------------------------------------------------------
-        Subject summary
-        ------------------------------------------------------- */
-   
-     renderSyllabusSubjects(
-       trackableTopics
-     );
+    /* -------------------------------------------------------
+   Subject summary + detailed syllabus
+   ------------------------------------------------------- */
+
+/*
+ * IMPORTANT:
+ * Pass the COMPLETE syllabus dataset here.
+ *
+ * trackableTopics excludes chapters, but the detailed
+ * renderer needs chapter rows to build the chapter
+ * dropdowns.
+ */
+      renderSyllabusSubjects(
+        topics
+      );
    
    
      /* -------------------------------------------------------
