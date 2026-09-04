@@ -1104,3 +1104,334 @@ a { color: inherit; text-decoration: none; }
     align-self: flex-start;
   }
 }
+
+/* =========================================================
+   SYLLABUS TABS + DROPDOWNS
+   ========================================================= */
+
+.syllabus-tabs {
+  display: grid;
+  grid-template-columns:
+    repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.syllabus-tab {
+  border: 1px solid
+    rgba(255, 255, 255, 0.08);
+
+  background:
+    rgba(255, 255, 255, 0.035);
+
+  color: inherit;
+
+  padding: 14px 12px;
+
+  border-radius: 14px;
+
+  font-size: 0.9rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.syllabus-tab:hover {
+  transform: translateY(-1px);
+
+  border-color:
+    rgba(139, 92, 246, 0.35);
+}
+
+.syllabus-tab.active {
+  background:
+    rgba(139, 92, 246, 0.16);
+
+  border-color:
+    rgba(139, 92, 246, 0.55);
+
+  box-shadow:
+    0 0 20px
+    rgba(139, 92, 246, 0.08);
+}
+
+
+/* ---------------------------------------------------------
+   Selected subject progress
+   --------------------------------------------------------- */
+
+.syllabus-selected-subject-progress {
+  margin-top: 16px;
+
+  padding: 18px;
+
+  border-radius: 16px;
+
+  background:
+    rgba(255, 255, 255, 0.035);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.07);
+}
+
+.syllabus-selected-subject-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+}
+
+.syllabus-selected-subject-header > div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+.syllabus-selected-subject-header strong {
+  font-size: 1.5rem;
+}
+
+.syllabus-selected-subject-header > span {
+  font-size: 0.82rem;
+
+  opacity: 0.65;
+}
+
+
+/* ---------------------------------------------------------
+   Chapter list
+   --------------------------------------------------------- */
+
+.syllabus-chapter-list {
+  margin-top: 22px;
+}
+
+.syllabus-chapter {
+  margin-bottom: 10px;
+
+  overflow: hidden;
+
+  border-radius: 15px;
+
+  background:
+    rgba(255, 255, 255, 0.035);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.07);
+}
+
+.syllabus-chapter-header {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding: 15px 17px;
+
+  border: none;
+
+  background: transparent;
+
+  color: inherit;
+
+  cursor: pointer;
+
+  text-align: left;
+}
+
+.syllabus-chapter-title {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  min-width: 0;
+}
+
+.syllabus-chapter-title strong {
+  font-size: 0.94rem;
+
+  line-height: 1.4;
+}
+
+.syllabus-chapter-arrow {
+  width: 16px;
+
+  flex-shrink: 0;
+
+  opacity: 0.6;
+
+  font-size: 0.75rem;
+}
+
+.syllabus-chapter-progress {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  flex-shrink: 0;
+}
+
+.syllabus-chapter-progress span {
+  font-size: 0.75rem;
+
+  opacity: 0.55;
+}
+
+.syllabus-chapter-progress strong {
+  font-size: 0.78rem;
+}
+
+
+/* ---------------------------------------------------------
+   Chapter progress bar
+   --------------------------------------------------------- */
+
+.syllabus-chapter-progress-bar {
+  height: 4px;
+
+  margin:
+    0 17px 10px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background:
+    rgba(255, 255, 255, 0.07);
+}
+
+
+/* ---------------------------------------------------------
+   Topics
+   --------------------------------------------------------- */
+
+.syllabus-topic-list {
+  border-top:
+    1px solid
+    rgba(255, 255, 255, 0.06);
+}
+
+.syllabus-topic-row {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding: 12px 17px;
+
+  border-bottom:
+    1px solid
+    rgba(255, 255, 255, 0.045);
+}
+
+.syllabus-topic-row:last-child {
+  border-bottom: none;
+}
+
+.syllabus-topic-name {
+  font-size: 0.84rem;
+
+  line-height: 1.45;
+}
+
+.syllabus-topic-status {
+  flex-shrink: 0;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  font-size: 0.68rem;
+
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  background:
+    rgba(255, 255, 255, 0.06);
+}
+
+.syllabus-topic-status.status-completed {
+  background:
+    rgba(34, 197, 94, 0.12);
+}
+
+.syllabus-topic-status.status-studied {
+  background:
+    rgba(59, 130, 246, 0.12);
+}
+
+
+/* ---------------------------------------------------------
+   Mobile
+   --------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+  .syllabus-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .syllabus-tab {
+    padding: 12px;
+  }
+
+  .syllabus-selected-subject-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 7px;
+  }
+
+  .syllabus-chapter-header {
+    padding: 14px;
+  }
+
+  .syllabus-chapter-progress {
+    gap: 5px;
+  }
+
+  .syllabus-chapter-progress span {
+    display: none;
+  }
+
+  .syllabus-topic-row {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+    padding: 12px 14px;
+  }
+
+  .syllabus-topic-status {
+    align-self: flex-start;
+  }
+
+}
