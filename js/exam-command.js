@@ -1995,10 +1995,11 @@
     startCountdownTimer();
   }
 
+    await loadSyllabusForCurrentGoal();
+  }
+
    
-    /* ---------------------------------------------------------
-       Load syllabus progress
-       --------------------------------------------------------- */
+
 
   
 
