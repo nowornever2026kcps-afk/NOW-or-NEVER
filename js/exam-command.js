@@ -1449,844 +1449,972 @@ function renderSyllabusSubjects(topics) {
          Render detailed syllabus
          --------------------------------------------------------- */
       
-      function renderSyllabusTopics(
-        topics,
-        selectedSubject
-      ) {
       
-        if (!syllabusTopicContainer) return;
-      
-      
-        /*
-         * Normalize selected subject.
-         */
-        const normalizedSelectedSubject =
-          String(selectedSubject || "")
-            .trim()
-            .toLowerCase();
-      
-      
-        /*
-         * Only show topics belonging to the selected subject.
-         */
-        const subjectTopics =
-          topics.filter(
-            topic => {
-      
-              const topicSubject =
-                String(topic.subject || "")
-                  .trim()
-                  .toLowerCase();
-      
-              return (
-                topicSubject ===
-                normalizedSelectedSubject
-              );
-      
-            }
-          );
-      
-      
-        /*
-         * Find chapters.
-         */
-        const chapters =
-          subjectTopics.filter(
-            topic =>
-              topic.topic_type === "chapter"
-          );
-      
-      
-        /*
-         * No syllabus data for this subject.
-         */
-        if (!chapters.length) {
-      
-          syllabusTopicContainer.innerHTML = `
-      
-            <div class="syllabus-empty-subject">
-      
-              <div class="syllabus-empty-icon">
-                📚
-              </div>
-      
-              <strong>
-                No ${escapeHTML(selectedSubject)} syllabus data yet
-              </strong>
-      
-              <span>
-                The syllabus for this subject hasn't been added
-                to the database yet.
-              </span>
-      
-            </div>
-      
-          `;
-      
-          return;
-        }
-      
-      
-        /*
-         * Render chapter list.
-         */
-        syllabusTopicContainer.innerHTML = `
-      
-          <div class="syllabus-chapter-list">
-      
-            ${chapters.map((chapter, index) => {
-      
-              /*
-               * Find topics belonging to this chapter.
-               */
-              const children =
-                subjectTopics.filter(
-                  topic =>
-                    topic.parent_topic_id ===
-                    chapter.topic_id
-                );
-      
-      
-              /*
-               * Calculate chapter progress.
-               */
-              const completed =
-                children.filter(
-                  topic =>
-                    topic.progress_status ===
-                    "completed"
-                ).length;
-      
-      
-              const total =
-                children.length;
-      
-      
-              const percentage =
-                total > 0
-                  ? Math.round(
-                      (completed / total) * 100
-                    )
-                  : 0;
-      
-      
-              return `
-      
-                <div
-                  class="
-                    syllabus-chapter
-                    ${index === 0 ? "expanded" : ""}
-                  "
-                  data-topic-id="${escapeHTML(
-                    chapter.topic_id
-                  )}"
-                >
-      
-                  <button
-                    type="button"
-                    class="syllabus-chapter-header"
-                    data-chapter-toggle
-                  >
-      
-                    <div
-                      class="syllabus-chapter-title"
-                    >
-      
-                      <span
-                        class="syllabus-chapter-arrow"
-                      >
-                        ${index === 0 ? "▼" : "▶"}
-                      </span>
-      
-                      <strong>
-                        ${escapeHTML(
-                          chapter.topic_name
-                        )}
-                      </strong>
-      
-                    </div>
-      
-      
-                    <div
-                      class="syllabus-chapter-progress"
-                    >
-      
-                      <span>
-                        ${completed} / ${total}
-                      </span>
-      
-                      <strong>
-                        ${percentage}%
-                      </strong>
-      
-                    </div>
-      
-                  </button>
-      
-      
-                  <div
-                    class="syllabus-chapter-progress-bar"
-                  >
-      
-                    <div
-                      class="syllabus-progress-fill"
-                      style="width: ${percentage}%"
-                    ></div>
-      
-                  </div>
-      
-      
-                  <div
-                    class="syllabus-topic-list"
-                    ${index !== 0
-                      ? 'style="display:none;"'
-                      : ""
-                    }
-                  >
-      
-                    ${
-                      children.length
-                        ? children.map(topic => `
-      
-                           <div
-                             class="syllabus-topic-row"
-                             data-topic-id="${escapeHTML(topic.topic_id)}"
-                             data-topic-name="${escapeHTML(topic.topic_name)}"
-                             role="button"
-                             tabindex="0"
-                             aria-label="Open ${escapeHTML(topic.topic_name)}"
-                           >
-                           
-                             <div class="syllabus-topic-main">
-                           
-                               <span class="syllabus-topic-check">
-                                 ${
-                                   topic.progress_status === "completed"
-                                     ? "✓"
-                                     : "○"
-                                 }
-                               </span>
-                           
-                               <span class="syllabus-topic-name">
-                                 ${escapeHTML(topic.topic_name)}
-                               </span>
-                           
-                             </div>
-                           
-                           
-                             <div class="syllabus-topic-right">
-                           
-                               <span
-                                 class="
-                                   syllabus-topic-status
-                                   status-${escapeHTML(
-                                     topic.progress_status
-                                   )}
-                                 "
-                               >
-                                 ${getSyllabusStatusLabel(
-                                   topic.progress_status
-                                 )}
-                               </span>
-                           
-                               <span class="syllabus-topic-chevron">
-                                 ›
-                               </span>
-                           
-                             </div>
-                           
-                           </div>
-      
-                          `).join("")
-      
-                        : `
-      
-                            <div
-                              class="syllabus-topic-row"
-                            >
-      
-                              <span
-                                class="syllabus-topic-name"
-                              >
-                                No topics added yet.
-                              </span>
-      
-                            </div>
-      
-                          `
-                    }
-      
-                  </div>
-      
-                </div>
-      
-              `;
-      
-            }).join("")}
-      
-          </div>
-      
-        `;
-      
-      
-        /*
-         * Chapter dropdown controls.
-         */
-        const chapterHeaders =
-          syllabusTopicContainer.querySelectorAll(
-            "[data-chapter-toggle]"
-          );
-      
-      
-        chapterHeaders.forEach(header => {
-      
-          header.addEventListener(
-            "click",
-            () => {
-      
-              const chapter =
-                header.closest(
-                  ".syllabus-chapter"
-                );
-      
-      
-              if (!chapter) return;
-      
-      
-              const topicList =
-                chapter.querySelector(
-                  ".syllabus-topic-list"
-                );
-      
-      
-              const arrow =
-                chapter.querySelector(
-                  ".syllabus-chapter-arrow"
-                );
-      
-      
-              if (!topicList || !arrow) return;
-      
-      
-              const isOpen =
-                chapter.classList.contains(
-                  "expanded"
-                );
-      
-      
-              if (isOpen) {
-      
-                chapter.classList.remove(
-                  "expanded"
-                );
-      
-                topicList.style.display =
-                  "none";
-      
-                arrow.textContent =
-                  "▶";
-      
-              }
-      
-              else {
-      
-                chapter.classList.add(
-                  "expanded"
-                );
-      
-                topicList.style.display =
-                  "block";
-      
-                arrow.textContent =
-                  "▼";
-      
-              }
-
-               /* ---------------------------------------------------------
-   Topic click controls
-   --------------------------------------------------------- */
-
-            const topicRows =
-              syllabusTopicContainer.querySelectorAll(
-                ".syllabus-topic-row[data-topic-id]"
-              );
-            
-            
-            topicRows.forEach(row => {
-            
-              function openTopic() {
-            
-                const topicId =
-                  row.dataset.topicId;
-            
-                const topicName =
-                  row.dataset.topicName;
-            
-                console.log(
-                  "📖 Syllabus topic clicked:",
-                  {
-                    topicId,
-                    topicName
-                  }
-                );
-            
-                /*
-                 * Temporary selection state.
-                 *
-                 * The actual Learn / Practice / AI / Complete
-                 * action panel will be added in the next step.
-                 */
-                topicRows.forEach(otherRow => {
-                  otherRow.classList.remove(
-                    "selected"
-                  );
-                });
-            
-                row.classList.add(
-                  "selected"
-                );
-              }
-            
-            
-         
-            
-            });
-      
-            }
-          );
-      
-        });
-
          /* =========================================================
-               SYLLABUS TOPIC ACTION PANEL
-               ========================================================= */
-            
-            const syllabusActionPanel =
-              document.getElementById("syllabusTopicActionPanel");
-            
-            const syllabusActionTopicName =
-              document.getElementById("syllabusActionTopicName");
-            
-            const syllabusActionClose =
-              document.getElementById("syllabusActionClose");
-            
-            let selectedSyllabusTopic = null;
-            
-            
-            /* ---------------------------------------------------------
-               Open action panel
-               --------------------------------------------------------- */
-            
-            function openSyllabusTopicActionPanel(topic) {
-            
-              if (
-                !syllabusActionPanel ||
-                !syllabusActionTopicName
-              ) {
-                return;
-              }
-            
-              selectedSyllabusTopic = topic;
-            
-              syllabusActionTopicName.textContent =
-                topic.topic_name || "Selected Topic";
-            
-              syllabusActionPanel.classList.remove("hidden");
-            
-              syllabusActionPanel.setAttribute(
-                "aria-hidden",
-                "false"
-              );
-            
-              syllabusActionPanel.scrollIntoView({
-                behavior: "smooth",
-                block: "nearest"
-              });
-            
-              console.log(
-                "📖 Topic action panel opened:",
-                {
-                  topicId: topic.topic_id,
-                  topicName: topic.topic_name,
-                  subject: topic.subject,
-                  status: topic.progress_status
-                }
-              );
-            }
-            
-            
-            /* ---------------------------------------------------------
-               Connect THIS render's topic rows
-               --------------------------------------------------------- */
-            
-            const actionTopicRows =
-              syllabusTopicContainer.querySelectorAll(
-                ".syllabus-topic-row[data-topic-id]"
-              );
-            
-            actionTopicRows.forEach(row => {
-            
-              const topicId =
-                row.dataset.topicId;
-            
-              const topic =
-                subjectTopics.find(
-                  item =>
-                    String(item.topic_id) ===
-                    String(topicId)
-                );
-            
-              if (!topic) {
-                return;
-              }
-            
-              row.addEventListener("click", () => {
-            
-                actionTopicRows.forEach(otherRow => {
-                  otherRow.classList.remove("selected");
-                });
-            
-                row.classList.add("selected");
-            
-                openSyllabusTopicActionPanel(topic);
-            
-              });
-            
-            });
-            
-            
-            /* ---------------------------------------------------------
-               Close action panel
-               --------------------------------------------------------- */
-            
-            if (syllabusActionClose) {
-            
-              syllabusActionClose.addEventListener(
-                "click",
-                () => {
-            
-                  syllabusActionPanel.classList.add("hidden");
-            
-                  syllabusActionPanel.setAttribute(
-                    "aria-hidden",
-                    "true"
-                  );
-            
-                  selectedSyllabusTopic = null;
-            
-                }
-              );
-            
-            }
-            
-            
-            /* ---------------------------------------------------------
-               Action buttons
-               --------------------------------------------------------- */
-            
-            if (syllabusActionPanel) {
-            
-              const actionButtons =
-                syllabusActionPanel.querySelectorAll(
-                  "[data-syllabus-action]"
-                );
-            
-              actionButtons.forEach(button => {
-
-                button.addEventListener("click", async () => {
-            
-                    const action = button.dataset.syllabusAction;
-            
-                    if (!selectedSyllabusTopic) {
-                        return;
-                    }
-            
-                    const topic = selectedSyllabusTopic;
-            
-                    /* =========================================================
-                       LEARN
-                       ========================================================= */
-            
-                    if (action === "learn") {
-            
-                        console.log(
-                            "📖 Learn topic:",
-                            topic.topic_name
-                        );
-            
-                        alert(
-                            `Learn: ${topic.topic_name}`
-                        );
-            
-                        return;
-                    }
-            
-            
-                    /* =========================================================
-                       PRACTICE
-                       ========================================================= */
-            
-                    if (action === "practice") {
-            
-                        console.log(
-                            "📝 Practice topic:",
-                            topic.topic_name
-                        );
-            
-                        alert(
-                            `Practice: ${topic.topic_name}`
-                        );
-            
-                        return;
-                    }
-            
-            
-                    /* =========================================================
-                       ASK AI
-                       ========================================================= */
-            
-                    if (action === "ai") {
-            
-                        console.log(
-                            "🤖 Ask AI about:",
-                            topic.topic_name
-                        );
-            
-                        alert(
-                            `Ask AI: ${topic.topic_name}`
-                        );
-            
-                        return;
-                    }
-            
-            
-                    /* =========================================================
-                       MARK COMPLETE
-                       ========================================================= */
-            
-                    if (action === "complete") {
-            
-                        const topicId = Number(topic.topic_id);
-            
-                        if (!topicId) {
-            
-                            console.error(
-                                "❌ Missing syllabus topic ID:",
-                                topic
-                            );
-            
-                            alert(
-                                "Unable to complete this topic."
-                            );
-            
-                            return;
-                        }
-            
-            
-                        /* -----------------------------------------------------
-                           Prevent double clicking
-                           ----------------------------------------------------- */
-            
-                        button.disabled = true;
-            
-                        const originalHTML =
-                            button.innerHTML;
-            
-            
-                        button.innerHTML = `
-                            <span class="syllabus-action-icon">
-                                ⏳
-                            </span>
-            
-                            <span class="syllabus-action-content">
-                                <strong>Saving...</strong>
-                                <small>Please wait</small>
-                            </span>
-                        `;
-            
-            
-                        try {
-            
-                            console.log(
-                                "📚 Marking syllabus topic complete:",
-                                {
-                                    topicId,
-                                    topicName: topic.topic_name
-                                }
-                            );
-            
-            
-                            /* -------------------------------------------------
-                               Save to Supabase
-                               ------------------------------------------------- */
-            
-                            const {
-                                data,
-                                error
-                            } = await supabaseClient.rpc(
-                                "mark_syllabus_topic_complete",
-                                {
-                                    p_topic_id: topicId
-                                }
-                            );
-            
-            
-                            if (error) {
-            
-                                console.error(
-                                    "❌ Failed to complete syllabus topic:",
-                                    error
-                                );
-            
-                                throw error;
-                            }
-            
-            
-                            console.log(
-                                "✅ Topic completed:",
-                                data
-                            );
-            
-            
-                            /* -------------------------------------------------
-                               Update local topic
-                               ------------------------------------------------- */
-            
-                            topic.progress_status =
-                                "completed";
-            
-                            topic.status =
-                                "completed";
-            
-                            topic.completed_at =
-                                new Date().toISOString();
-            
-            
-                            /* -------------------------------------------------
-                               Close action panel
-                               ------------------------------------------------- */
-            
-                            if (syllabusActionPanel) {
-            
-                                syllabusActionPanel.classList.add(
-                                    "hidden"
-                                );
-            
-                                syllabusActionPanel.setAttribute(
-                                    "aria-hidden",
-                                    "true"
-                                );
-                            }
-            
-            
-                            /* -------------------------------------------------
-                               Clear selected row
-                               ------------------------------------------------- */
-            
-                            if (syllabusTopicContainer) {
-            
-                                const selectedRows =
-                                    syllabusTopicContainer.querySelectorAll(
-                                        ".syllabus-topic-row.selected"
-                                    );
-            
-                                selectedRows.forEach(row => {
-            
-                                    row.classList.remove(
-                                        "selected"
-                                    );
-            
-                                });
-                            }
-            
-            
-                            selectedSyllabusTopic =
-                                null;
-            
-            
-                            /* -------------------------------------------------
-                               Success message
-                               ------------------------------------------------- */
-            
-                            if (typeof showToast === "function") {
-            
-                                showToast(
-                                    `✓ ${topic.topic_name} completed!`
-                                );
-            
-                            } else {
-            
-                                console.log(
-                                    `✓ ${topic.topic_name} completed!`
-                                );
-                            }
-            
-            
-                            /* -------------------------------------------------
-                               Re-render syllabus
-                               ------------------------------------------------- */
-            
-                            if (
-                                currentSyllabusTopics &&
-                                currentSyllabusTopics.length
-                            ) {
-            
-                                renderSyllabus(
-                                    currentSyllabus,
-                                    currentSyllabusTopics
-                                );
-                            }
-            
-            
-                        } catch (error) {
-            
-                            console.error(
-                                "❌ Syllabus completion error:",
-                                error
-                            );
-            
-            
-                            if (typeof showToast === "function") {
-            
-                                showToast(
-                                    "Could not save completion. Please try again."
-                                );
-            
-                            } else {
-            
-                                alert(
-                                    "Could not save completion. Please try again."
-                                );
-                            }
-            
-            
-                            /* Restore button */
-            
-                            button.disabled = false;
-            
-                            button.innerHTML =
-                                originalHTML;
-                        }
-            
-                        return;
-                    }
-            
-                });
-            
-            });
-                     
-                       
-                     
+            RENDER SYLLABUS TOPICS
+            ---------------------------------------------------------
+            Handles:
+            - Subject filtering
+            - Chapter dropdowns
+            - Topic rows
+            - Topic selection
+            - Learn / Practice / Ask AI / Complete panel
+            ========================================================= */
+         
+         function renderSyllabusTopics(
+           topics,
+           selectedSubject
+         ) {
+         
+           if (!syllabusTopicContainer) {
+             return;
+           }
+         
+         
+           /* =========================================================
+              NORMALIZE SUBJECT
+              ========================================================= */
+         
+           const normalizedSelectedSubject =
+             String(selectedSubject || "")
+               .trim()
+               .toLowerCase();
+         
+         
+           /* =========================================================
+              FILTER SUBJECT TOPICS
+              ========================================================= */
+         
+           const subjectTopics =
+             topics.filter(topic => {
+         
+               const topicSubject =
+                 String(topic.subject || "")
+                   .trim()
+                   .toLowerCase();
+         
+               return (
+                 topicSubject ===
+                 normalizedSelectedSubject
+               );
+         
+             });
+         
+         
+           /* =========================================================
+              FIND CHAPTERS
+              ========================================================= */
+         
+           const chapters =
+             subjectTopics.filter(topic =>
+               topic.topic_type === "chapter"
+             );
+         
+         
+           /* =========================================================
+              EMPTY STATE
+              ========================================================= */
+         
+           if (!chapters.length) {
+         
+             syllabusTopicContainer.innerHTML = `
+         
+               <div class="syllabus-empty-subject">
+         
+                 <div class="syllabus-empty-icon">
+                   📚
+                 </div>
+         
+                 <strong>
+                   No ${escapeHTML(selectedSubject)} syllabus data yet
+                 </strong>
+         
+                 <span>
+                   The syllabus for this subject hasn't been added
+                   to the database yet.
+                 </span>
+         
+               </div>
+         
+             `;
+         
+             return;
+           }
+         
+         
+           /* =========================================================
+              RENDER CHAPTERS
+              ========================================================= */
+         
+           syllabusTopicContainer.innerHTML = `
+         
+             <div class="syllabus-chapter-list">
+         
+               ${chapters.map((chapter, index) => {
+         
+                 /* -----------------------------------------------------
+                    Find topics belonging to this chapter
+                    ----------------------------------------------------- */
+         
+                 const children =
+                   subjectTopics.filter(topic =>
+                     String(topic.parent_topic_id) ===
+                     String(chapter.topic_id)
+                   );
+         
+         
+                 /* -----------------------------------------------------
+                    Chapter progress
+                    ----------------------------------------------------- */
+         
+                 const completed =
+                   children.filter(topic =>
+                     topic.progress_status === "completed"
+                   ).length;
+         
+         
+                 const total =
+                   children.length;
+         
+         
+                 const percentage =
+                   total > 0
+                     ? Math.round(
+                         (completed / total) * 100
+                       )
+                     : 0;
+         
+         
+                 /* -----------------------------------------------------
+                    Chapter HTML
+                    ----------------------------------------------------- */
+         
+                 return `
+         
+                   <div
+                     class="
+                       syllabus-chapter
+                       ${index === 0 ? "expanded" : ""}
+                     "
+                     data-topic-id="${escapeHTML(
+                       chapter.topic_id
+                     )}"
+                   >
+         
+                     <!-- =============================================
+                          CHAPTER HEADER
+                          ============================================= -->
+         
+                     <button
+                       type="button"
+                       class="syllabus-chapter-header"
+                       data-chapter-toggle
+                     >
+         
+                       <div class="syllabus-chapter-title">
+         
+                         <span class="syllabus-chapter-arrow">
+                           ${index === 0 ? "▼" : "▶"}
+                         </span>
+         
+                         <strong>
+                           ${escapeHTML(
+                             chapter.topic_name
+                           )}
+                         </strong>
+         
+                       </div>
+         
+         
+                       <div class="syllabus-chapter-progress">
+         
+                         <span>
+                           ${completed} / ${total}
+                         </span>
+         
+                         <strong>
+                           ${percentage}%
+                         </strong>
+         
+                       </div>
+         
+                     </button>
+         
+         
+                     <!-- =============================================
+                          CHAPTER PROGRESS BAR
+                          ============================================= -->
+         
+                     <div
+                       class="syllabus-chapter-progress-bar"
+                     >
+         
+                       <div
+                         class="syllabus-progress-fill"
+                         style="width: ${percentage}%"
+                       ></div>
+         
+                     </div>
+         
+         
+                     <!-- =============================================
+                          TOPIC LIST
+                          ============================================= -->
+         
+                     <div
+                       class="syllabus-topic-list"
+                       ${index !== 0
+                         ? 'style="display:none;"'
+                         : ""
+                       }
+                     >
+         
+                       ${
+                         children.length
+         
+                           ? children.map(topic => `
+         
+                               <div
+                                 class="syllabus-topic-row"
+                                 data-topic-id="${escapeHTML(
+                                   topic.topic_id
+                                 )}"
+                                 data-topic-name="${escapeHTML(
+                                   topic.topic_name
+                                 )}"
+                                 role="button"
+                                 tabindex="0"
+                                 aria-label="Open ${escapeHTML(
+                                   topic.topic_name
+                                 )}"
+                               >
+         
+                                 <div class="syllabus-topic-main">
+         
+                                   <span class="syllabus-topic-check">
+                                     ${
+                                       topic.progress_status ===
+                                       "completed"
+                                         ? "✓"
+                                         : "○"
+                                     }
+                                   </span>
+         
+                                   <span class="syllabus-topic-name">
+                                     ${escapeHTML(
+                                       topic.topic_name
+                                     )}
+                                   </span>
+         
+                                 </div>
+         
+         
+                                 <div class="syllabus-topic-right">
+         
+                                   <span
+                                     class="
+                                       syllabus-topic-status
+                                       status-${escapeHTML(
+                                         topic.progress_status
+                                       )}
+                                     "
+                                   >
+                                     ${getSyllabusStatusLabel(
+                                       topic.progress_status
+                                     )}
+                                   </span>
+         
+         
+                                   <span class="syllabus-topic-chevron">
+                                     ›
+                                   </span>
+         
+                                 </div>
+         
+                               </div>
+         
+                             `).join("")
+         
+                           : `
+         
+                               <div
+                                 class="syllabus-topic-row"
+                               >
+         
+                                 <span
+                                   class="syllabus-topic-name"
+                                 >
+                                   No topics added yet.
+                                 </span>
+         
+                               </div>
+         
+                             `
+                       }
+         
+                     </div>
+         
+                   </div>
+         
+                 `;
+         
+               }).join("")}
+         
+             </div>
+         
+           `;
+         
+         
+           /* =========================================================
+              CHAPTER DROPDOWN CONTROLS
+              ========================================================= */
+         
+           const chapterHeaders =
+             syllabusTopicContainer.querySelectorAll(
+               "[data-chapter-toggle]"
+             );
+         
+         
+           chapterHeaders.forEach(header => {
+         
+             header.addEventListener(
+               "click",
+               () => {
+         
+                 const chapter =
+                   header.closest(
+                     ".syllabus-chapter"
+                   );
+         
+         
+                 if (!chapter) {
+                   return;
+                 }
+         
+         
+                 const topicList =
+                   chapter.querySelector(
+                     ".syllabus-topic-list"
+                   );
+         
+         
+                 const arrow =
+                   chapter.querySelector(
+                     ".syllabus-chapter-arrow"
+                   );
+         
+         
+                 if (!topicList || !arrow) {
+                   return;
+                 }
+         
+         
+                 const isOpen =
+                   chapter.classList.contains(
+                     "expanded"
+                   );
+         
+         
+                 if (isOpen) {
+         
+                   chapter.classList.remove(
+                     "expanded"
+                   );
+         
+                   topicList.style.display =
+                     "none";
+         
+                   arrow.textContent =
+                     "▶";
+         
+                 } else {
+         
+                   chapter.classList.add(
+                     "expanded"
+                   );
+         
+                   topicList.style.display =
+                     "block";
+         
+                   arrow.textContent =
+                     "▼";
+         
+                 }
+         
+               }
+             );
+         
+           });
+         
+         
+           /* =========================================================
+              TOPIC CLICK CONTROLS
+              ---------------------------------------------------------
+              Clicking a topic:
+              1. Selects the row
+              2. Finds the real topic object
+              3. Opens the action panel
+              ========================================================= */
+         
+           const topicRows =
+             syllabusTopicContainer.querySelectorAll(
+               ".syllabus-topic-row[data-topic-id]"
+             );
+         
+         
+           topicRows.forEach(row => {
+         
+             const topicId =
+               row.dataset.topicId;
+         
+         
+             const topic =
+               subjectTopics.find(item =>
+                 String(item.topic_id) ===
+                 String(topicId)
+               );
+         
+         
+             if (!topic) {
+               return;
+             }
+         
+         
+             function openTopic() {
+         
+               /* -----------------------------------------------
+                  Clear previous selection
+                  ----------------------------------------------- */
+         
+               topicRows.forEach(otherRow => {
+         
+                 otherRow.classList.remove(
+                   "selected"
+                 );
+         
+               });
+         
+         
+               /* -----------------------------------------------
+                  Select current topic
+                  ----------------------------------------------- */
+         
+               row.classList.add(
+                 "selected"
+               );
+         
+         
+               /* -----------------------------------------------
+                  Save selected topic
+                  ----------------------------------------------- */
+         
+               selectedSyllabusTopic =
+                 topic;
+         
+         
+               console.log(
+                 "📖 Syllabus topic selected:",
+                 {
+                   topicId: topic.topic_id,
+                   topicName: topic.topic_name,
+                   subject: topic.subject,
+                   status: topic.progress_status
+                 }
+               );
+         
+         
+               /* -----------------------------------------------
+                  Open action panel
+                  ----------------------------------------------- */
+         
+               if (
+                 syllabusActionPanel &&
+                 syllabusActionTopicName
+               ) {
+         
+                 syllabusActionTopicName.textContent =
+                   topic.topic_name ||
+                   "Selected Topic";
+         
+         
+                 syllabusActionPanel.classList.remove(
+                   "hidden"
+                 );
+         
+         
+                 syllabusActionPanel.setAttribute(
+                   "aria-hidden",
+                   "false"
+                 );
+         
+         
+                 syllabusActionPanel.scrollIntoView({
+                   behavior: "smooth",
+                   block: "nearest"
+                 });
+         
+               }
+         
+             }
+         
+         
+             /* -----------------------------------------------
+                Mouse click
+                ----------------------------------------------- */
+         
+             row.addEventListener(
+               "click",
+               openTopic
+             );
+         
+         
+             /* -----------------------------------------------
+                Keyboard accessibility
+                ----------------------------------------------- */
+         
+             row.addEventListener(
+               "keydown",
+               event => {
+         
+                 if (
+                   event.key === "Enter" ||
+                   event.key === " "
+                 ) {
+         
+                   event.preventDefault();
+         
+                   openTopic();
+         
+                 }
+         
+               }
+             );
+         
+           });
+         
+         
+           /* =========================================================
+              ACTION PANEL CLOSE
+              ---------------------------------------------------------
+              We remove the previous listener before adding a new one.
+              This prevents duplicate close events after re-rendering.
+              ========================================================= */
+         
+           if (
+             syllabusActionClose &&
+             syllabusActionPanel
+           ) {
+         
+             const newCloseButton =
+               syllabusActionClose.cloneNode(true);
+         
+         
+             syllabusActionClose.replaceWith(
+               newCloseButton
+             );
+         
+         
+             newCloseButton.addEventListener(
+               "click",
+               () => {
+         
+                 syllabusActionPanel.classList.add(
+                   "hidden"
+                 );
+         
+         
+                 syllabusActionPanel.setAttribute(
+                   "aria-hidden",
+                   "true"
+                 );
+         
+         
+                 selectedSyllabusTopic =
+                   null;
+         
+         
+                 topicRows.forEach(row => {
+         
+                   row.classList.remove(
+                     "selected"
+                   );
+         
+                 });
+         
+               }
+             );
+         
+           }
+         
+         
+           /* =========================================================
+              ACTION BUTTONS
+              ========================================================= */
+         
+           if (syllabusActionPanel) {
+         
+             const actionButtons =
+               syllabusActionPanel.querySelectorAll(
+                 "[data-syllabus-action]"
+               );
+         
+         
+             actionButtons.forEach(button => {
+         
+               /* -----------------------------------------------------
+                  Prevent duplicate listeners when syllabus re-renders
+                  ----------------------------------------------------- */
+         
+               const cleanButton =
+                 button.cloneNode(true);
+         
+         
+               button.replaceWith(
+                 cleanButton
+               );
+         
+         
+               cleanButton.addEventListener(
+                 "click",
+                 async () => {
+         
+                   const action =
+                     cleanButton.dataset.syllabusAction;
+         
+         
+                   /* ---------------------------------------------------
+                      No topic selected
+                      --------------------------------------------------- */
+         
+                   if (!selectedSyllabusTopic) {
+         
+                     console.warn(
+                       "⚠️ No syllabus topic selected."
+                     );
+         
+                     return;
+                   }
+         
+         
+                   const topic =
+                     selectedSyllabusTopic;
+         
+         
+                   /* ===================================================
+                      LEARN
+                      =================================================== */
+         
+                   if (action === "learn") {
+         
+                     console.log(
+                       "📖 Learn topic:",
+                       topic.topic_name
+                     );
+         
+         
+                     alert(
+                       `Learn: ${topic.topic_name}`
+                     );
+         
+         
+                     return;
+                   }
+         
+         
+                   /* ===================================================
+                      PRACTICE
+                      =================================================== */
+         
+                   if (action === "practice") {
+         
+                     console.log(
+                       "📝 Practice topic:",
+                       topic.topic_name
+                     );
+         
+         
+                     alert(
+                       `Practice: ${topic.topic_name}`
+                     );
+         
+         
+                     return;
+                   }
+         
+         
+                   /* ===================================================
+                      ASK AI
+                      =================================================== */
+         
+                   if (action === "ai") {
+         
+                     console.log(
+                       "🤖 Ask AI about:",
+                       topic.topic_name
+                     );
+         
+         
+                     alert(
+                       `Ask AI: ${topic.topic_name}`
+                     );
+         
+         
+                     return;
+                   }
+         
+         
+                   /* ===================================================
+                      MARK COMPLETE
+                      =================================================== */
+         
+                   if (action === "complete") {
+         
+                     const topicId =
+                       Number(
+                         topic.topic_id
+                       );
+         
+         
+                     if (!topicId) {
+         
+                       console.error(
+                         "❌ Missing syllabus topic ID:",
+                         topic
+                       );
+         
+         
+                       alert(
+                         "Unable to complete this topic."
+                       );
+         
+         
+                       return;
                      }
-            
-                  }
-                );
-            
-              });
-            
-            }
-      
-      }
+         
+         
+                     /* -----------------------------------------------
+                        Prevent double-click
+                        ----------------------------------------------- */
+         
+                     cleanButton.disabled =
+                       true;
+         
+         
+                     const originalHTML =
+                       cleanButton.innerHTML;
+         
+         
+                     cleanButton.innerHTML = `
+         
+                       <span class="syllabus-action-icon">
+                         ⏳
+                       </span>
+         
+                       <span class="syllabus-action-content">
+         
+                         <strong>
+                           Saving...
+                         </strong>
+         
+                         <small>
+                           Please wait
+                         </small>
+         
+                       </span>
+         
+                     `;
+         
+         
+                     try {
+         
+                       console.log(
+                         "📚 Marking syllabus topic complete:",
+                         {
+                           topicId,
+                           topicName:
+                             topic.topic_name
+                         }
+                       );
+         
+         
+                       /* ---------------------------------------------
+                          Save completion to Supabase
+                          --------------------------------------------- */
+         
+                       const {
+                         data,
+                         error
+                       } =
+                         await supabaseClient.rpc(
+                           "mark_syllabus_topic_complete",
+                           {
+                             p_topic_id:
+                               topicId
+                           }
+                         );
+         
+         
+                       if (error) {
+         
+                         console.error(
+                           "❌ Failed to complete syllabus topic:",
+                           error
+                         );
+         
+                         throw error;
+                       }
+         
+         
+                       console.log(
+                         "✅ Topic completed:",
+                         data
+                       );
+         
+         
+                       /* ---------------------------------------------
+                          Update local topic
+                          --------------------------------------------- */
+         
+                       topic.progress_status =
+                         "completed";
+         
+         
+                       topic.status =
+                         "completed";
+         
+         
+                       topic.completed_at =
+                         new Date().toISOString();
+         
+         
+                       /* ---------------------------------------------
+                          Close panel
+                          --------------------------------------------- */
+         
+                       if (syllabusActionPanel) {
+         
+                         syllabusActionPanel.classList.add(
+                           "hidden"
+                         );
+         
+         
+                         syllabusActionPanel.setAttribute(
+                           "aria-hidden",
+                           "true"
+                         );
+         
+                       }
+         
+         
+                       /* ---------------------------------------------
+                          Clear selected row
+                          --------------------------------------------- */
+         
+                       topicRows.forEach(row => {
+         
+                         row.classList.remove(
+                           "selected"
+                         );
+         
+                       });
+         
+         
+                       selectedSyllabusTopic =
+                         null;
+         
+         
+                       /* ---------------------------------------------
+                          Success message
+                          --------------------------------------------- */
+         
+                       if (
+                         typeof showToast ===
+                         "function"
+                       ) {
+         
+                         showToast(
+                           `✓ ${topic.topic_name} completed!`
+                         );
+         
+                       } else {
+         
+                         console.log(
+                           `✓ ${topic.topic_name} completed!`
+                         );
+         
+                       }
+         
+         
+                       /* ---------------------------------------------
+                          Re-render syllabus
+                          --------------------------------------------- */
+         
+                       if (
+                         currentSyllabusTopics &&
+                         currentSyllabusTopics.length
+                       ) {
+         
+                         renderSyllabus(
+                           currentSyllabus,
+                           currentSyllabusTopics
+                         );
+         
+                       }
+         
+                     } catch (error) {
+         
+                       console.error(
+                         "❌ Syllabus completion error:",
+                         error
+                       );
+         
+         
+                       if (
+                         typeof showToast ===
+                         "function"
+                       ) {
+         
+                         showToast(
+                           "Could not save completion. Please try again."
+                         );
+         
+                       } else {
+         
+                         alert(
+                           "Could not save completion. Please try again."
+                         );
+         
+                       }
+         
+         
+                       /* ---------------------------------------------
+                          Restore button
+                          --------------------------------------------- */
+         
+                       cleanButton.disabled =
+                         false;
+         
+         
+                       cleanButton.innerHTML =
+                         originalHTML;
+         
+                     }
+         
+         
+                     return;
+         
+                   }
+         
+                 }
+               );
+         
+             });
+         
+           }
+         
+         }
+         
+
    
    /*=========================*/
 
