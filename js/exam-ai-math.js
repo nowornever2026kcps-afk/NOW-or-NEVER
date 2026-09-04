@@ -1,30 +1,64 @@
 /* =========================================================
    NOW-or-NEVER — EXAM AI MATH RENDERER
-   Adds MathJax support without changing Exam AI logic.
+   ---------------------------------------------------------
+   Safely renders LaTeX/MathJax inside Exam AI responses.
+   This file is intentionally separate from exam-command.js.
    ========================================================= */
 
 (() => {
   "use strict";
 
-  const MATHJAX_SRC = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js";
+  const MATHJAX_SRC =
+    "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js";
+
+  function configureMathJax() {
+    window.MathJax = window.MathJax || {};
+
+    window.MathJax.tex = window.MathJax.tex || {};
+    window.MathJax.tex.inlineMath = [
+      ["\\(", "\\)"],
+      ["$", "$"],
+    ];
+    window.MathJax.tex.displayMath = [
+      ["\\[", "\\]"],
+      ["$$", "$$"],
+    ];
+    window.MathJax.tex.processEscapes = true;
+
+    window.MathJax.options = window.MathJax.options || {};
+    window.MathJax.options.skipHtmlTags = [
+      "script",
+      "noscript",
+      "style",
+      "textarea",
+      "pre",
+      "code",
+    ];
+  }
 
   function loadMathJax() {
-    if (window.MathJax?.typesetPromise) return Promise.resolve(window.MathJax);
-    if (window.__examAiMathPromise) return window.__examAiMathPromise;
+    if (window.MathJax?.typesetPromise) {
+      return Promise.resolve(window.MathJax);
+    }
 
-    window.MathJax = window.MathJax || {};
-    window.MathJax.tex = window.MathJax.tex || {};
-    window.MathJax.tex.inlineMath = [["\\(", "\\)"]];
-    window.MathJax.tex.displayMath = [["\\[", "\\]"], ["$$", "$$"]];
-    window.MathJax.tex.processEscapes = true;
-    window.MathJax.options = window.MathJax.options || {};
-    window.MathJax.options.skipHtmlTags = ["script", "noscript", "style", "textarea", "pre", "code"];
+    if (window.__examAiMathPromise) {
+      return window.__examAiMathPromise;
+    }
+
+    configureMathJax();
 
     window.__examAiMathPromise = new Promise((resolve, reject) => {
-      const existing = document.querySelector('script[data-exam-ai-mathjax]');
+      const existing = document.querySelector(
+        'script[data-exam-ai-mathjax="true"]'
+      );
+
       if (existing) {
-        existing.addEventListener("load", () => resolve(window.MathJax));
-        existing.addEventListener("error", reject);
+        existing.addEventListener(
+          "load",
+          () => resolve(window.MathJax),
+          { once: true }
+        );
+        existing.addEventListener("error", reject, { once: true });
         return;
       }
 
@@ -32,8 +66,13 @@
       script.src = MATHJAX_SRC;
       script.async = true;
       script.dataset.examAiMathjax = "true";
+
       script.onload = () => resolve(window.MathJax);
-      script.onerror = reject;
+      script.onerror = () => {
+        window.__examAiMathPromise = null;
+        reject(new Error("MathJax failed to load."));
+      };
+
       document.head.appendChild(script);
     });
 
@@ -41,12 +80,17 @@
   }
 
   async function typesetExamAi(root = document) {
-    const messages = root.querySelectorAll?.(".exam-ai-assistant-message") || [];
+    const messages = root.querySelectorAll?.(
+      ".exam-ai-assistant-message"
+    ) || [];
+
     if (!messages.length) return;
 
     try {
       const mathJax = await loadMathJax();
+
       if (!mathJax?.typesetPromise) return;
+
       await mathJax.typesetPromise([...messages]);
     } catch (error) {
       console.warn("Exam AI MathJax rendering unavailable:", error);
@@ -54,25 +98,35 @@
   }
 
   function start() {
-    if (!document.querySelector("#examAiMessages")) return;
-
-    typesetExamAi();
-
     const container = document.getElementById("examAiMessages");
     if (!container) return;
 
-    const observer = new MutationObserver(mutations => {
-      const addedAssistantMessage = mutations.some(mutation =>
-        [...mutation.addedNodes].some(node =>
-          node.nodeType === Node.ELEMENT_NODE &&
-          (node.matches?.(".exam-ai-assistant-message") || node.querySelector?.(".exam-ai-assistant-message"))
-        )
+    // Render any assistant content already present.
+    typesetExamAi(container);
+
+    const observer = new MutationObserver((mutations) => {
+      const addedAssistantMessage = mutations.some((mutation) =>
+        [...mutation.addedNodes].some((node) => {
+          if (node.nodeType !== Node.ELEMENT_NODE) return false;
+
+          return (
+            node.matches?.(".exam-ai-assistant-message") ||
+            node.querySelector?.(".exam-ai-assistant-message")
+          );
+        })
       );
 
-      if (addedAssistantMessage) typesetExamAi(container);
+      if (addedAssistantMessage) {
+        typesetExamAi(container);
+      }
     });
 
-    observer.observe(container, { childList: true, subtree: true });
+    observer.observe(container, {
+      childList: true,
+      subtree: true,
+    });
+
+    window.examAiTypesetMath = () => typesetExamAi(container);
   }
 
   if (document.readyState === "loading") {
