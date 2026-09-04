@@ -37,6 +37,8 @@
     }
   );
 
+   window.debugSupabaseClient = supabaseClient;
+
 
   /* =========================================================
      CONFIG
