@@ -27,6 +27,8 @@
   let countdownTimer = null;
   let currentSyllabus = null;
   let currentSyllabusTopics = [];
+   // Subjects available for the student's selected exams
+  let currentAllowedSyllabusSubjects = [];
   let selectedSyllabusTopic = null;
   const autoResearchAttempted = new Set();
 
@@ -195,12 +197,84 @@
     }
   }
   function subjectName(value) {
-    const subject = String(value || "").trim().toLowerCase();
-    if (subject === "biology") return "Biology";
-    if (subject === "physics") return "Physics";
-    if (subject === "chemistry") return "Chemistry";
-    return String(value || "").trim();
+  const subject = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ");
+
+  if (
+    subject === "biology" ||
+    subject === "bio"
+  ) {
+    return "Biology";
   }
+
+  if (
+    subject === "physics" ||
+    subject === "phy"
+  ) {
+    return "Physics";
+  }
+
+  if (
+    subject === "chemistry" ||
+    subject === "chem"
+  ) {
+    return "Chemistry";
+  }
+
+  if (
+    subject === "mathematics" ||
+    subject === "math" ||
+    subject === "maths"
+  ) {
+    return "Mathematics";
+  }
+
+  return String(value || "").trim();
+}
+
+   function getAllowedSyllabusSubjects(goals = currentGoals) {
+  const subjects = new Map();
+
+  const hasNEET = goals.some(
+    goal => normalizeExamType(goal.exam_type) === "neet"
+  );
+
+  const hasJEE = goals.some(goal => {
+    const type = normalizeExamType(goal.exam_type);
+    return type === "jee_main" || type === "jee_advanced" || type === "jee";
+  });
+
+  // Common subjects
+  subjects.set("Physics", {
+    key: "Physics",
+    icon: "⚡"
+  });
+
+  subjects.set("Chemistry", {
+    key: "Chemistry",
+    icon: "🧪"
+  });
+
+  // NEET adds Biology
+  if (hasNEET) {
+    subjects.set("Biology", {
+      key: "Biology",
+      icon: "🧬"
+    });
+  }
+
+  // JEE adds Mathematics
+  if (hasJEE) {
+    subjects.set("Mathematics", {
+      key: "Mathematics",
+      icon: "📐"
+    });
+  }
+
+  return [...subjects.values()];
+}
   function getSyllabusStatusLabel(status) {
     switch (normalizeExamType(status)) {
       case "completed": return "✅ Completed";
@@ -412,10 +486,150 @@
       if (syllabusTopicContainer) syllabusTopicContainer.innerHTML = `<div class="syllabus-empty-subject"><div class="syllabus-empty-icon">⚠️</div><strong>Unable to load syllabus</strong><span>Please refresh the page and try again.</span></div>`;
     }
   }
-  async function loadSyllabusForCurrentGoal() {
-    if (!currentUser || !currentGoals.length) { syllabusSection?.classList.add("hidden"); return; }
-    await loadSyllabusProgress(currentGoals[0]);
+ async function loadSyllabusForCurrentGoal() {
+  if (!currentUser || !currentGoals.length) {
+    syllabusSection?.classList.add("hidden");
+    return;
   }
+
+  try {
+    console.log(
+      "📚 Loading syllabus for selected exams:",
+      currentGoals.map(goal => goal.exam_type)
+    );
+
+    const allTopics = [];
+    const syllabusVersions = [];
+
+    for (const goal of currentGoals) {
+      const examType = normalizeExamType(goal.exam_type);
+
+      // Only syllabus-bearing entrance exams
+      if (
+        examType !== "neet" &&
+        examType !== "jee_main" &&
+        examType !== "jee_advanced" &&
+        examType !== "jee"
+      ) {
+        continue;
+      }
+
+      console.log("📚 Loading syllabus for exam:", goal);
+
+      try {
+        await resolveSyllabusVersion(goal);
+
+        const examYear = Number(
+          goal.exam_year || TARGET_EXAM_YEAR
+        );
+
+        const {
+          data,
+          error
+        } = await supabaseClient.rpc(
+          "get_student_syllabus_progress",
+          {
+            p_exam_type: examType,
+            p_exam_year: examYear,
+            p_board: null,
+            p_class_level: null
+          }
+        );
+
+        if (error) {
+          console.error(
+            `❌ Failed loading ${examType} syllabus:`,
+            error
+          );
+          continue;
+        }
+
+        const rows = Array.isArray(data) ? data : [];
+
+        console.log(
+          `✅ ${examType} syllabus topics:`,
+          rows.length
+        );
+
+        allTopics.push(...rows);
+
+        if (currentSyllabus) {
+          syllabusVersions.push(currentSyllabus);
+        }
+
+      } catch (error) {
+        console.error(
+          `❌ Failed resolving ${examType} syllabus:`,
+          error
+        );
+      }
+    }
+
+    /*
+     * Remove duplicate topics.
+     *
+     * This is particularly useful because Physics and Chemistry
+     * can appear for both JEE and NEET.
+     */
+    const uniqueTopics = Array.from(
+      new Map(
+        allTopics.map(topic => [
+          `${topic.subject}|${topic.topic_id}`,
+          topic
+        ])
+      ).values()
+    );
+
+    currentSyllabusTopics = uniqueTopics;
+
+    console.log(
+      "📚 COMBINED SYLLABUS:",
+      uniqueTopics.length
+    );
+
+    console.log(
+      "📚 COMBINED SUBJECTS:",
+      [
+        ...new Set(
+          uniqueTopics.map(topic =>
+            subjectName(topic.subject)
+          )
+        )
+      ]
+    );
+
+    const fallbackSyllabus =
+      syllabusVersions[0] ||
+      {
+        syllabus_version_name: "Exam Syllabus",
+        is_official: true,
+        is_current: true
+      };
+
+    renderSyllabus(
+      fallbackSyllabus,
+      uniqueTopics
+    );
+
+  } catch (error) {
+    console.error(
+      "❌ Failed to load combined syllabus:",
+      error
+    );
+
+    if (syllabusTopicContainer) {
+      syllabusTopicContainer.innerHTML = `
+        <div class="syllabus-empty-subject">
+          <div class="syllabus-empty-icon">⚠️</div>
+          <strong>Unable to load syllabus</strong>
+          <span>
+            Please refresh the page and try again.
+          </span>
+        </div>
+      `;
+    }
+  }
+}
 
   function renderSyllabus(syllabus, topics) {
     if (!syllabusSection) return;
@@ -437,20 +651,101 @@
     renderSyllabusSubjects(currentSyllabusTopics);
   }
   function renderSyllabusSubjects(topics) {
-    if (!syllabusSubjectGrid) return;
-    const subjects = [{ key: "Biology", icon: "🧬" }, { key: "Physics", icon: "⚡" }, { key: "Chemistry", icon: "🧪" }];
-    const normalizedTopics = topics.map(topic => ({ ...topic, subject: subjectName(topic.subject) }));
-    currentSyllabusTopics = normalizedTopics;
-    syllabusSubjectGrid.innerHTML = `<div class="syllabus-tabs">${subjects.map((subject, index) => { const count = normalizedTopics.filter(topic => topic.subject === subject.key && (topic.topic_type === "topic" || topic.topic_type === "subtopic")).length; return `<button type="button" class="syllabus-tab ${index === 0 ? "active" : ""}" data-subject="${escapeHTML(subject.key)}" aria-selected="${index === 0 ? "true" : "false"}"><span class="syllabus-tab-icon">${subject.icon}</span><span class="syllabus-tab-name">${escapeHTML(subject.key)}</span><span class="syllabus-tab-count">${count || "—"}</span></button>`; }).join("")}</div><div id="syllabusSubjectProgress" class="syllabus-selected-subject-progress"></div>`;
-    const tabs = syllabusSubjectGrid.querySelectorAll(".syllabus-tab");
-    tabs.forEach(tab => tab.addEventListener("click", () => {
-      tabs.forEach(other => { other.classList.remove("active"); other.setAttribute("aria-selected", "false"); });
-      tab.classList.add("active");
-      tab.setAttribute("aria-selected", "true");
-      renderSelectedSyllabusSubject(tab.dataset.subject, normalizedTopics);
-    }));
-    renderSelectedSyllabusSubject("Biology", normalizedTopics);
-  }
+     if (!syllabusSubjectGrid) return;
+   
+     const subjects = getAllowedSyllabusSubjects(currentGoals);
+   
+     currentAllowedSyllabusSubjects = subjects;
+   
+     const normalizedTopics = topics.map(topic => ({
+       ...topic,
+       subject: subjectName(topic.subject)
+     }));
+   
+     currentSyllabusTopics = normalizedTopics;
+   
+     if (!subjects.length) {
+       syllabusSubjectGrid.innerHTML = `
+         <div class="syllabus-empty-subject">
+           <div class="syllabus-empty-icon">📚</div>
+           <strong>No subjects selected</strong>
+           <span>Please select JEE or NEET from your exam preferences.</span>
+         </div>
+       `;
+   
+       if (syllabusTopicContainer) {
+         syllabusTopicContainer.innerHTML = "";
+       }
+   
+       return;
+     }
+   
+     syllabusSubjectGrid.innerHTML = `
+       <div class="syllabus-tabs">
+         ${subjects.map((subject, index) => {
+           const count = normalizedTopics.filter(
+             topic =>
+               topic.subject === subject.key &&
+               (
+                 topic.topic_type === "topic" ||
+                 topic.topic_type === "subtopic"
+               )
+           ).length;
+   
+           return `
+             <button
+               type="button"
+               class="syllabus-tab ${index === 0 ? "active" : ""}"
+               data-subject="${escapeHTML(subject.key)}"
+               aria-selected="${index === 0 ? "true" : "false"}"
+             >
+               <span class="syllabus-tab-icon">
+                 ${subject.icon}
+               </span>
+   
+               <span class="syllabus-tab-name">
+                 ${escapeHTML(subject.key)}
+               </span>
+   
+               <span class="syllabus-tab-count">
+                 ${count || "—"}
+               </span>
+             </button>
+           `;
+         }).join("")}
+       </div>
+   
+       <div
+         id="syllabusSubjectProgress"
+         class="syllabus-selected-subject-progress"
+       ></div>
+     `;
+   
+     const tabs = syllabusSubjectGrid.querySelectorAll(".syllabus-tab");
+   
+     tabs.forEach(tab => {
+       tab.addEventListener("click", () => {
+         tabs.forEach(other => {
+           other.classList.remove("active");
+           other.setAttribute("aria-selected", "false");
+         });
+   
+         tab.classList.add("active");
+         tab.setAttribute("aria-selected", "true");
+   
+         renderSelectedSyllabusSubject(
+           tab.dataset.subject,
+           normalizedTopics
+         );
+       });
+     });
+   
+     // Automatically open the first available subject
+     renderSelectedSyllabusSubject(
+       subjects[0].key,
+       normalizedTopics
+     );
+   }
   function renderSelectedSyllabusSubject(subject, topics) {
     const progressElement = $("syllabusSubjectProgress");
     if (!progressElement) return;
