@@ -10,6 +10,7 @@
   const SUPABASE_URL = "https://kvbbgvfrllptqpbkixnv.supabase.co";
   const SUPABASE_KEY = "sb_publishable_YaS6ZJfi4VrAbtGymRBr6w_ocpvX0I-";
   const EXAM_RESEARCH_FUNCTION = "exam-research-ts";
+  const EXAM_AI_FUNCTION = "exam-ai";
   const TARGET_EXAM_YEAR = new Date().getMonth() >= 6 ? new Date().getFullYear() + 1 : new Date().getFullYear();
 
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -17,7 +18,6 @@
   });
 
   window.examSupabaseClient = supabaseClient;
-
   window.debugSupabaseClient = supabaseClient;
 
   let currentSession = null;
@@ -59,6 +59,15 @@
   const syllabusActionPanel = $("syllabusTopicActionPanel");
   const syllabusActionTopicName = $("syllabusActionTopicName");
   const syllabusActionClose = $("syllabusActionClose");
+
+  const examAiPanel = $("examAiPanel");
+  const examAiTopicName = $("examAiTopicName");
+  const examAiContext = $("examAiContext");
+  const examAiMessages = $("examAiMessages");
+  const examAiInput = $("examAiInput");
+  const examAiSend = $("examAiSend");
+  const examAiClose = $("examAiClose");
+  const examAiHint = $("examAiHint");
 
   function escapeHTML(value) {
     return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
@@ -143,6 +152,7 @@
       emptyState?.classList.add("hidden");
       dashboardSection?.classList.add("hidden");
       syllabusSection?.classList.add("hidden");
+      examAiPanel?.classList.add("hidden");
       showStatus("Please sign in to NOW-or-NEVER before using the Exam Command Center.", "error");
       return false;
     }
@@ -423,6 +433,132 @@
     });
     bindSyllabusActionButtons(rows);
   }
+
+  function resetExamAiMessages() {
+    if (!examAiMessages) return;
+    examAiMessages.innerHTML = `<div class="exam-ai-welcome"><span class="exam-ai-welcome-icon">🤖</span><div><strong>Hi! I'm your Exam AI.</strong><p>Ask me anything about the selected topic.</p></div></div>`;
+  }
+  function closeExamAi() {
+    if (!examAiPanel) return;
+    examAiPanel.classList.add("hidden");
+    examAiPanel.setAttribute("aria-hidden", "true");
+  }
+  function openExamAi(topic) {
+    if (!examAiPanel || !topic) return;
+    selectedSyllabusTopic = topic;
+    if (examAiTopicName) examAiTopicName.textContent = topic.topic_name || "Selected Topic";
+    if (examAiContext) {
+      const subject = subjectName(topic.subject);
+      const chapter = topic.chapter_name || topic.chapter || topic.parent_topic_name || "Selected chapter";
+      const exam = currentGoals[0] ? getExamLabel(currentGoals[0].exam_type) : "Exam";
+      examAiContext.textContent = `${exam} ${currentGoals[0]?.exam_year || ""} • ${subject} • ${chapter}`;
+    }
+    resetExamAiMessages();
+    if (examAiInput) {
+      examAiInput.value = "";
+      examAiInput.focus();
+    }
+    if (examAiHint) examAiHint.textContent = "Ask a doubt, request an explanation, or ask for exam-focused help.";
+    examAiPanel.classList.remove("hidden");
+    examAiPanel.setAttribute("aria-hidden", "false");
+    examAiPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  function appendExamAiMessage(text, role) {
+    if (!examAiMessages) return null;
+    const element = document.createElement("div");
+    element.className = role === "user" ? "exam-ai-user-message" : "exam-ai-assistant-message";
+    element.textContent = String(text || "");
+    examAiMessages.appendChild(element);
+    examAiMessages.scrollTop = examAiMessages.scrollHeight;
+    return element;
+  }
+  function appendExamAiError(text) {
+    if (!examAiMessages) return;
+    const element = document.createElement("div");
+    element.className = "exam-ai-error";
+    element.textContent = String(text || "Something went wrong. Please try again.");
+    examAiMessages.appendChild(element);
+    examAiMessages.scrollTop = examAiMessages.scrollHeight;
+  }
+  function appendExamAiLoading() {
+    if (!examAiMessages) return null;
+    const element = document.createElement("div");
+    element.className = "exam-ai-assistant-message";
+    element.textContent = "🤖 Thinking…";
+    examAiMessages.appendChild(element);
+    examAiMessages.scrollTop = examAiMessages.scrollHeight;
+    return element;
+  }
+  async function askExamAi() {
+    const topic = selectedSyllabusTopic;
+    const message = examAiInput?.value?.trim() || "";
+    if (!topic) { appendExamAiError("Select a syllabus topic first."); return; }
+    if (!message) {
+      examAiHint && (examAiHint.textContent = "Please enter a question first.");
+      examAiInput?.focus();
+      return;
+    }
+    if (!currentSession) await loadSession();
+    if (!currentSession?.access_token || !currentUser) {
+      appendExamAiError("Please sign in again before using Exam AI.");
+      return;
+    }
+    const goal = currentGoals[0] || {};
+    appendExamAiMessage(message, "user");
+    if (examAiInput) examAiInput.value = "";
+    const loading = appendExamAiLoading();
+    if (examAiSend) { examAiSend.disabled = true; examAiSend.textContent = "Thinking…"; }
+    if (examAiHint) examAiHint.textContent = "Exam AI is working on your question…";
+    try {
+      const { data, error } = await supabaseClient.functions.invoke(EXAM_AI_FUNCTION, {
+        body: {
+          message,
+          context: {
+            exam_type: apiExamType(goal.exam_type),
+            exam_year: Number(goal.exam_year || TARGET_EXAM_YEAR),
+            subject: subjectName(topic.subject),
+            chapter: topic.chapter_name || topic.chapter || topic.parent_topic_name || "",
+            topic: topic.topic_name || "",
+            topic_id: Number(topic.topic_id) || null,
+            completion_status: topic.progress_status || "not_started"
+          }
+        }
+      });
+      if (loading?.remove) loading.remove(); else loading && loading.remove();
+      if (error) {
+        console.error("Exam AI Edge Function error:", error);
+        let detail = "Exam AI could not respond. Please try again.";
+        try {
+          if (error.context) {
+            const body = await error.context.json();
+            if (body?.error) detail = body.error;
+          }
+        } catch (_) {}
+        throw new Error(detail);
+      }
+      if (!data?.success) throw new Error(data?.error || "Exam AI returned no answer.");
+      appendExamAiMessage(data.answer || "I couldn't generate an answer. Please try again.", "assistant");
+      if (examAiHint) examAiHint.textContent = "Ask another question about this topic.";
+    } catch (error) {
+      if (loading?.remove) loading.remove();
+      console.error("❌ Exam AI error:", error);
+      appendExamAiError(error?.message || "Exam AI could not respond. Please try again.");
+      if (examAiHint) examAiHint.textContent = "Something went wrong. Try sending your question again.";
+    } finally {
+      if (examAiSend) { examAiSend.disabled = false; examAiSend.textContent = "Send 🤖"; }
+    }
+  }
+  function bindExamAi() {
+    examAiClose?.addEventListener("click", closeExamAi);
+    examAiSend?.addEventListener("click", askExamAi);
+    examAiInput?.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        askExamAi();
+      }
+    });
+  }
+
   function bindSyllabusActionButtons(topicRows) {
     if (syllabusActionClose && syllabusActionPanel) {
       const cleanClose = syllabusActionClose.cloneNode(true);
@@ -445,7 +581,7 @@
         if (!topic) return;
         if (action === "learn") { alert(`Learn: ${topic.topic_name}`); return; }
         if (action === "practice") { alert(`Practice: ${topic.topic_name}`); return; }
-        if (action === "ai") { alert(`Ask AI: ${topic.topic_name}`); return; }
+        if (action === "ai") { openExamAi(topic); return; }
         if (action !== "complete") return;
         const topicId = Number(topic.topic_id);
         if (!topicId) { showToast("Unable to complete this topic."); return; }
@@ -479,6 +615,7 @@
       emptyState?.classList.remove("hidden");
       dashboardSection?.classList.add("hidden");
       syllabusSection?.classList.add("hidden");
+      closeExamAi();
       if (examGrid) examGrid.innerHTML = "";
       return;
     }
@@ -525,6 +662,7 @@
     finally { setButtonLoading(saveGoalsBtn, false); }
   });
   refreshBtn?.addEventListener("click", refreshCommandCenter);
+  bindExamAi();
 
   supabaseClient.auth.onAuthStateChange((_event, session) => {
     currentSession = session;
@@ -533,6 +671,7 @@
       currentGoals = [];
       examDates = [];
       clearInterval(countdownTimer);
+      closeExamAi();
       if (userLabel) userLabel.textContent = "Not signed in";
       if (goalCount) goalCount.textContent = "0";
       emptyState?.classList.add("hidden");
