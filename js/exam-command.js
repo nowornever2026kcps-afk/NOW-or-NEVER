@@ -678,92 +678,253 @@
    }
    
    
-   /* ---------------------------------------------------------
-      Load syllabus topics + student progress
-      --------------------------------------------------------- */
-   
-   async function loadSyllabusProgress(goal) {
 
 
-      console.log("========== SYLLABUS DEBUG ==========");
+      // =========================================================
+// Load ALL syllabus progress rows
+// Supabase/PostgREST can limit a single response to 1000
+// rows, so fetch in pages.
+// =========================================================
 
-      const debugResult = await supabaseClient.rpc(
-        "get_student_syllabus_progress",
-        {
-          p_exam_type: "neet",
-          p_exam_year: 2027,
-          p_board: null,
-          p_class_level: null
-        }
-      );
+      async function loadSyllabusProgress(goal) {
       
-      console.log("RPC ERROR:", debugResult.error);
-      console.log("RPC TOTAL ROWS:", debugResult.data?.length);
+        try {
       
-      console.log(
-        "RPC SUBJECTS:",
-        [
-          ...new Set(
-            (debugResult.data || []).map(
-              row => row.subject
-            )
-          )
-        ]
-      );
+          console.log(
+            "📚 Loading syllabus for:",
+            goal
+          );
       
-      console.table(debugResult.data);
       
-      console.log("========== END SYLLABUS DEBUG ==========");
-   
-     const syllabus =
-       await resolveSyllabusVersion(goal);
-   
-     const {
-        data,
-        error
-      } = await supabaseClient
-        .rpc(
-          "get_student_syllabus_progress",
-          {
-            p_exam_type:
-              normalizeExamType(goal.exam_type),
+          const examType =
+            normalizeExamType(
+              goal?.exam_type
+            );
       
-            p_exam_year:
-              Number(syllabus.actual_exam_year),
+          const examYear =
+            Number(
+              syllabus?.actual_exam_year ||
+              goal?.exam_year ||
+              TARGET_EXAM_YEAR
+            );
       
-            p_board:
-              normalizeExamType(goal.exam_type) === "board"
-                ? goal.board || null
-                : null,
       
-            p_class_level:
-              normalizeExamType(goal.exam_type) === "board"
-                ? goal.class_level || null
-                : null
+          const board =
+            examType === "board"
+              ? goal?.board || null
+              : null;
+      
+      
+          const classLevel =
+            examType === "board"
+              ? goal?.class_level || null
+              : null;
+      
+      
+          const PAGE_SIZE = 1000;
+      
+          let from = 0;
+      
+          let allRows = [];
+      
+          let hasMore = true;
+      
+      
+          while (hasMore) {
+      
+            console.log(
+              `📚 Loading syllabus rows ${from} → ${from + PAGE_SIZE - 1}`
+            );
+      
+      
+            const {
+              data,
+              error
+            } = await supabaseClient
+              .rpc(
+                "get_student_syllabus_progress",
+                {
+                  p_exam_type: examType,
+                  p_exam_year: examYear,
+                  p_board: board,
+                  p_class_level: classLevel
+                }
+              )
+              .range(
+                from,
+                from + PAGE_SIZE - 1
+              );
+      
+      
+            if (error) {
+      
+              console.error(
+                "❌ Syllabus RPC error:",
+                error
+              );
+      
+              throw error;
+      
+            }
+      
+      
+            const rows =
+              Array.isArray(data)
+                ? data
+                : [];
+      
+      
+            allRows.push(
+              ...rows
+            );
+      
+      
+            console.log(
+              `📚 Received ${rows.length} rows`
+            );
+      
+      
+            /*
+             * If fewer than PAGE_SIZE rows were
+             * returned, we reached the end.
+             */
+            if (
+              rows.length < PAGE_SIZE
+            ) {
+      
+              hasMore = false;
+      
+            }
+      
+            else {
+      
+              from += PAGE_SIZE;
+      
+            }
+      
           }
-        )
-        .range(0, 4999);
+      
+      
+          /*
+           * Remove accidental duplicates.
+           */
+          const uniqueRows =
+            Array.from(
+              new Map(
+                allRows.map(
+                  row => [
+                    row.topic_id,
+                    row
+                  ]
+                )
+              ).values()
+            );
+      
+      
+          currentSyllabusTopics =
+            uniqueRows;
+      
+      
+          console.log(
+            "✅ TOTAL SYLLABUS TOPICS:",
+            currentSyllabusTopics.length
+          );
+      
+      
+          console.log(
+            "📚 SUBJECTS:",
+            [
+              ...new Set(
+                currentSyllabusTopics.map(
+                  row => row.subject
+                )
+              )
+            ]
+          );
+      
+      
+          console.log(
+            "📚 BIOLOGY:",
+            currentSyllabusTopics.filter(
+              row =>
+                String(row.subject)
+                  .toLowerCase() ===
+                "biology"
+            ).length
+          );
+      
+      
+          console.log(
+            "📚 PHYSICS:",
+            currentSyllabusTopics.filter(
+              row =>
+                String(row.subject)
+                  .toLowerCase() ===
+                "physics"
+            ).length
+          );
+      
+      
+          console.log(
+            "📚 CHEMISTRY:",
+            currentSyllabusTopics.filter(
+              row =>
+                String(row.subject)
+                  .toLowerCase() ===
+                "chemistry"
+            ).length
+          );
+      
+      
+          /*
+           * Render the syllabus using the complete
+           * dataset.
+           */
+          renderSyllabus(
+            syllabus,
+            currentSyllabusTopics
+          );
+      
+      
+        } catch (error) {
+      
+          console.error(
+            "❌ Failed to load syllabus:",
+            error
+          );
+      
+      
+          if (
+            syllabusTopicContainer
+          ) {
+      
+            syllabusTopicContainer.innerHTML = `
+      
+              <div class="syllabus-empty-subject">
+      
+                <div class="syllabus-empty-icon">
+                  ⚠️
+                </div>
+      
+                <strong>
+                  Unable to load syllabus
+                </strong>
+      
+                <span>
+                  Please refresh the page and try again.
+                </span>
+      
+              </div>
+      
+            `;
+      
+          }
+      
+        }
+      
+      }
    
-     console.log(
-       "📚 Syllabus progress result:",
-       {
-         data,
-         error
-       }
-     );
-   
-     if (error) {
-       throw error;
-     }
-   
-     currentSyllabusTopics =
-       data || [];
-   
-     renderSyllabus(syllabus, currentSyllabusTopics);
-   
-     return currentSyllabusTopics;
-   }
-   
+    
    
    /* ---------------------------------------------------------
       Render syllabus
