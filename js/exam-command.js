@@ -881,9 +881,13 @@
            * dataset.
            */
           renderSyllabus(
-            currentSyllabus,
-            currentSyllabusTopics
-          );
+              currentSyllabus || {
+                syllabus_version_name: `NEET UG ${examYear}`,
+                is_official: true,
+                is_current: true
+              },
+              currentSyllabusTopics
+            );
       
       
         } catch (error) {
@@ -934,6 +938,14 @@
      syllabus,
      topics
    ) {
+
+       syllabus = syllabus || {
+          syllabus_version_name: "Syllabus",
+          is_official: false,
+          is_current: false
+        };
+      
+        topics = Array.isArray(topics) ? topics : [];
    
      if (!syllabusSection) {
        return;
