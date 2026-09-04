@@ -810,7 +810,7 @@
     if (!syllabusTopicContainer) return;
     const selected = subjectName(selectedSubject);
     const subjectTopics = topics.filter(topic => subjectName(topic.subject) === selected);
-    const chapters = subjectTopics.filter(topic => topic.topic_type === "chapter");
+    const chapters = subjectTopics.filter(topic => topic.topic_type === "chapter"|| topic.topic_type === "unit");
     if (!chapters.length) {
       syllabusTopicContainer.innerHTML = `<div class="syllabus-empty-subject"><div class="syllabus-empty-icon">📚</div><strong>No ${escapeHTML(selected)} syllabus data yet</strong><span>The syllabus for this subject hasn't been added to the database yet.</span></div>`;
       return;
