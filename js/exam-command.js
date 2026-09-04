@@ -858,9 +858,6 @@
         Detailed topics
         ------------------------------------------------------- */
    
-     renderSyllabusTopics(
-       topics
-     );
    }
    
    
@@ -868,196 +865,376 @@
       Render subject cards
       --------------------------------------------------------- */
    
-   function renderSyllabusSubjects(
-     topics
-   ) {
+   function renderSyllabusSubjects(topics) {
+     if (!syllabusSubjectGrid) return;
    
-     if (!syllabusSubjectGrid) {
-       return;
+     const subjects = [
+       ...new Set(
+         topics.map(topic => topic.subject)
+       )
+     ];
+   
+     syllabusSubjectGrid.innerHTML = `
+       <div class="syllabus-tabs">
+         ${subjects.map((subject, index) => `
+           <button
+             type="button"
+             class="syllabus-tab ${index === 0 ? "active" : ""}"
+             data-subject="${escapeHTML(subject)}"
+           >
+             ${subject === "Biology" ? "🧬" : ""}
+             ${subject === "Physics" ? "⚡" : ""}
+             ${subject === "Chemistry" ? "🧪" : ""}
+             ${escapeHTML(subject)}
+           </button>
+         `).join("")}
+       </div>
+   
+       <div
+         id="syllabusSubjectProgress"
+         class="syllabus-selected-subject-progress"
+       ></div>
+     `;
+   
+     const tabs =
+       syllabusSubjectGrid.querySelectorAll(
+         ".syllabus-tab"
+       );
+   
+     tabs.forEach(tab => {
+   
+       tab.addEventListener("click", () => {
+   
+         tabs.forEach(t =>
+           t.classList.remove("active")
+         );
+   
+         tab.classList.add("active");
+   
+         renderSelectedSyllabusSubject(
+           tab.dataset.subject,
+           topics
+         );
+       });
+   
+     });
+   
+     if (subjects.length) {
+       renderSelectedSyllabusSubject(
+         subjects[0],
+         topics
+       );
      }
-   
-     const subjects =
-       [...new Set(
-         topics.map(
-           topic => topic.subject
-         )
-       )];
-   
-   
-     syllabusSubjectGrid.innerHTML =
-       subjects.map(subject => {
-   
-         const subjectTopics =
-           topics.filter(
-             topic =>
-               topic.subject === subject
-           );
-   
-         const completed =
-           subjectTopics.filter(
-             topic =>
-               topic.progress_status ===
-               "completed"
-           ).length;
-   
-         const total =
-           subjectTopics.length;
-   
-         const percentage =
-           total > 0
-             ? Math.round(
-                 (completed / total) * 100
-               )
-             : 0;
-   
-         return `
-           <div class="syllabus-subject-card">
-   
-             <div class="syllabus-subject-header">
-   
-               <strong>
-                 ${escapeHTML(subject)}
-               </strong>
-   
-               <span>
-                 ${percentage}%
-               </span>
-   
-             </div>
-   
-             <div class="syllabus-subject-count">
-               ${completed} / ${total} completed
-             </div>
-   
-             <div class="syllabus-progress-bar">
-   
-               <div
-                 class="syllabus-progress-fill"
-                 style="width: ${percentage}%"
-               ></div>
-   
-             </div>
-   
-           </div>
-         `;
-   
-       }).join("");
    }
    
-   
+/*====================================*/
+         function renderSelectedSyllabusSubject(
+        subject,
+        topics
+      ) {
+      
+        const progressContainer =
+          document.getElementById(
+            "syllabusSelectedSubjectProgress"
+          );
+      
+        const subjectProgress =
+          document.getElementById(
+            "syllabusSubjectProgress"
+          );
+      
+        if (!subjectProgress) return;
+      
+        const subjectTopics =
+          topics.filter(
+            topic =>
+              topic.subject === subject &&
+              (
+                topic.topic_type === "topic" ||
+                topic.topic_type === "subtopic"
+              )
+          );
+      
+        const completed =
+          subjectTopics.filter(
+            topic =>
+              topic.progress_status === "completed"
+          ).length;
+      
+        const total =
+          subjectTopics.length;
+      
+        const percentage =
+          total > 0
+            ? Math.round(
+                (completed / total) * 100
+              )
+            : 0;
+      
+        subjectProgress.innerHTML = `
+          <div class="syllabus-selected-subject-header">
+      
+            <div>
+              <span class="syllabus-label">
+                ${escapeHTML(subject)} Progress
+              </span>
+      
+              <strong>
+                ${percentage}%
+              </strong>
+            </div>
+      
+            <span>
+              ${completed} / ${total} completed
+            </span>
+      
+          </div>
+      
+          <div class="syllabus-progress-bar">
+            <div
+              class="syllabus-progress-fill"
+              style="width: ${percentage}%"
+            ></div>
+          </div>
+        `;
+      
+        /*
+         * Tell the topic renderer which subject
+         * is currently selected.
+         */
+      
+        renderSyllabusTopics(
+          topics,
+          subject
+        );
+      }
    /* ---------------------------------------------------------
       Render detailed syllabus
       --------------------------------------------------------- */
    
    function renderSyllabusTopics(
-     topics
-   ) {
+        topics,
+        selectedSubject
+      ) {
+      
+        if (!syllabusTopicContainer) return;
+      
+        const subjectTopics =
+          topics.filter(
+            topic =>
+              topic.subject === selectedSubject
+          );
+      
+        const chapters =
+          subjectTopics.filter(
+            topic =>
+              topic.topic_type === "chapter"
+          );
+      
+        syllabusTopicContainer.innerHTML = `
+          <div class="syllabus-chapter-list">
+      
+            ${chapters.map((chapter, index) => {
+      
+              const children =
+                subjectTopics.filter(
+                  topic =>
+                    topic.parent_topic_id ===
+                    chapter.topic_id
+                );
+      
+              const completed =
+                children.filter(
+                  topic =>
+                    topic.progress_status ===
+                    "completed"
+                ).length;
+      
+              const total =
+                children.length;
+      
+              const percentage =
+                total > 0
+                  ? Math.round(
+                      (completed / total) * 100
+                    )
+                  : 0;
+      
+              return `
+                <div
+                  class="syllabus-chapter
+                         ${index === 0 ? "expanded" : ""}"
+                  data-topic-id="${chapter.topic_id}"
+                >
+      
+                  <button
+                    type="button"
+                    class="syllabus-chapter-header"
+                    data-chapter-toggle
+                  >
+      
+                    <div class="syllabus-chapter-title">
+      
+                      <span class="syllabus-chapter-arrow">
+                        ${index === 0 ? "▼" : "▶"}
+                      </span>
+      
+                      <strong>
+                        ${escapeHTML(
+                          chapter.topic_name
+                        )}
+                      </strong>
+      
+                    </div>
+      
+                    <div class="syllabus-chapter-progress">
+      
+                      <span>
+                        ${completed} / ${total}
+                      </span>
+      
+                      <strong>
+                        ${percentage}%
+                      </strong>
+      
+                    </div>
+      
+                  </button>
+      
+                  <div
+                    class="syllabus-chapter-progress-bar"
+                  >
+                    <div
+                      class="syllabus-progress-fill"
+                      style="width: ${percentage}%"
+                    ></div>
+                  </div>
+      
+                  <div
+                    class="syllabus-topic-list"
+                    ${index !== 0 ? 'style="display:none;"' : ""}
+                  >
+      
+                    ${children.map(topic => `
+      
+                      <div
+                        class="syllabus-topic-row"
+                        data-topic-id="${topic.topic_id}"
+                      >
+      
+                        <span class="syllabus-topic-name">
+                          ${escapeHTML(
+                            topic.topic_name
+                          )}
+                        </span>
+      
+                        <span
+                          class="
+                            syllabus-topic-status
+                            status-${escapeHTML(
+                              topic.progress_status
+                            )}
+                          "
+                        >
+                          ${getSyllabusStatusLabel(
+                            topic.progress_status
+                          )}
+                        </span>
+      
+                      </div>
+      
+                    `).join("")}
+      
+                  </div>
+      
+                </div>
+              `;
+      
+            }).join("")}
+      
+          </div>
+        `;
+      
+        /*
+         * Chapter dropdown controls
+         */
+      
+        const chapterHeaders =
+          syllabusTopicContainer.querySelectorAll(
+            "[data-chapter-toggle]"
+          );
+      
+        chapterHeaders.forEach(header => {
+      
+          header.addEventListener(
+            "click",
+            () => {
+      
+              const chapter =
+                header.closest(
+                  ".syllabus-chapter"
+                );
+      
+              const topicList =
+                chapter.querySelector(
+                  ".syllabus-topic-list"
+                );
+      
+              const arrow =
+                chapter.querySelector(
+                  ".syllabus-chapter-arrow"
+                );
+      
+              const isOpen =
+                chapter.classList.contains(
+                  "expanded"
+                );
+      
+              if (isOpen) {
+      
+                chapter.classList.remove(
+                  "expanded"
+                );
+      
+                topicList.style.display =
+                  "none";
+      
+                arrow.textContent = "▶";
+      
+              } else {
+      
+                chapter.classList.add(
+                  "expanded"
+                );
+      
+                topicList.style.display =
+                  "block";
+      
+                arrow.textContent = "▼";
+              }
+      
+            }
+          );
+      
+        });
+      }
    
-     if (!syllabusTopicContainer) {
-       return;
-     }
-   
-     const subjects =
-       [...new Set(
-         topics.map(
-           topic => topic.subject
-         )
-       )];
-   
-   
-     syllabusTopicContainer.innerHTML =
-       subjects.map(subject => {
-   
-         const subjectTopics =
-           topics.filter(
-             topic =>
-               topic.subject === subject
-           );
-   
-         const chapters =
-           subjectTopics.filter(
-             topic =>
-               topic.topic_type === "chapter"
-           );
-   
-   
-         return `
-           <div class="syllabus-subject-section">
-   
-             <div class="syllabus-subject-title">
-               <h3>
-                 ${escapeHTML(subject)}
-               </h3>
-             </div>
-   
-             ${chapters.map(chapter => {
-   
-               const children =
-                 subjectTopics.filter(
-                   topic =>
-                     topic.parent_topic_id ===
-                     chapter.topic_id
-                 );
-   
-               return `
-                 <div
-                   class="syllabus-chapter"
-                   data-topic-id="${chapter.topic_id}"
-                 >
-   
-                   <div class="syllabus-chapter-header">
-   
-                     <strong>
-                       ${escapeHTML(
-                         chapter.topic_name
-                       )}
-                     </strong>
-   
-                     <span>
-                       ${children.length} topics
-                     </span>
-   
-                   </div>
-   
-                   <div class="syllabus-topic-list">
-   
-                     ${children.map(topic => `
-   
-                       <div
-                         class="syllabus-topic-row"
-                         data-topic-id="${topic.topic_id}"
-                       >
-   
-                         <span class="syllabus-topic-name">
-                           ${escapeHTML(
-                             topic.topic_name
-                           )}
-                         </span>
-   
-                         <span class="syllabus-topic-status">
-                           ${escapeHTML(
-                             topic.progress_status
-                           )}
-                         </span>
-   
-                       </div>
-   
-                     `).join("")}
-   
-                   </div>
-   
-                 </div>
-               `;
-   
-             }).join("")}
-   
-           </div>
-         `;
-   
-       }).join("");
-   }
-   
-   
+   /*=========================*/
+
+   function getSyllabusStatusLabel(status) {
+
+        switch (status) {
+      
+          case "completed":
+            return "✅ Completed";
+      
+          case "studied":
+            return "📖 Studied";
+      
+          default:
+            return "○ Not started";
+        }
+      }
    /* ---------------------------------------------------------
       Load syllabus for the first active exam
       --------------------------------------------------------- */
