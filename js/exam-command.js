@@ -703,7 +703,7 @@
       
           const examYear =
             Number(
-              syllabus?.actual_exam_year ||
+              
               goal?.exam_year ||
               TARGET_EXAM_YEAR
             );
