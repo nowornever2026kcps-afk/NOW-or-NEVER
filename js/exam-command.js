@@ -867,104 +867,309 @@
       Render subject cards
       --------------------------------------------------------- */
    
-   function renderSyllabusSubjects(topics) {
-     if (!syllabusSubjectGrid) return;
-   
-     const subjects = [
-       ...new Set(
-         topics.map(topic => topic.subject)
-       )
-     ];
-   
-     syllabusSubjectGrid.innerHTML = `
-       <div class="syllabus-tabs">
-         ${subjects.map((subject, index) => `
-           <button
-             type="button"
-             class="syllabus-tab ${index === 0 ? "active" : ""}"
-             data-subject="${escapeHTML(subject)}"
-           >
-             ${subject === "Biology" ? "🧬" : ""}
-             ${subject === "Physics" ? "⚡" : ""}
-             ${subject === "Chemistry" ? "🧪" : ""}
-             ${escapeHTML(subject)}
-           </button>
-         `).join("")}
-       </div>
-   
-       <div
-         id="syllabusSubjectProgress"
-         class="syllabus-selected-subject-progress"
-       ></div>
-     `;
-   
-     const tabs =
-       syllabusSubjectGrid.querySelectorAll(
-         ".syllabus-tab"
-       );
-   
-     tabs.forEach(tab => {
-   
-       tab.addEventListener("click", () => {
-   
-         tabs.forEach(t =>
-           t.classList.remove("active")
-         );
-   
-         tab.classList.add("active");
-   
-         renderSelectedSyllabusSubject(
-           tab.dataset.subject,
-           topics
-         );
-       });
-   
-     });
-   
-     if (subjects.length) {
-       renderSelectedSyllabusSubject(
-         subjects[0],
-         topics
-       );
-     }
-   }
-   
-/*====================================*/
-         function renderSelectedSyllabusSubject(
+  /* ---------------------------------------------------------
+   Render subject tabs
+   --------------------------------------------------------- */
+
+function renderSyllabusSubjects(topics) {
+
+  if (!syllabusSubjectGrid) return;
+
+  /*
+   * Fixed NEET subject order.
+   *
+   * This guarantees that all three tabs appear even if
+   * one subject currently has no rows returned by Supabase.
+   */
+  const SUBJECTS = [
+    {
+      key: "Biology",
+      icon: "🧬"
+    },
+    {
+      key: "Physics",
+      icon: "⚡"
+    },
+    {
+      key: "Chemistry",
+      icon: "🧪"
+    }
+  ];
+
+
+  /*
+   * Normalize subject names coming from Supabase.
+   *
+   * This handles:
+   * Biology
+   * biology
+   * BIOLOGY
+   * Physics
+   * physics
+   * Chemistry
+   * chemistry
+   */
+  function normalizeSubject(value) {
+
+    const normalized =
+      String(value || "")
+        .trim()
+        .toLowerCase();
+
+    if (normalized === "biology") {
+      return "Biology";
+    }
+
+    if (normalized === "physics") {
+      return "Physics";
+    }
+
+    if (normalized === "chemistry") {
+      return "Chemistry";
+    }
+
+    return String(value || "").trim();
+  }
+
+
+  /*
+   * Convert the returned topic subject names into the
+   * standard names used by the tabs.
+   */
+  const normalizedTopics =
+    topics.map(topic => ({
+      ...topic,
+      subject: normalizeSubject(topic.subject)
+    }));
+
+
+  /*
+   * Store the normalized data.
+   *
+   * This is important because the rest of the syllabus
+   * renderer will now consistently use Biology / Physics /
+   * Chemistry.
+   */
+  currentSyllabusTopics =
+    normalizedTopics;
+
+
+  /*
+   * Render the three tabs.
+   */
+  syllabusSubjectGrid.innerHTML = `
+
+    <div class="syllabus-tabs">
+
+      ${SUBJECTS.map((subject, index) => {
+
+        const subjectTopics =
+          normalizedTopics.filter(
+            topic =>
+              topic.subject === subject.key &&
+              (
+                topic.topic_type === "topic" ||
+                topic.topic_type === "subtopic"
+              )
+          );
+
+        const hasData =
+          subjectTopics.length > 0;
+
+        return `
+
+          <button
+            type="button"
+            class="syllabus-tab ${index === 0 ? "active" : ""}"
+            data-subject="${escapeHTML(subject.key)}"
+            aria-selected="${index === 0 ? "true" : "false"}"
+          >
+
+            <span class="syllabus-tab-icon">
+              ${subject.icon}
+            </span>
+
+            <span class="syllabus-tab-name">
+              ${escapeHTML(subject.key)}
+            </span>
+
+            <span class="syllabus-tab-count">
+              ${hasData ? subjectTopics.length : "—"}
+            </span>
+
+          </button>
+
+        `;
+
+      }).join("")}
+
+    </div>
+
+
+    <div
+      id="syllabusSubjectProgress"
+      class="syllabus-selected-subject-progress"
+    ></div>
+
+  `;
+
+
+  /*
+   * Tab click handlers.
+   */
+  const tabs =
+    syllabusSubjectGrid.querySelectorAll(
+      ".syllabus-tab"
+    );
+
+
+  tabs.forEach(tab => {
+
+    tab.addEventListener(
+      "click",
+      () => {
+
+        /*
+         * Remove active state from all tabs.
+         */
+        tabs.forEach(otherTab => {
+
+          otherTab.classList.remove(
+            "active"
+          );
+
+          otherTab.setAttribute(
+            "aria-selected",
+            "false"
+          );
+
+        });
+
+
+        /*
+         * Activate selected tab.
+         */
+        tab.classList.add(
+          "active"
+        );
+
+        tab.setAttribute(
+          "aria-selected",
+          "true"
+        );
+
+
+        /*
+         * Render selected subject.
+         */
+        renderSelectedSyllabusSubject(
+          tab.dataset.subject,
+          normalizedTopics
+        );
+
+      }
+    );
+
+  });
+
+
+  /*
+   * Biology is selected by default.
+   */
+  renderSelectedSyllabusSubject(
+    "Biology",
+    normalizedTopics
+  );
+
+}
+
+
+
+/* ---------------------------------------------------------
+   Render selected subject
+   --------------------------------------------------------- */
+      
+      function renderSelectedSyllabusSubject(
         subject,
         topics
       ) {
-      
-        const progressContainer =
-          document.getElementById(
-            "syllabusSelectedSubjectProgress"
-          );
       
         const subjectProgress =
           document.getElementById(
             "syllabusSubjectProgress"
           );
       
+      
         if (!subjectProgress) return;
       
+      
+        /*
+         * Normalize the selected subject.
+         */
+        const selectedSubject =
+          String(subject || "")
+            .trim()
+            .toLowerCase();
+      
+      
+        let normalizedSubject = subject;
+      
+      
+        if (selectedSubject === "biology") {
+          normalizedSubject = "Biology";
+        }
+      
+        else if (selectedSubject === "physics") {
+          normalizedSubject = "Physics";
+        }
+      
+        else if (selectedSubject === "chemistry") {
+          normalizedSubject = "Chemistry";
+        }
+      
+      
+        /*
+         * Get all trackable topics for this subject.
+         */
         const subjectTopics =
           topics.filter(
-            topic =>
-              topic.subject === subject &&
-              (
-                topic.topic_type === "topic" ||
-                topic.topic_type === "subtopic"
-              )
+            topic => {
+      
+              const topicSubject =
+                String(topic.subject || "")
+                  .trim()
+                  .toLowerCase();
+      
+              return (
+                topicSubject ===
+                  String(normalizedSubject)
+                    .trim()
+                    .toLowerCase()
+                &&
+                (
+                  topic.topic_type === "topic" ||
+                  topic.topic_type === "subtopic"
+                )
+              );
+      
+            }
           );
       
+      
+        /*
+         * Calculate subject progress.
+         */
         const completed =
           subjectTopics.filter(
             topic =>
-              topic.progress_status === "completed"
+              topic.progress_status ===
+              "completed"
           ).length;
+      
       
         const total =
           subjectTopics.length;
+      
       
         const percentage =
           total > 0
@@ -973,17 +1178,24 @@
               )
             : 0;
       
+      
+        /*
+         * Render subject progress.
+         */
         subjectProgress.innerHTML = `
+      
           <div class="syllabus-selected-subject-header">
       
             <div>
+      
               <span class="syllabus-label">
-                ${escapeHTML(subject)} Progress
+                ${escapeHTML(normalizedSubject)} Progress
               </span>
       
               <strong>
                 ${percentage}%
               </strong>
+      
             </div>
       
             <span>
@@ -992,52 +1204,125 @@
       
           </div>
       
+      
           <div class="syllabus-progress-bar">
+      
             <div
               class="syllabus-progress-fill"
               style="width: ${percentage}%"
             ></div>
+      
           </div>
+      
         `;
       
-        /*
-         * Tell the topic renderer which subject
-         * is currently selected.
-         */
       
+        /*
+         * Render chapters/topics for the selected subject.
+         */
         renderSyllabusTopics(
           topics,
-          subject
+          normalizedSubject
         );
+      
       }
-   /* ---------------------------------------------------------
-      Render detailed syllabus
-      --------------------------------------------------------- */
-   
-   function renderSyllabusTopics(
+      
+      
+      
+      /* ---------------------------------------------------------
+         Render detailed syllabus
+         --------------------------------------------------------- */
+      
+      function renderSyllabusTopics(
         topics,
         selectedSubject
       ) {
       
         if (!syllabusTopicContainer) return;
       
+      
+        /*
+         * Normalize selected subject.
+         */
+        const normalizedSelectedSubject =
+          String(selectedSubject || "")
+            .trim()
+            .toLowerCase();
+      
+      
+        /*
+         * Only show topics belonging to the selected subject.
+         */
         const subjectTopics =
           topics.filter(
-            topic =>
-              topic.subject === selectedSubject
+            topic => {
+      
+              const topicSubject =
+                String(topic.subject || "")
+                  .trim()
+                  .toLowerCase();
+      
+              return (
+                topicSubject ===
+                normalizedSelectedSubject
+              );
+      
+            }
           );
       
+      
+        /*
+         * Find chapters.
+         */
         const chapters =
           subjectTopics.filter(
             topic =>
               topic.topic_type === "chapter"
           );
       
+      
+        /*
+         * No syllabus data for this subject.
+         */
+        if (!chapters.length) {
+      
+          syllabusTopicContainer.innerHTML = `
+      
+            <div class="syllabus-empty-subject">
+      
+              <div class="syllabus-empty-icon">
+                📚
+              </div>
+      
+              <strong>
+                No ${escapeHTML(selectedSubject)} syllabus data yet
+              </strong>
+      
+              <span>
+                The syllabus for this subject hasn't been added
+                to the database yet.
+              </span>
+      
+            </div>
+      
+          `;
+      
+          return;
+        }
+      
+      
+        /*
+         * Render chapter list.
+         */
         syllabusTopicContainer.innerHTML = `
+      
           <div class="syllabus-chapter-list">
       
             ${chapters.map((chapter, index) => {
       
+              /*
+               * Find topics belonging to this chapter.
+               */
               const children =
                 subjectTopics.filter(
                   topic =>
@@ -1045,6 +1330,10 @@
                     chapter.topic_id
                 );
       
+      
+              /*
+               * Calculate chapter progress.
+               */
               const completed =
                 children.filter(
                   topic =>
@@ -1052,8 +1341,10 @@
                     "completed"
                 ).length;
       
+      
               const total =
                 children.length;
+      
       
               const percentage =
                 total > 0
@@ -1062,11 +1353,17 @@
                     )
                   : 0;
       
+      
               return `
+      
                 <div
-                  class="syllabus-chapter
-                         ${index === 0 ? "expanded" : ""}"
-                  data-topic-id="${chapter.topic_id}"
+                  class="
+                    syllabus-chapter
+                    ${index === 0 ? "expanded" : ""}
+                  "
+                  data-topic-id="${escapeHTML(
+                    chapter.topic_id
+                  )}"
                 >
       
                   <button
@@ -1075,9 +1372,13 @@
                     data-chapter-toggle
                   >
       
-                    <div class="syllabus-chapter-title">
+                    <div
+                      class="syllabus-chapter-title"
+                    >
       
-                      <span class="syllabus-chapter-arrow">
+                      <span
+                        class="syllabus-chapter-arrow"
+                      >
                         ${index === 0 ? "▼" : "▶"}
                       </span>
       
@@ -1089,7 +1390,10 @@
       
                     </div>
       
-                    <div class="syllabus-chapter-progress">
+      
+                    <div
+                      class="syllabus-chapter-progress"
+                    >
       
                       <span>
                         ${completed} / ${total}
@@ -1103,68 +1407,104 @@
       
                   </button>
       
+      
                   <div
                     class="syllabus-chapter-progress-bar"
                   >
+      
                     <div
                       class="syllabus-progress-fill"
                       style="width: ${percentage}%"
                     ></div>
+      
                   </div>
+      
       
                   <div
                     class="syllabus-topic-list"
-                    ${index !== 0 ? 'style="display:none;"' : ""}
+                    ${index !== 0
+                      ? 'style="display:none;"'
+                      : ""
+                    }
                   >
       
-                    ${children.map(topic => `
+                    ${
+                      children.length
+                        ? children.map(topic => `
       
-                      <div
-                        class="syllabus-topic-row"
-                        data-topic-id="${topic.topic_id}"
-                      >
+                            <div
+                              class="syllabus-topic-row"
+                              data-topic-id="${escapeHTML(
+                                topic.topic_id
+                              )}"
+                            >
       
-                        <span class="syllabus-topic-name">
-                          ${escapeHTML(
-                            topic.topic_name
-                          )}
-                        </span>
+                              <span
+                                class="syllabus-topic-name"
+                              >
+                                ${escapeHTML(
+                                  topic.topic_name
+                                )}
+                              </span>
       
-                        <span
-                          class="
-                            syllabus-topic-status
-                            status-${escapeHTML(
-                              topic.progress_status
-                            )}
-                          "
-                        >
-                          ${getSyllabusStatusLabel(
-                            topic.progress_status
-                          )}
-                        </span>
       
-                      </div>
+                              <span
+                                class="
+                                  syllabus-topic-status
+                                  status-${escapeHTML(
+                                    topic.progress_status
+                                  )}
+                                "
+                              >
       
-                    `).join("")}
+                                ${getSyllabusStatusLabel(
+                                  topic.progress_status
+                                )}
+      
+                              </span>
+      
+                            </div>
+      
+                          `).join("")
+      
+                        : `
+      
+                            <div
+                              class="syllabus-topic-row"
+                            >
+      
+                              <span
+                                class="syllabus-topic-name"
+                              >
+                                No topics added yet.
+                              </span>
+      
+                            </div>
+      
+                          `
+                    }
       
                   </div>
       
                 </div>
+      
               `;
       
             }).join("")}
       
           </div>
+      
         `;
       
-        /*
-         * Chapter dropdown controls
-         */
       
+        /*
+         * Chapter dropdown controls.
+         */
         const chapterHeaders =
           syllabusTopicContainer.querySelectorAll(
             "[data-chapter-toggle]"
           );
+      
       
         chapterHeaders.forEach(header => {
       
@@ -1177,20 +1517,30 @@
                   ".syllabus-chapter"
                 );
       
+      
+              if (!chapter) return;
+      
+      
               const topicList =
                 chapter.querySelector(
                   ".syllabus-topic-list"
                 );
+      
       
               const arrow =
                 chapter.querySelector(
                   ".syllabus-chapter-arrow"
                 );
       
+      
+              if (!topicList || !arrow) return;
+      
+      
               const isOpen =
                 chapter.classList.contains(
                   "expanded"
                 );
+      
       
               if (isOpen) {
       
@@ -1201,9 +1551,12 @@
                 topicList.style.display =
                   "none";
       
-                arrow.textContent = "▶";
+                arrow.textContent =
+                  "▶";
       
-              } else {
+              }
+      
+              else {
       
                 chapter.classList.add(
                   "expanded"
@@ -1212,13 +1565,16 @@
                 topicList.style.display =
                   "block";
       
-                arrow.textContent = "▼";
+                arrow.textContent =
+                  "▼";
+      
               }
       
             }
           );
       
         });
+      
       }
    
    /*=========================*/
