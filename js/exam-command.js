@@ -4085,5 +4085,5 @@ async function init() {
 
 init();
 
-};
+})();
 
