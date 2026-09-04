@@ -5970,91 +5970,65 @@ async function refreshAll(){
 ============================================ */
 
 document
-  .querySelectorAll(".nav button[data-view]")
-  .forEach(
-    btn => {
+  .querySelectorAll(".nav button")
+  .forEach(btn => {
 
-      btn.addEventListener(
-        "click",
-        async () => {
+    btn.addEventListener("click", async () => {
 
-            // 🎯 Exam opens as a separate page
-            if (btn.id === "examNavBtn") {
-                window.location.href = "exam-command.html";
-                return;
-            }
-          
-            document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
-            document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-            btn.classList.add("active");
-            $(btn.dataset.view).classList.add("active");
+      // 🎯 Exam opens as a separate page
+      if (btn.id === "examNavBtn") {
+        window.location.href = "exam-command.html";
+        return;
+      }
 
+      // Ignore buttons that are not normal navigation buttons
+      if (!btn.dataset.view) {
+        return;
+      }
 
-          if(
-            btn.dataset.view ===
-            "tasks"
-          ){
+      document
+        .querySelectorAll(".nav button")
+        .forEach(b => b.classList.remove("active"));
 
-            await renderTasks();
+      document
+        .querySelectorAll(".view")
+        .forEach(v => v.classList.remove("active"));
 
-          }
+      btn.classList.add("active");
 
+      const targetView = $(btn.dataset.view);
 
-          if(
-            btn.dataset.view ===
-            "tests"
-          ){
+      if (targetView) {
+        targetView.classList.add("active");
+      }
 
-            await renderTests();
+      if (btn.dataset.view === "tasks") {
+        await renderTasks();
+      }
 
-          }
+      if (btn.dataset.view === "tests") {
+        await renderTests();
+      }
 
+      if (btn.dataset.view === "personal") {
+        await renderPersonal();
+      }
 
-          if(
-            btn.dataset.view ===
-            "personal"
-          ){
+      if (btn.dataset.view === "shop") {
+        await renderShop();
+      }
 
-            await renderPersonal();
+      if (btn.dataset.view === "leaderboard") {
+        await renderBoard();
+      }
 
-          }
+      if (btn.dataset.view === "history") {
+        await renderHistory();
+      }
 
+    });
 
-          if(
-            btn.dataset.view ===
-            "shop"
-          ){
-
-            await renderShop();
-
-          }
-
-
-          if(
-            btn.dataset.view ===
-            "leaderboard"
-          ){
-
-            await renderBoard();
-
-          }
-
-
-          if(
-            btn.dataset.view ===
-            "history"
-          ){
-
-            await renderHistory();
-
-          }
-
-        }
-      );
-
-    }
-  );
-
+  });
 
 /* ============================================
    SECURITY / HTML ESCAPING
