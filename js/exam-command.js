@@ -881,7 +881,7 @@
            * dataset.
            */
           renderSyllabus(
-            syllabus,
+            currentSyllabus,
             currentSyllabusTopics
           );
       
