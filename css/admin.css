@@ -5,6 +5,14 @@
    Styling for admin.html only.
    ========================================================= */
 
+/* SECURITY/UI GATE
+   admin.html intentionally starts with the dashboard hidden.
+   Keep this rule local to admin.css so the page does not depend
+   on main.css for access-state visibility. */
+.hidden {
+  display: none !important;
+}
+
 :root {
   --admin-bg: #070b14;
   --admin-panel: rgba(15, 23, 42, 0.88);
@@ -50,10 +58,6 @@ button {
   cursor: pointer;
 }
 
-/* =========================================================
-   PAGE SHELL
-   ========================================================= */
-
 .admin-page {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
@@ -93,10 +97,6 @@ button {
   flex-wrap: wrap;
   justify-content: flex-end;
 }
-
-/* =========================================================
-   STATUS / BUTTONS
-   ========================================================= */
 
 .admin-status {
   display: inline-flex;
@@ -147,10 +147,6 @@ button {
   background: rgba(190, 24, 93, 0.12);
 }
 
-/* =========================================================
-   ACCESS STATES
-   ========================================================= */
-
 .admin-state {
   padding: 52px 24px;
   text-align: center;
@@ -175,10 +171,6 @@ button {
 #accessDenied {
   border-color: rgba(251, 113, 133, 0.22);
 }
-
-/* =========================================================
-   ADMIN PROFILE CARD
-   ========================================================= */
 
 .admin-user-card {
   display: flex;
@@ -215,10 +207,6 @@ button {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
-
-/* =========================================================
-   DASHBOARD CARDS
-   ========================================================= */
 
 .admin-dashboard-grid {
   display: grid;
@@ -276,10 +264,6 @@ button {
   line-height: 1.45;
 }
 
-/* =========================================================
-   STATS
-   ========================================================= */
-
 .admin-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -304,10 +288,6 @@ button {
   font-size: 1.5rem;
   font-weight: 800;
 }
-
-/* =========================================================
-   SECTION PANEL
-   ========================================================= */
 
 .admin-section-panel {
   margin-top: 22px;
@@ -344,10 +324,6 @@ button {
   color: var(--admin-text);
   background: rgba(255, 255, 255, 0.05);
 }
-
-/* =========================================================
-   FUTURE FORMS / TABLES
-   ========================================================= */
 
 .admin-form-grid {
   display: grid;
@@ -425,10 +401,6 @@ button {
 .admin-table tr:last-child td {
   border-bottom: 0;
 }
-
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
 
 @media (max-width: 900px) {
   .admin-dashboard-grid,
