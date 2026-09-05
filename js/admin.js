@@ -2,7 +2,7 @@
    NOW-or-NEVER
    ADMIN COMMAND CENTER
    ---------------------------------------------------------
-   Step 1: authentication, access gate and dashboard shell.
+   Step 2: secure admin authorization through Supabase.
    Shop/database management will be added in later steps.
    ========================================================= */
 
@@ -86,26 +86,20 @@
   /* =========================================================
      ADMIN AUTHORIZATION
      ---------------------------------------------------------
-     IMPORTANT:
-     This is intentionally NOT based on username/email.
-     The real authorization source will be Supabase/RLS.
-
-     For this first step we look for an existing admin role claim
-     in the authenticated user's metadata/app metadata. This keeps
-     the page locked by default until an administrator role exists.
+     The browser does NOT decide who is an administrator.
+     Supabase executes public.is_admin(), which checks the
+     protected public.admin_users table using auth.uid().
      ========================================================= */
 
-  function hasAdminRole(user) {
-    if (!user) return false;
+  async function hasAdminAccess() {
+    const { data, error } = await supabaseClient.rpc("is_admin");
 
-    const appRole = user.app_metadata?.role;
-    const userRole = user.user_metadata?.role;
+    if (error) {
+      console.error("Admin authorization error:", error);
+      throw error;
+    }
 
-    const roles = [appRole, userRole]
-      .filter(Boolean)
-      .map((value) => String(value).toLowerCase());
-
-    return roles.includes("admin") || roles.includes("administrator");
+    return data === true;
   }
 
   /* =========================================================
@@ -133,15 +127,15 @@
         return;
       }
 
-      const user = session.user;
+      const allowed = await hasAdminAccess();
 
-      if (!hasAdminRole(user)) {
-        console.warn("Admin access rejected for user:", user.id);
+      if (!allowed) {
+        console.warn("Admin access rejected for user:", session.user.id);
         showAccessDenied("Your account does not have administrator permission.");
         return;
       }
 
-      showDashboard(user);
+      showDashboard(session.user);
     } catch (error) {
       console.error("Admin verification failed:", error);
       showAccessDenied("A security check failed. Please try again.");
@@ -230,20 +224,14 @@
      AUTH STATE CHANGES
      ========================================================= */
 
-  supabaseClient.auth.onAuthStateChange((event, session) => {
+  supabaseClient.auth.onAuthStateChange((event) => {
     if (event === "SIGNED_OUT") {
       window.location.href = "index.html";
       return;
     }
 
-    if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-      if (session?.user) {
-        if (hasAdminRole(session.user)) {
-          showDashboard(session.user);
-        } else {
-          showAccessDenied("Your account does not have administrator permission.");
-        }
-      }
+    if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+      verifyAdminAccess();
     }
   });
 
