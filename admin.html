@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>NOW-or-NEVER — Admin Command Center</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-app">
+    <header class="admin-header">
+      <div class="brand">
+        <div class="brand-mark">N</div>
+        <div>
+          <h1>NOW-or-NEVER</h1>
+          <p>Admin Command Center</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span id="adminStatus" class="status-pill">Checking access…</span>
+        <button id="logoutBtn" class="ghost-btn" type="button">Log out</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <section id="accessLoading" class="panel loading-panel">
+        <div class="loader"></div>
+        <h2>Verifying administrator access</h2>
+        <p>Please wait while your account is verified.</p>
+      </section>
+
+      <section id="accessDenied" class="panel denied-panel hidden">
+        <div class="denied-icon">🔒</div>
+        <h2>Access denied</h2>
+        <p>Your account does not have administrator permission.</p>
+        <button id="deniedLogoutBtn" class="primary-btn" type="button">Return to login</button>
+      </section>
+
+      <section id="dashboard" class="hidden">
+        <div class="welcome-row">
+          <div>
+            <p class="eyebrow">CONTROL CENTER</p>
+            <h2>Welcome, Administrator</h2>
+            <p class="muted">Manage NOW-or-NEVER from one secure control panel.</p>
+          </div>
+          <div class="admin-user-card">
+            <span class="user-avatar">A</span>
+            <div>
+              <strong id="adminName">Administrator</strong>
+              <small id="adminEmail">—</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <button class="dashboard-card shop-card" type="button" data-section="shop">
+            <span class="card-icon">🛒</span>
+            <span class="card-title">Shop Management</span>
+            <span class="card-description">Manage shop items, prices and availability.</span>
+            <span class="card-arrow">→</span>
+          </button>
+
+          <button class="dashboard-card menu-card" type="button" data-section="menus">
+            <span class="card-icon">📂</span>
+            <span class="card-title">Shop Menus</span>
+            <span class="card-description">Create, rename, reorder or disable shop menus.</span>
+            <span class="card-arrow">→</span>
+          </button>
+
+          <button class="dashboard-card update-card" type="button" data-section="updates">
+            <span class="card-icon">📢</span>
+            <span class="card-title">Updates</span>
+            <span class="card-description">Publish announcements and new feature updates.</span>
+            <span class="card-arrow">→</span>
+          </button>
+
+          <button class="dashboard-card settings-card" type="button" data-section="settings">
+            <span class="card-icon">⚙️</span>
+            <span class="card-title">Settings</span>
+            <span class="card-description">Administrator and dashboard settings.</span>
+            <span class="card-arrow">→</span>
+          </button>
+        </div>
+
+        <section class="overview-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">OVERVIEW</p>
+              <h3>System at a glance</h3>
+            </div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card"><span>🛒</span><strong id="shopItemCount">—</strong><small>Shop Items</small></div>
+            <div class="stat-card"><span>📂</span><strong id="shopMenuCount">—</strong><small>Shop Menus</small></div>
+            <div class="stat-card"><span>📢</span><strong id="updateCount">—</strong><small>Published Updates</small></div>
+            <div class="stat-card"><span>🛡️</span><strong>Protected</strong><small>Admin Access</small></div>
+          </div>
+        </section>
+
+        <section id="sectionPanel" class="panel section-panel hidden">
+          <button id="closeSectionBtn" class="close-btn" type="button" aria-label="Close">×</button>
+          <div id="sectionContent"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
