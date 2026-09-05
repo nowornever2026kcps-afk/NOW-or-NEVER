@@ -1,6 +1,6 @@
 // Marketplace / shop module
 /* ================= SHOP CATALOGUE ================= */
-const SHOP_ITEMS=[
+let SHOP_ITEMS=[
  {id:"title_newbie",category:"title",name:"Rookie",desc:"A clean starter title.",price:0,kind:"title",preview:"ROOKIE"},
  {id:"title_grinder",category:"title",name:"Grinder",desc:"For showing up every day.",price:75,kind:"title",preview:"GRINDER"},
  {id:"title_locked",category:"title",name:"Locked In",desc:"No distractions.",price:150,kind:"title",preview:"LOCKED IN"},
@@ -8,7 +8,6 @@ const SHOP_ITEMS=[
  {id:"title_machine",category:"title",name:"Study Machine",desc:"A serious flex.",price:400,kind:"title",preview:"STUDY MACHINE"},
  {id:"title_elite",category:"title",name:"Elite",desc:"Premium leaderboard title.",price:650,kind:"title",preview:"ELITE"},
  {id:"title_goat",category:"title",name:"GOAT",desc:"Endgame cosmetic title.",price:1000,kind:"title",preview:"GOAT"},
-
  {id:"acc_stethoscope",category:"cosmetics",name:"Stethoscope",desc:"Classic medical accessory.",price:150,kind:"accessory",preview:"🩺"},
  {id:"acc_labcoat",category:"outfit",name:"Lab Coat",desc:"Future-doctor look.",price:250,kind:"accessory",preview:"🥼"},
  {id:"acc_backpack",category:"cosmetics",name:"Study Backpack",desc:"Carry your grind.",price:100,kind:"accessory",preview:"🎒"},
@@ -46,8 +45,7 @@ const SHOP_ITEMS=[
  {id:"acc_molecule",category:"cosmetics",name:"Molecule Badge",desc:"Chemistry-themed badge.",price:375,kind:"accessory",preview:"⚗️"},
  {id:"acc_atom",category:"cosmetics",name:"Atom Badge",desc:"Physics-themed badge.",price:375,kind:"accessory",preview:"⚛️"},
  {id:"acc_neet",category:"cosmetics",name:"NEET Grind Badge",desc:"For the long preparation.",price:700,kind:"accessory",preview:"📖"},
- {id:"acc_1000",category:"cosmetics",name:"1000 Club",desc:"Ultra-premium cosmetic.",price:1000,kind:"accessory",preview:"💎"}
-,
+ {id:"acc_1000",category:"cosmetics",name:"1000 Club",desc:"Ultra-premium cosmetic.",price:1000,kind:"accessory",preview:"💎"},
  {id:"style_neon",category:"textstyle",name:"Neon Edge",desc:"Violet-cyan gradient name.",price:325,kind:"textstyle",preview:"Aa"},
  {id:"style_serif",category:"textstyle",name:"Scholar Serif",desc:"Classic editorial type.",price:175,kind:"textstyle",preview:"Aa"},
  {id:"style_terminal",category:"textstyle",name:"Terminal",desc:"Monospace locked-in look.",price:225,kind:"textstyle",preview:"Aa"},
@@ -62,36 +60,52 @@ const SHOP_ITEMS=[
  {id:"emoji_brain",category:"emoji",name:"Brain Spark",desc:"Animated 🧠 study badge.",price:275,kind:"effect",preview:"🧠"},
  {id:"emoji_star",category:"emoji",name:"Star Burst",desc:"Animated ⭐ achievement badge.",price:500,kind:"effect",preview:"⭐"},
  {id:"emoji_lightning",category:"emoji",name:"Lightning",desc:"Animated ⚡ energy badge.",price:550,kind:"effect",preview:"⚡"},
- {id:"cosmetic_dragon_storm",category:"cosmetics",name:"Storm Wyrm",desc:"A living electric dragon surrounded by lightning.",price:1500,kind:"dragon",
-    preview:"🐉",
-    rarity:"legendary"
-  }
+ {id:"cosmetic_dragon_storm",category:"cosmetics",name:"Storm Wyrm",desc:"A living electric dragon surrounded by lightning.",price:1500,kind:"dragon",preview:"🐉",rarity:"legendary"}
 ];
 
+/* ================= DATABASE CATALOGUE ================= */
+async function loadDatabaseShopCatalogue(){
+  try{
+    const {data,error}=await supabaseClient
+      .from("shop_catalog")
+      .select("item_id,category,item_name,description,price,kind,preview")
+      .order("created_at",{ascending:true});
+
+    if(error){
+      console.warn("SHOP CATALOGUE:",error);
+      return;
+    }
+
+    const databaseItems=(data||[]).map(x=>({
+      id:x.item_id,
+      category:x.category||"cosmetics",
+      name:x.item_name||x.item_id,
+      desc:x.description||"",
+      price:Number(x.price)||0,
+      kind:x.kind||"accessory",
+      preview:x.preview||"🎁"
+    }));
+
+    if(!databaseItems.length) return;
+
+    const byId=new Map(SHOP_ITEMS.map(i=>[i.id,i]));
+    databaseItems.forEach(i=>byId.set(i.id,i));
+    SHOP_ITEMS=Array.from(byId.values());
+  }catch(err){
+    console.warn("SHOP CATALOGUE:",err);
+  }
+}
+
 function shopPreview(i){
-
   if(i.kind==="dragon"){
-    return `
-      <div class="shop-badge-preview dragon-shop-preview">
-        <span class="dragon-shop-icon">🐉</span>
-        <span class="dragon-shop-bolt">⚡</span>
-      </div>
-    `;
+    return `<div class="shop-badge-preview dragon-shop-preview"><span class="dragon-shop-icon">🐉</span><span class="dragon-shop-bolt">⚡</span></div>`;
   }
-
-  if(i.kind==="title"){
-    return `<div class="shop-title-preview">${i.preview}</div>`;
-  }
-
+  if(i.kind==="title") return `<div class="shop-title-preview">${i.preview}</div>`;
   if(i.kind==="textstyle"){
     const cls=getTextStyleClass(i);
     return `<div class="shop-title-preview ${cls}">${i.preview}</div>`;
   }
-
-  if(i.kind==="effect"){
-    return `<div class="shop-badge-preview live-emoji">${i.preview}</div>`;
-  }
-
+  if(i.kind==="effect") return `<div class="shop-badge-preview live-emoji">${i.preview}</div>`;
   return `<div class="shop-badge-preview">${i.preview}</div>`;
 }
 function shopSlot(i){
@@ -109,159 +123,74 @@ function selectShopCategory(c){
 }
 async function getShopData(){
   if(!currentUser) return {owned:[],equipped:{}};
-
   const owned=[];
   const equipped={};
-
-  // These are optional status queries. If they fail, the catalogue
-  // must still render.
   try{
-    const {data,error}=await supabaseClient
-      .from("shop_items")
-      .select("item_id")
-      .eq("user_id",currentUser.id);
-
-    if(error){
-      console.warn("SHOP OWNED ITEMS:", error);
-    }else{
-      (data||[]).forEach(x=>owned.push(x.item_id));
-    }
-  }catch(err){
-    console.warn("SHOP OWNED ITEMS:", err);
-  }
-
+    const {data,error}=await supabaseClient.from("shop_items").select("item_id").eq("user_id",currentUser.id);
+    if(error) console.warn("SHOP OWNED ITEMS:",error); else (data||[]).forEach(x=>owned.push(x.item_id));
+  }catch(err){ console.warn("SHOP OWNED ITEMS:",err); }
   try{
-    const {data,error}=await supabaseClient
-      .from("user_cosmetics")
-      .select("slot,item_id")
-      .eq("user_id",currentUser.id);
-
-    if(error){
-      console.warn("SHOP EQUIPPED ITEMS:", error);
-    }else{
-      (data||[]).forEach(x=>equipped[x.slot]=x.item_id);
-    }
-  }catch(err){
-    console.warn("SHOP EQUIPPED ITEMS:", err);
-  }
-
+    const {data,error}=await supabaseClient.from("user_cosmetics").select("slot,item_id").eq("user_id",currentUser.id);
+    if(error) console.warn("SHOP EQUIPPED ITEMS:",error); else (data||[]).forEach(x=>equipped[x.slot]=x.item_id);
+  }catch(err){ console.warn("SHOP EQUIPPED ITEMS:",err); }
   return {owned,equipped};
 }
-
 function getShopPointsNow(){
   const n=Number(currentProfile?.points);
-  return Number.isFinite(n) ? Math.max(0,n) : 0;
+  return Number.isFinite(n)?Math.max(0,n):0;
 }
-
 function shopCardHtml(i,owned,equipped){
   const own=owned.includes(i.id);
   const eq=equipped[shopSlot(i)]===i.id;
-
-  return `<div class="shop-item fade-pop">
-    <div class="shop-preview">${shopPreview(i)}</div>
-    <div class="shop-name">${escapeHtml(i.name)}</div>
-    <div class="shop-desc">${escapeHtml(i.desc)}</div>
-    <div class="shop-price">${own?"Owned":"💠 "+i.price+" pts"}</div>
-    <button class="${own?"owned":""} ${eq?"equipped":""}"
-      onclick="shopAction('${i.id}')" ${eq?"disabled":""}>
-      ${eq?"✓ Equipped":own?"Equip":"Buy · "+i.price}
-    </button>
-  </div>`;
+  return `<div class="shop-item fade-pop"><div class="shop-preview">${shopPreview(i)}</div><div class="shop-name">${escapeHtml(i.name)}</div><div class="shop-desc">${escapeHtml(i.desc)}</div><div class="shop-price">${own?"Owned":"💠 "+i.price+" pts"}</div><button class="${own?"owned":""} ${eq?"equipped":""}" onclick="shopAction('${i.id}')" ${eq?"disabled":""}>${eq?"✓ Equipped":own?"Equip":"Buy · "+i.price}</button></div>`;
 }
-
 function renderShopCatalogue(owned=[],equipped={}){
-  const grid=$("shopGrid");
-  if(!grid) return;
-
-  const selected=selectedShopCategory || "all";
-
-  const filtered=SHOP_ITEMS.filter(i =>
-    selected==="all" ||
-    i.category===selected ||
-    (selected==="cosmetics" &&
-      ["cosmetics","outfit","badge","headwear"].includes(i.category))
-  );
-
-  const sectionLabel={
-    textstyle:"Aa Text Styles",
-    title:"🏷 Titles",
-    crown:"👑 Crowns",
-    emoji:"✨ Emoji FX",
-    cosmetics:"🎒 Cosmetics",
-    outfit:"🧥 Outfits",
-    badge:"🏅 Badges",
-    headwear:"🧢 Headwear"
-  };
-
+  const grid=$("shopGrid"); if(!grid)return;
+  const selected=selectedShopCategory||"all";
+  const filtered=SHOP_ITEMS.filter(i=>selected==="all"||i.category===selected||(selected==="cosmetics"&&["cosmetics","outfit","badge","headwear"].includes(i.category)));
+  const sectionLabel={textstyle:"Aa Text Styles",title:"🏷 Titles",crown:"👑 Crowns",emoji:"✨ Emoji FX",cosmetics:"🎒 Cosmetics",outfit:"🧥 Outfits",badge:"🏅 Badges",headwear:"🧢 Headwear"};
   if(selected!=="all"){
-    const label=sectionLabel[selected] || "Shop";
-
-    grid.innerHTML =
-      `<div style="grid-column:1/-1">
-        <div class="shop-section-head">
-          <div class="shop-section-name">${label}</div>
-          <div class="shop-section-count">${filtered.length} items</div>
-        </div>
-      </div>` +
-      filtered.map(i=>shopCardHtml(i,owned,equipped)).join("");
+    const label=sectionLabel[selected]||"Shop";
+    grid.innerHTML=`<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">${label}</div><div class="shop-section-count">${filtered.length} items</div></div></div>`+filtered.map(i=>shopCardHtml(i,owned,equipped)).join("");
   }else{
-    const order=[
-      "textstyle","title","crown","emoji",
-      "cosmetics","outfit","badge","headwear"
-    ];
-
-    grid.innerHTML=order.map(cat=>{
-      const arr=SHOP_ITEMS.filter(i=>i.category===cat);
-      if(!arr.length) return "";
-
-      return `<div style="grid-column:1/-1">
-        <div class="shop-section-head">
-          <div class="shop-section-name">${sectionLabel[cat]}</div>
-          <div class="shop-section-count">${arr.length} items</div>
-        </div>
-      </div>${arr.map(i=>shopCardHtml(i,owned,equipped)).join("")}`;
-    }).join("");
+    const order=["textstyle","title","crown","emoji","cosmetics","outfit","badge","headwear"];
+    grid.innerHTML=order.map(cat=>{const arr=SHOP_ITEMS.filter(i=>i.category===cat);if(!arr.length)return "";return `<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">${sectionLabel[cat]}</div><div class="shop-section-count">${arr.length} items</div></div></div>${arr.map(i=>shopCardHtml(i,owned,equipped)).join("")}`;}).join("");
   }
-
-  const names=Object.values(equipped)
-    .map(id=>SHOP_ITEMS.find(i=>i.id===id)?.name)
-    .filter(Boolean);
-
+  const names=Object.values(equipped).map(id=>SHOP_ITEMS.find(i=>i.id===id)?.name).filter(Boolean);
   const equippedEl=$("equippedShopItems");
-  if(equippedEl){
-    equippedEl.innerHTML=names.length
-      ? names.map(n=>`<span class="equipped-chip">✦ ${escapeHtml(n)}</span>`).join(" ")
-      : "Nothing equipped yet.";
-  }
+  if(equippedEl)equippedEl.innerHTML=names.length?names.map(n=>`<span class="equipped-chip">✦ ${escapeHtml(n)}</span>`).join(" "):"Nothing equipped yet.";
 }
-
 async function renderShop(){
-  if(!currentUser) return;
-
-  // Never leave the balance stuck on Loading.
+  if(!currentUser)return;
   const balanceEl=$("shopBalance");
-  if(balanceEl){
-    balanceEl.textContent=`${getShopPointsNow().toFixed(0)} pts`;
-  }
-
-  // IMPORTANT: render the catalogue immediately.
-  // Supabase ownership/equipped status is secondary.
-  renderShopCatalogue([],{});  
-
-  // Then load ownership/equipped information and refresh the cards.
+  if(balanceEl)balanceEl.textContent=`${getShopPointsNow().toFixed(0)} pts`;
+  renderShopCatalogue([],{});
   const {owned,equipped}=await getShopData();
   renderShopCatalogue(owned,equipped);
 }
-
 async function shopAction(id){
- const i=SHOP_ITEMS.find(x=>x.id===id); if(!i)return;
- const {data,error}=await supabaseClient.rpc("buy_or_equip_cosmetic",{p_item_id:i.id,p_price:i.price,p_slot:shopSlot(i)});
- if(error){console.error(error);showToast(error.message);return}
- await loadProfile(); await renderShop(); await renderBoard();
- showToast(data?.bought?`${i.name} purchased · -${i.price} points ✓`:`${i.name} equipped ✓`);
+  const i=SHOP_ITEMS.find(x=>x.id===id); if(!i)return;
+  const {data,error}=await supabaseClient.rpc("buy_or_equip_cosmetic",{p_item_id:i.id,p_price:i.price,p_slot:shopSlot(i)});
+  if(error){console.error(error);showToast(error.message);return;}
+  await loadProfile(); await renderShop(); await renderBoard();
+  showToast(data?.bought?`${i.name} purchased · -${i.price} points ✓`:`${i.name} equipped ✓`);
 }
-
 
 /* ============================================
    SUPABASE CONFIGURATION
 ============================================ */
+
+// Load the database catalogue after Supabase has been initialized by the main app.
+// This keeps the existing catalogue as a fallback while allowing Admin-created
+// items to appear automatically in the student Shop.
+function scheduleDatabaseShopCatalogueLoad(){
+  if(typeof supabaseClient==="undefined"){
+    setTimeout(scheduleDatabaseShopCatalogueLoad,500);
+    return;
+  }
+  loadDatabaseShopCatalogue().then(()=>{
+    if(currentUser) renderShop();
+  });
+}
+
+scheduleDatabaseShopCatalogueLoad();
