@@ -1,4 +1,4 @@
-/* NOW-or-NEVER — Daily Points Reminder */
+/* NOW-or-NEVER — Daily Points Reminder*/
 (() => {
   'use strict';
   const KEY='nowOrNeverDailyPointsReminder'; let timer=null;
