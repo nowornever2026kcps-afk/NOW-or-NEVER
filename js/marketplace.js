@@ -63,6 +63,9 @@ let SHOP_ITEMS=[
  {id:"cosmetic_dragon_storm",category:"cosmetics",name:"Storm Wyrm",desc:"A living electric dragon surrounded by lightning.",price:1500,kind:"dragon",preview:"🐉",rarity:"legendary"}
 ];
 
+let SHOP_MENUS=[];
+let SHOP_MENUS_LOADED=false;
+
 /* ================= TEXT STYLE HELPERS ================= */
 function getTextStyleClass(i){
   const id=String(i?.id||"").toLowerCase();
@@ -83,42 +86,79 @@ async function loadDatabaseShopCatalogue(){
       .from("shop_catalog")
       .select("item_id,category,item_name,description,price,kind,preview")
       .order("created_at",{ascending:true});
-
-    if(error){
-      console.warn("SHOP CATALOGUE:",error);
-      return;
-    }
-
+    if(error){console.warn("SHOP CATALOGUE:",error);return;}
     const databaseItems=(data||[]).map(x=>({
-      id:x.item_id,
-      category:x.category||"cosmetics",
-      name:x.item_name||x.item_id,
-      desc:x.description||"",
-      price:Number(x.price)||0,
-      kind:x.kind||"accessory",
-      preview:x.preview||"🎁"
+      id:x.item_id,category:x.category||"cosmetics",name:x.item_name||x.item_id,
+      desc:x.description||"",price:Number(x.price)||0,kind:x.kind||"accessory",preview:x.preview||"🎁"
     }));
-
-    if(!databaseItems.length) return;
-
+    if(!databaseItems.length)return;
     const byId=new Map(SHOP_ITEMS.map(i=>[i.id,i]));
     databaseItems.forEach(i=>byId.set(i.id,i));
     SHOP_ITEMS=Array.from(byId.values());
+  }catch(err){console.warn("SHOP CATALOGUE:",err);}
+}
+
+/* ================= ADMIN-MANAGED SHOP MENUS ================= */
+async function loadShopMenus(){
+  if(typeof supabaseClient==="undefined")return false;
+  try{
+    const {data,error}=await supabaseClient.rpc("shop_menus_list_public");
+    if(error){
+      console.warn("SHOP MENUS:",error);
+      SHOP_MENUS=[];
+      SHOP_MENUS_LOADED=false;
+      return false;
+    }
+    SHOP_MENUS=(Array.isArray(data)?data:[])
+      .map(m=>({
+        menu_key:String(m.menu_key||"").trim(),
+        menu_name:String(m.menu_name||m.menu_key||"Shop").trim(),
+        icon:String(m.icon||"📂"),
+        sort_order:Number(m.sort_order)||0
+      }))
+      .filter(m=>m.menu_key)
+      .sort((a,b)=>a.sort_order-b.sort_order);
+    SHOP_MENUS_LOADED=true;
+    renderShopTabs();
+    return true;
   }catch(err){
-    console.warn("SHOP CATALOGUE:",err);
+    console.warn("SHOP MENUS:",err);
+    return false;
   }
 }
 
+function getShopMenu(menuKey){
+  return SHOP_MENUS.find(m=>m.menu_key===menuKey)||null;
+}
+
+function menuItems(menu){
+  if(!menu)return [];
+  const exact=SHOP_ITEMS.filter(i=>i.category===menu.menu_key);
+  if(menu.menu_key!=="cosmetics")return exact;
+  const legacyCategories=["cosmetics","outfit","badge","headwear"];
+  return SHOP_ITEMS.filter(i=>legacyCategories.includes(i.category));
+}
+
+function renderShopTabs(){
+  const tabs=document.querySelector(".shop-tabs");
+  if(!tabs||!SHOP_MENUS_LOADED)return;
+  const previous=selectedShopCategory||"all";
+  const visibleMenus=SHOP_MENUS.filter(m=>menuItems(m).length>0);
+  tabs.innerHTML=`<button class="active" type="button" onclick="selectShopCategory('all')">✦ All</button>`+
+    visibleMenus.map(m=>`<button type="button" data-shop-category="${escapeHtml(m.menu_key)}" onclick="selectShopCategory('${String(m.menu_key).replace(/'/g,"\\'")}')">${escapeHtml(m.icon)} ${escapeHtml(m.menu_name)}</button>`).join("");
+  const selectedStillExists=previous!=="all"&&visibleMenus.some(m=>m.menu_key===previous);
+  selectedShopCategory=selectedStillExists?previous:"all";
+  tabs.querySelectorAll("button").forEach(b=>{
+    const key=b.dataset.shopCategory||"all";
+    b.classList.toggle("active",key===selectedShopCategory);
+  });
+}
+
 function shopPreview(i){
-  if(i.kind==="dragon"){
-    return `<div class="shop-badge-preview dragon-shop-preview"><span class="dragon-shop-icon">🐉</span><span class="dragon-shop-bolt">⚡</span></div>`;
-  }
-  if(i.kind==="title") return `<div class="shop-title-preview">${i.preview}</div>`;
-  if(i.kind==="textstyle"){
-    const cls=getTextStyleClass(i);
-    return `<div class="shop-title-preview ${cls}">${i.preview}</div>`;
-  }
-  if(i.kind==="effect") return `<div class="shop-badge-preview live-emoji">${i.preview}</div>`;
+  if(i.kind==="dragon")return `<div class="shop-badge-preview dragon-shop-preview"><span class="dragon-shop-icon">🐉</span><span class="dragon-shop-bolt">⚡</span></div>`;
+  if(i.kind==="title")return `<div class="shop-title-preview">${i.preview}</div>`;
+  if(i.kind==="textstyle")return `<div class="shop-title-preview ${getTextStyleClass(i)}">${i.preview}</div>`;
+  if(i.kind==="effect")return `<div class="shop-badge-preview live-emoji">${i.preview}</div>`;
   return `<div class="shop-badge-preview">${i.preview}</div>`;
 }
 function shopSlot(i){
@@ -129,45 +169,51 @@ function shopSlot(i){
   return "accessory";
 }
 function selectShopCategory(c){
- selectedShopCategory=c;
- const cats=["all","textstyle","title","crown","emoji","cosmetics"];
- document.querySelectorAll(".shop-tabs button").forEach((b,n)=>b.classList.toggle("active",cats[n]===c));
- renderShop();
+  selectedShopCategory=c||"all";
+  document.querySelectorAll(".shop-tabs button").forEach(b=>{
+    const key=b.dataset.shopCategory||"all";
+    b.classList.toggle("active",key===selectedShopCategory);
+  });
+  renderShop();
 }
 async function getShopData(){
-  if(!currentUser) return {owned:[],equipped:{}};
-  const owned=[];
-  const equipped={};
+  if(!currentUser)return {owned:[],equipped:{}};
+  const owned=[];const equipped={};
   try{
     const {data,error}=await supabaseClient.from("shop_items").select("item_id").eq("user_id",currentUser.id);
-    if(error) console.warn("SHOP OWNED ITEMS:",error); else (data||[]).forEach(x=>owned.push(x.item_id));
-  }catch(err){ console.warn("SHOP OWNED ITEMS:",err); }
+    if(error)console.warn("SHOP OWNED ITEMS:",error);else(data||[]).forEach(x=>owned.push(x.item_id));
+  }catch(err){console.warn("SHOP OWNED ITEMS:",err);}
   try{
     const {data,error}=await supabaseClient.from("user_cosmetics").select("slot,item_id").eq("user_id",currentUser.id);
-    if(error) console.warn("SHOP EQUIPPED ITEMS:",error); else (data||[]).forEach(x=>equipped[x.slot]=x.item_id);
-  }catch(err){ console.warn("SHOP EQUIPPED ITEMS:",err); }
+    if(error)console.warn("SHOP EQUIPPED ITEMS:",error);else(data||[]).forEach(x=>equipped[x.slot]=x.item_id);
+  }catch(err){console.warn("SHOP EQUIPPED ITEMS:",err);}
   return {owned,equipped};
 }
-function getShopPointsNow(){
-  const n=Number(currentProfile?.points);
-  return Number.isFinite(n)?Math.max(0,n):0;
-}
+function getShopPointsNow(){const n=Number(currentProfile?.points);return Number.isFinite(n)?Math.max(0,n):0;}
 function shopCardHtml(i,owned,equipped){
-  const own=owned.includes(i.id);
-  const eq=equipped[shopSlot(i)]===i.id;
+  const own=owned.includes(i.id);const eq=equipped[shopSlot(i)]===i.id;
   return `<div class="shop-item fade-pop"><div class="shop-preview">${shopPreview(i)}</div><div class="shop-name">${escapeHtml(i.name)}</div><div class="shop-desc">${escapeHtml(i.desc)}</div><div class="shop-price">${own?"Owned":"💠 "+i.price+" pts"}</div><button class="${own?"owned":""} ${eq?"equipped":""}" onclick="shopAction('${i.id}')" ${eq?"disabled":""}>${eq?"✓ Equipped":own?"Equip":"Buy · "+i.price}</button></div>`;
 }
 function renderShopCatalogue(owned=[],equipped={}){
-  const grid=$("shopGrid"); if(!grid)return;
+  const grid=$("shopGrid");if(!grid)return;
   const selected=selectedShopCategory||"all";
-  const filtered=SHOP_ITEMS.filter(i=>selected==="all"||i.category===selected||(selected==="cosmetics"&&["cosmetics","outfit","badge","headwear"].includes(i.category)));
-  const sectionLabel={textstyle:"Aa Text Styles",title:"🏷 Titles",crown:"👑 Crowns",emoji:"✨ Emoji FX",cosmetics:"🎒 Cosmetics",outfit:"🧥 Outfits",badge:"🏅 Badges",headwear:"🧢 Headwear"};
+  if(!SHOP_MENUS_LOADED){
+    grid.innerHTML=`<div class="loading">Loading shop menus...</div>`;
+    return;
+  }
+  const visibleMenus=SHOP_MENUS.filter(m=>menuItems(m).length>0);
+  const selectedMenu=getShopMenu(selected);
+  const sectionLabel={};
+  visibleMenus.forEach(m=>sectionLabel[m.menu_key]=`${m.icon} ${m.menu_name}`);
   if(selected!=="all"){
-    const label=sectionLabel[selected]||"Shop";
-    grid.innerHTML=`<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">${label}</div><div class="shop-section-count">${filtered.length} items</div></div></div>`+filtered.map(i=>shopCardHtml(i,owned,equipped)).join("");
+    const items=menuItems(selectedMenu);
+    const label=selectedMenu?sectionLabel[selected]:"Shop";
+    grid.innerHTML=`<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">${escapeHtml(label)}</div><div class="shop-section-count">${items.length} items</div></div></div>`+items.map(i=>shopCardHtml(i,owned,equipped)).join("");
   }else{
-    const order=["textstyle","title","crown","emoji","cosmetics","outfit","badge","headwear"];
-    grid.innerHTML=order.map(cat=>{const arr=SHOP_ITEMS.filter(i=>i.category===cat);if(!arr.length)return "";return `<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">${sectionLabel[cat]}</div><div class="shop-section-count">${arr.length} items</div></div></div>${arr.map(i=>shopCardHtml(i,owned,equipped)).join("")}`;}).join("");
+    grid.innerHTML=visibleMenus.map(menu=>{
+      const arr=menuItems(menu);if(!arr.length)return "";
+      return `<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">${escapeHtml(menu.icon)} ${escapeHtml(menu.menu_name)}</div><div class="shop-section-count">${arr.length} items</div></div></div>${arr.map(i=>shopCardHtml(i,owned,equipped)).join("")}`;
+    }).join("");
   }
   const names=Object.values(equipped).map(id=>SHOP_ITEMS.find(i=>i.id===id)?.name).filter(Boolean);
   const equippedEl=$("equippedShopItems");
@@ -175,35 +221,28 @@ function renderShopCatalogue(owned=[],equipped={}){
 }
 async function renderShop(){
   if(!currentUser)return;
-  const balanceEl=$("shopBalance");
-  if(balanceEl)balanceEl.textContent=`${getShopPointsNow().toFixed(0)} pts`;
+  const balanceEl=$("shopBalance");if(balanceEl)balanceEl.textContent=`${getShopPointsNow().toFixed(0)} pts`;
   renderShopCatalogue([],{});
   const {owned,equipped}=await getShopData();
   renderShopCatalogue(owned,equipped);
 }
 async function shopAction(id){
-  const i=SHOP_ITEMS.find(x=>x.id===id); if(!i)return;
+  const i=SHOP_ITEMS.find(x=>x.id===id);if(!i)return;
   const {data,error}=await supabaseClient.rpc("buy_or_equip_cosmetic",{p_item_id:i.id,p_price:i.price,p_slot:shopSlot(i)});
   if(error){console.error(error);showToast(error.message);return;}
-  await loadProfile(); await renderShop(); await renderBoard();
+  await loadProfile();await renderShop();await renderBoard();
   showToast(data?.bought?`${i.name} purchased · -${i.price} points ✓`:`${i.name} equipped ✓`);
 }
 
 /* ============================================
    SUPABASE CONFIGURATION
 ============================================ */
-
-// Load the database catalogue after Supabase has been initialized by the main app.
-// This keeps the existing catalogue as a fallback while allowing Admin-created
-// items to appear automatically in the student Shop.
 function scheduleDatabaseShopCatalogueLoad(){
   if(typeof supabaseClient==="undefined"){
-    setTimeout(scheduleDatabaseShopCatalogueLoad,500);
-    return;
+    setTimeout(scheduleDatabaseShopCatalogueLoad,500);return;
   }
-  loadDatabaseShopCatalogue().then(()=>{
-    if(currentUser) renderShop();
+  Promise.all([loadDatabaseShopCatalogue(),loadShopMenus()]).then(()=>{
+    if(currentUser){renderShopTabs();renderShop();}
   });
 }
-
 scheduleDatabaseShopCatalogueLoad();
