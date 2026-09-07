@@ -63,6 +63,19 @@ let SHOP_ITEMS=[
  {id:"cosmetic_dragon_storm",category:"cosmetics",name:"Storm Wyrm",desc:"A living electric dragon surrounded by lightning.",price:1500,kind:"dragon",preview:"🐉",rarity:"legendary"}
 ];
 
+/* ================= TEXT STYLE HELPERS ================= */
+function getTextStyleClass(i){
+  const id=String(i?.id||"").toLowerCase();
+  const name=String(i?.name||"").toLowerCase();
+  if(id.includes("neon")||name.includes("neon")) return "text-style-neon";
+  if(id.includes("serif")||name.includes("serif")) return "text-style-serif";
+  if(id.includes("terminal")||name.includes("terminal")) return "text-style-terminal";
+  if(id.includes("wide")||name.includes("wide")) return "text-style-wide";
+  if(id.includes("glow")||name.includes("glow")) return "text-style-glow";
+  if(id.includes("royal")||name.includes("royal")) return "text-style-royal";
+  return "";
+}
+
 /* ================= DATABASE CATALOGUE ================= */
 async function loadDatabaseShopCatalogue(){
   try{
