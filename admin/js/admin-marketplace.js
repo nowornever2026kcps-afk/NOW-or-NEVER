@@ -19,7 +19,7 @@ export function initMarketplace({ supabaseClient, $, sectionContent, adminToast,
       </div>
 
       <form id="marketplaceForm" class="admin-form">
-        <input type="hidden" id="mpOriginalId" value="${escapeHTML(item?.item_id || "")}2026">
+        <input type="hidden" id="mpOriginalId" value="${escapeHTML(item?.item_id || "")}">
 
         <div class="admin-form-grid">
           <label>
