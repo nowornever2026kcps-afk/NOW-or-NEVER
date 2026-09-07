@@ -1,0 +1,173 @@
+/* =========================================================
+   NOW-or-NEVER — ADMIN SHOP MENUS
+   ========================================================= */
+
+.admin-menu-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-menu-row {
+  display: grid;
+  grid-template-columns: auto minmax(150px, .8fr) minmax(300px, 1.6fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, .55);
+}
+
+.admin-menu-order {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-menu-order .ghost-btn {
+  min-width: 38px;
+  min-height: 34px;
+  padding: 5px 9px;
+}
+
+.admin-menu-order button:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
+
+.admin-menu-preview {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.admin-menu-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border: 1px solid rgba(96, 165, 250, .2);
+  border-radius: 12px;
+  background: rgba(37, 99, 235, .1);
+  font-size: 1.15rem;
+}
+
+.admin-menu-preview strong,
+.admin-menu-preview small {
+  display: block;
+}
+
+.admin-menu-preview strong {
+  margin-bottom: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-menu-preview small {
+  color: var(--admin-muted);
+  font-size: .7rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.admin-menu-controls {
+  display: grid;
+  grid-template-columns: 1.4fr .65fr 1fr;
+  gap: 8px;
+}
+
+.admin-menu-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.admin-menu-controls label > span {
+  color: var(--admin-muted);
+  font-size: .68rem;
+  font-weight: 750;
+}
+
+.admin-menu-controls input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid rgba(148, 163, 184, .2);
+  border-radius: 10px;
+  outline: none;
+  color: var(--admin-text);
+  background: rgba(7, 11, 20, .58);
+}
+
+.admin-menu-controls input:focus {
+  border-color: rgba(96, 165, 250, .62);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, .1);
+}
+
+.admin-menu-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.menu-enabled {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 3px;
+  color: #cbd5e1;
+  font-size: .72rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.menu-enabled input {
+  accent-color: #60a5fa;
+}
+
+.admin-form-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 9px !important;
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 920px) {
+  .admin-menu-row {
+    grid-template-columns: auto 1fr;
+  }
+
+  .admin-menu-controls,
+  .admin-menu-actions {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 680px) {
+  .admin-menu-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-menu-order,
+  .admin-menu-controls,
+  .admin-menu-actions {
+    grid-column: auto;
+  }
+
+  .admin-menu-order {
+    flex-direction: row;
+  }
+
+  .admin-menu-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-menu-actions {
+    justify-content: flex-start;
+  }
+}
