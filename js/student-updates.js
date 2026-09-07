@@ -1,5 +1,5 @@
 /* =========================================================
-   NOW-or-NEVER — STUDENT UPDATES
+   NOW-or-NEVER — STUDENT UPDATES 
    Reads only published/enabled updates through the secure RPC.
    ========================================================= */
 (() => {
