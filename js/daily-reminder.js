@@ -138,6 +138,30 @@
     document.head.appendChild(style);
   }
 
+  /*------*/
+
+      document.addEventListener("click", (event) => {
+      const btn = event.target.closest("#dailyReminderNavBtn");
+      if (!btn) return;
+    
+      setTimeout(() => {
+        const card = document.getElementById("dailyPointsReminderCard");
+    
+        if (card) {
+          card.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+          });
+    
+          const timeInput = card.querySelector('input[type="time"]');
+    
+          if (timeInput) {
+            timeInput.focus({ preventScroll: true });
+          }
+        }
+      }, 300);
+    });
+
   /* ---------------------------------------------------------
      ADD REMINDER BUTTON TO THE EXISTING MORE MENU
      --------------------------------------------------------- */
