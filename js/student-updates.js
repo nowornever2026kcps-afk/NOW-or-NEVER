@@ -158,6 +158,25 @@
 
   function removeFloating() { document.getElementById('studentUpdateFloat')?.remove(); }
 
+  function openNotificationPanel() {
+    const panel = document.getElementById('notificationPanel');
+    const bell = document.getElementById('notificationBell');
+
+    // Use the real notification control first so we preserve the app's
+    // existing open/close behavior, instead of relying on guessed selectors.
+    if (bell) {
+      bell.click();
+    }
+
+    // Fallback: if the app's click handler is unavailable or the panel is
+    // still hidden, explicitly open the existing notification panel.
+    requestAnimationFrame(() => {
+      if (panel?.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+      }
+    });
+  }
+
   function renderFloating(updates) {
     ensureStyles();
     const update = chooseFloatingUpdate(updates);
@@ -181,10 +200,16 @@
       markSeen(update); setDismissedFloatId(update.id); box.remove(); render(updates);
     });
     box.querySelector('.suf-view')?.addEventListener('click', () => {
-      markSeen(update); setDismissedFloatId(update.id); box.remove(); render(updates);
-      const notificationButton = document.querySelector('#notificationBtn,[data-view="notifications"],[data-section="notifications"],.notification-btn');
-      if (notificationButton) notificationButton.click();
-      setTimeout(() => document.getElementById('studentUpdatesSection')?.scrollIntoView({behavior:'smooth',block:'center'}),250);
+      markSeen(update);
+      setDismissedFloatId(update.id);
+      box.remove();
+      render(updates);
+
+      openNotificationPanel();
+
+      setTimeout(() => {
+        document.getElementById('studentUpdatesSection')?.scrollIntoView({behavior:'smooth',block:'center'});
+      }, 150);
     });
   }
 
