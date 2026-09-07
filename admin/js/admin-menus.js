@@ -48,7 +48,7 @@ export function initShopMenus({
           </label>
           <label>
             <span>Key</span>
-            <input class="menu-key" value="${escapeHTML(menu.menu_key)}" maxlength="40" pattern="[a-z0-9_-]+">
+            <input class="menu-key" value="${escapeHTML(menu.menu_key)}" maxlength="40" pattern="[-a-z0-9_]+">
           </label>
         </div>
 
@@ -83,7 +83,7 @@ export function initShopMenus({
         <h4>Create shop menu</h4>
         <div>
           <label for="newMenuKey">Menu key</label>
-          <input id="newMenuKey" placeholder="example: badges" maxlength="40">
+          <input id="newMenuKey" placeholder="example: badges" maxlength="40" pattern="[-a-z0-9_]+">
         </div>
         <div>
           <label for="newMenuName">Menu name</label>
