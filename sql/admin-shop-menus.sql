@@ -214,6 +214,38 @@ begin
 end;
 $$;
 
+/* =========================================================
+   STUDENT-SIDE READ RPC
+   ---------------------------------------------------------
+   The student Shop needs menu names/order, but students must
+   not receive admin-only controls or write access.
+   RLS stays locked down; this function exposes only enabled
+   menu metadata.
+   ========================================================= */
+create or replace function public.shop_menus_list_public()
+returns table (
+  menu_key text,
+  menu_name text,
+  icon text,
+  sort_order integer
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    m.menu_key,
+    m.menu_name,
+    m.icon,
+    m.sort_order
+  from public.shop_menus m
+  where m.enabled = true
+  order by m.sort_order asc, m.id asc;
+$$;
+
+revoke execute on function public.shop_menus_list_public() from public;
+grant execute on function public.shop_menus_list_public() to authenticated;
+
 grant execute on function public.admin_shop_menus_list() to authenticated;
 grant execute on function public.admin_shop_menu_create(text,text,text,integer) to authenticated;
 grant execute on function public.admin_shop_menu_update(bigint,text,text,text,integer,boolean) to authenticated;
@@ -223,7 +255,8 @@ grant execute on function public.admin_shop_menus_reorder(bigint[]) to authentic
 alter table public.shop_menus enable row level security;
 
 /* No public SELECT policy is intentionally added here.
-   The admin RPC is security-definer and checks is_admin(). */
+   The admin RPC is security-definer and checks is_admin().
+   The student RPC only exposes enabled menu metadata. */
 
 create or replace function public.set_shop_menus_updated_at()
 returns trigger
