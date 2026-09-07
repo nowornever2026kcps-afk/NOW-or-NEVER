@@ -1,5 +1,5 @@
 export function initUpdates({ supabaseClient, $, sectionContent, adminToast, escapeHTML, loadOverview }) {
-  let updates = [];
+  let updates = []; 
   let editingId = null;
 
   const typeLabel = { announcement:'Announcement', feature:'Feature', important:'Important', maintenance:'Maintenance', event:'Event' };
