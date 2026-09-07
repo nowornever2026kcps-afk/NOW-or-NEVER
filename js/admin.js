@@ -7,6 +7,7 @@
    ========================================================= */
 
 import { initMarketplace } from "../admin/js/admin-marketplace.js";
+import { initShopMenus } from "../admin/js/admin-menus.js";
 
 (() => {
   "use strict";
@@ -157,6 +158,15 @@ import { initMarketplace } from "../admin/js/admin-marketplace.js";
       console.warn("Marketplace overview unavailable:", error);
       if ($("shopItemCount")) $("shopItemCount").textContent = "—";
     }
+
+    try {
+      const { data, error } = await supabaseClient.rpc("admin_shop_menus_list");
+      if (error) throw error;
+      if ($("shopMenuCount")) $("shopMenuCount").textContent = (data || []).filter(menu => menu.enabled).length;
+    } catch (error) {
+      console.warn("Shop menus overview unavailable:", error);
+      if ($("shopMenuCount")) $("shopMenuCount").textContent = "—";
+    }
   }
 
   const marketplace = initMarketplace({
@@ -169,18 +179,26 @@ import { initMarketplace } from "../admin/js/admin-marketplace.js";
     loadOverview
   });
 
+  const shopMenus = initShopMenus({
+    supabaseClient,
+    $,
+    sectionContent,
+    adminToast,
+    escapeHTML,
+    loadOverview
+  });
+
   function openSection(section) {
     if (!sectionPanel || !sectionContent) return;
 
     if (section === "shop") {
       sectionPanel.classList.remove("hidden");
       marketplace.renderMarketplace();
+    } else if (section === "menus") {
+      sectionPanel.classList.remove("hidden");
+      shopMenus.renderShopMenus();
     } else {
       const sections = {
-        menus: [
-          "📂 Shop Menus",
-          "Menu management will be connected after the marketplace catalogue is established."
-        ],
         updates: [
           "📢 Updates",
           "Announcement management will be connected next."
