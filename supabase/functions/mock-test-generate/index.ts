@@ -75,6 +75,82 @@ function overlapsAny(text: string, phrases: string[]): boolean {
   return phrases.some((p) => lower.includes(p.toLowerCase()));
 }
 
+function normalizedBoundaryText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[‐‑‒–—−]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function chapterForbiddenConcepts(syllabus: any): string[] {
+  const chapter = normalizedBoundaryText(String(syllabus.chapter ?? ""));
+
+  if (chapter === "principles of inheritance and variation") {
+    return [
+      // Explicitly excluded / advanced genetics.
+      "xist",
+      "xist rna",
+      "robertsonian translocation",
+      "fmr1",
+      "fragile x",
+      "trinucleotide repeat",
+      "repeat expansion",
+      "anticipation",
+      "advanced cytogenetics",
+      "array cgh",
+      "comparative genomic hybridization",
+      "genomic imprinting",
+      "uniparental disomy",
+      "mosaicism",
+      "population genetics",
+      "hardy-weinberg",
+      "hardy weinberg",
+      "allele frequency",
+      "gene frequency",
+      "genotype frequency",
+      "genetic drift",
+      "founder effect",
+      "bottleneck effect",
+      "natural selection coefficient",
+      "selection coefficient",
+      "linkage disequilibrium",
+      "molecular mechanism of thalassemia",
+      "molecular mechanism of haemophilia",
+      "molecular mechanism of hemophilia",
+      "molecular mechanism of colour blindness",
+      "molecular mechanism of color blindness",
+    ];
+  }
+
+  if (chapter === "molecular basis of inheritance") {
+    return [
+      "crispr",
+      "crispr-cas",
+      "epigenomics",
+      "advanced epigenetics",
+      "advanced chromatin",
+      "transcriptomics",
+      "single-cell sequencing",
+      "rna-seq",
+      "whole exome sequencing",
+      "whole genome sequencing",
+      "advanced genomics",
+      "advanced molecular genetics",
+      "clinical molecular genetics",
+      "gene therapy",
+      "next-generation sequencing",
+    ];
+  }
+
+  return [
+    "crispr",
+    "epigenomics",
+    "transcriptomics",
+    "advanced cytogenetics",
+  ];
+}
+
 async function groqRequest(body: any) {
   let lastError = "Unknown Groq error";
   for (let attempt = 1; attempt <= MAX_GROQ_RETRIES; attempt++) {
@@ -102,11 +178,20 @@ async function groqRequest(body: any) {
 async function groqGenerate(batchCount: number, settings: any, syllabus: any, existingFingerprints: string[]) {
   const systemPrompt = `You are an expert NEET-UG question setter.
 
-HIGHEST PRIORITY RULE — SYLLABUS BOUNDARY:
+HIGHEST PRIORITY RULE — EXACT SYLLABUS BOUNDARY:
 You may ONLY test knowledge explicitly contained in the supplied official syllabus scope.
-Do not expand a chapter into general biology, university biology, medical-school genetics, research genetics, or related concepts that are not in the scope.
-If a concept is uncertain or only indirectly related, DO NOT use it.
-The exclusions are hard exclusions.
+The supplied chapter scope is a closed set, not a suggestion.
+Do not expand it into general biology, university biology, medical-school genetics, research genetics, or related concepts that are not explicitly present.
+If a concept is uncertain, indirectly related, or normally taught at a higher level, DO NOT use it.
+Every question, option, explanation, calculation, and assumption must be solvable using the supplied syllabus alone.
+The exclusions are absolute.
+
+STRICT CONTENT RULES:
+- Do not use Hardy-Weinberg equilibrium, population-genetics calculations, allele-frequency calculations, or genetic-drift/founder-effect concepts unless they are explicitly present in the supplied scope.
+- Do not use molecular mechanisms of a disorder when the syllabus only names the disorder.
+- Do not introduce external clinical statistics, age-risk tables, research findings, or specialized medical facts merely to make a question harder.
+- Do not use advanced cytogenetics, molecular genetics, genomics, epigenomics, transcriptomics, or gene-editing concepts unless explicitly present.
+- A question is NOT compliant merely because its broad topic is related to the chapter.
 
 QUALITY RULES:
 - Factually correct and unambiguous.
@@ -114,10 +199,10 @@ QUALITY RULES:
 - Exactly one best answer.
 - No all-of-the-above/none-of-the-above.
 - No trick wording or double negatives.
-- Every question must be answerable from the supplied syllabus scope alone.
+- Avoid questions whose stem asks for a phenotype ratio while the options actually represent genotype/progeny classes; name the quantity being requested precisely.
+- Avoid questions that depend on unstated assumptions.
+- Numerical questions must provide every value and rule needed to solve them from the syllabus.
 - Use NEET-appropriate terminology and difficulty.
-- Do not require knowledge from an excluded concept to solve a question.
-- Avoid university/research-level mechanisms unless explicitly present in scope.
 - Avoid duplicate or near-duplicate questions.
 - Explanations must justify the answer using only syllabus-level knowledge.
 - Return ONLY JSON matching the supplied schema.`;
@@ -136,6 +221,10 @@ ${syllabus.scope_text}
 HARD EXCLUSIONS:
 ${syllabus.exclusions_text || "None supplied"}
 
+ADDITIONAL SERVER-SIDE FORBIDDEN CONCEPTS FOR THIS CHAPTER:
+${chapterForbiddenConcepts(syllabus).join(", ")}
+
+REQUESTED TOPIC: ${settings.topic || "Any topic within the exact chapter scope"}
 REQUESTED DIFFICULTY: ${settings.difficulty || "mixed"}
 CLASS/LEVEL: ${settings.class_level || "NEET-UG"}
 
@@ -220,7 +309,19 @@ async function validateSyllabusBatch(questions: any[], syllabus: any) {
     additionalProperties: false,
   };
 
-  const prompt = `Validate these NEET-UG MCQs against the exact syllabus boundary below.
+  const prompt = `You are performing a STRICT final gate for NEET-UG MCQs.
+
+A question may be approved ONLY if all of the following are true:
+1. It is directly answerable from the supplied official syllabus scope.
+2. It does not require any hard exclusion or server-forbidden concept.
+3. It does not require external clinical statistics, research facts, university-level details, or unstated assumptions.
+4. The stem precisely asks for the same kind of quantity represented by the answer options. For example, do not label four genotype/progeny classes as a "phenotypic ratio" unless the phenotypes are actually defined and that is what is being compared.
+5. It has exactly one defensible answer and the explanation supports that answer.
+6. A harder calculation is acceptable only when every principle required for the calculation is explicitly in scope.
+
+IMPORTANT:
+Scientific correctness alone is NOT sufficient. A scientifically correct question must still be rejected if it is outside the exact NEET syllabus supplied below.
+When uncertain, reject.
 
 SYLLABUS:
 ${syllabus.scope_text}
@@ -228,9 +329,8 @@ ${syllabus.scope_text}
 HARD EXCLUSIONS:
 ${syllabus.exclusions_text || "None"}
 
-A question is syllabus_compliant ONLY when a NEET student can answer it from the supplied scope without needing excluded/advanced knowledge.
-Reject questions that merely mention the chapter but secretly require advanced knowledge.
-Also reject factual errors and questions with more than one defensible answer.
+SERVER-FORBIDDEN CONCEPTS FOR THIS CHAPTER:
+${chapterForbiddenConcepts(syllabus).join(", ")}
 
 QUESTIONS:
 ${questions.map((q, i) => `QUESTION ${i + 1}: ${JSON.stringify(q)}`).join("\n\n")}`;
@@ -245,7 +345,7 @@ ${questions.map((q, i) => `QUESTION ${i + 1}: ${JSON.stringify(q)}`).join("\n\n"
       json_schema: { name: "neet_mcq_validation", strict: true, schema },
     },
     messages: [
-      { role: "system", content: "You are a strict NEET-UG syllabus and factual validator. Reject borderline questions rather than approving them." },
+      { role: "system", content: "You are a strict NEET-UG syllabus, factual, and ambiguity validator. Reject borderline questions rather than approving them." },
       { role: "user", content: prompt },
     ],
   });
@@ -256,18 +356,28 @@ ${questions.map((q, i) => `QUESTION ${i + 1}: ${JSON.stringify(q)}`).join("\n\n"
 }
 
 function deterministicBoundaryCheck(q: any, syllabus: any): boolean {
-  const text = `${q.question_text} ${q.explanation} ${q.topic}`.toLowerCase();
-  const exclusions = String(syllabus.exclusions_text || "").toLowerCase();
+  const text = normalizedBoundaryText(`${q.question_text} ${q.option_a} ${q.option_b} ${q.option_c} ${q.option_d} ${q.explanation} ${q.topic}`);
+  const exclusions = normalizedBoundaryText(String(syllabus.exclusions_text || ""));
+  const hardBlocked = chapterForbiddenConcepts(syllabus);
 
-  // Explicitly reject known advanced concepts when they appear in the generated item.
-  const hardBlocked = [
-    "xist", "robertsonian translocation", "fmr1", "trinucleotide repeat",
-    "crispr", "epigenomics", "transcriptomics", "advanced cytogenetics",
-  ];
+  // Server-side chapter rules run BEFORE the second AI validation pass.
   if (overlapsAny(text, hardBlocked)) return false;
 
-  // If the syllabus itself names an excluded phrase, it remains a block when used.
-  for (const phrase of hardBlocked) {
+  // Keep the original explicit global blocks as a second safety net.
+  const globalBlocked = [
+    "xist",
+    "robertsonian translocation",
+    "fmr1",
+    "trinucleotide repeat",
+    "crispr",
+    "epigenomics",
+    "transcriptomics",
+    "advanced cytogenetics",
+  ];
+  if (overlapsAny(text, globalBlocked)) return false;
+
+  // If the configured syllabus explicitly lists a phrase as excluded, never allow it.
+  for (const phrase of globalBlocked) {
     if (exclusions.includes(phrase) && text.includes(phrase)) return false;
   }
 
@@ -418,6 +528,7 @@ async function main(req: Request) {
     const generated: any[] = [];
     let safetyRounds = 0;
     let rejectedByValidator = 0;
+    let rejectedByBoundary = 0;
 
     try {
       while (generated.length < requestedCount && safetyRounds < MAX_GENERATION_ROUNDS) {
@@ -431,7 +542,10 @@ async function main(req: Request) {
           const position = existing.length + generated.length + candidates.length + 1;
           const normalized = normalizeQuestion(raw, position, settings);
           if (!normalized) continue;
-          if (!deterministicBoundaryCheck(normalized, syllabus)) continue;
+          if (!deterministicBoundaryCheck(normalized, syllabus)) {
+            rejectedByBoundary++;
+            continue;
+          }
           const fp = questionFingerprint(normalized);
           if (!fp || fingerprints.includes(fp) || generated.some((q) => questionFingerprint(q) === fp) || candidates.some((q) => questionFingerprint(q) === fp)) continue;
           candidates.push(normalized);
@@ -452,7 +566,7 @@ async function main(req: Request) {
       }
 
       if (generated.length !== requestedCount) {
-        throw new Error(`Could only produce ${generated.length} syllabus-compliant questions out of ${requestedCount} requested. Rejected by syllabus/factual validation: ${rejectedByValidator}. Try again or choose a broader configured chapter.`);
+        throw new Error(`Could only produce ${generated.length} syllabus-compliant questions out of ${requestedCount} requested. Rejected by boundary check: ${rejectedByBoundary}; rejected by AI validator: ${rejectedByValidator}. Try again or choose a broader configured chapter.`);
       }
 
       const { error: insertError } = await adminClient
@@ -475,10 +589,11 @@ async function main(req: Request) {
         syllabus_checked: true,
         syllabus_year: syllabus.exam_year,
         syllabus_chapter: syllabus.chapter,
+        rejected_by_boundary: rejectedByBoundary,
         rejected_by_validator: rejectedByValidator,
         generation_rounds: safetyRounds,
         status: "ai_generated",
-        message: "MCQs generated, syllabus-checked, AI-validated, and stored. They are not published or officially approved yet.",
+        message: "MCQs generated, strict syllabus-boundary checked, AI-validated, and stored. They are not published or officially approved yet.",
       });
     } catch (error) {
       await adminClient.from("mock_tests").update({ validation_status: "pending" }).eq("id", testId);
