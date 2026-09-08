@@ -14,9 +14,14 @@ const GROQ_API_KEY = Deno.env.get("GROQ_RESEARCH_KEY") ?? Deno.env.get("GROQ_API
 const GROQ_MODEL = Deno.env.get("GROQ_MCQ_MODEL") ?? "openai/gpt-oss-120b";
 
 const MAX_QUESTIONS = 90;
-const BATCH_SIZE = 15;
-const MAX_GENERATION_ROUNDS = 18;
+// GPT-OSS-120B currently has an 8K TPM limit on the user's Groq tier.
+// Small batches leave enough room for the syllabus/validator prompts.
+const BATCH_SIZE = 5;
+const MAX_GENERATION_ROUNDS = 24;
 const MAX_GROQ_RETRIES = 4;
+const GENERATION_MAX_COMPLETION_TOKENS = 2500;
+const VALIDATION_MAX_COMPLETION_TOKENS = 1800;
+const MAX_FINGERPRINTS_IN_PROMPT = 15;
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: corsHeaders });
@@ -88,67 +93,28 @@ function chapterForbiddenConcepts(syllabus: any): string[] {
 
   if (chapter === "principles of inheritance and variation") {
     return [
-      // Explicitly excluded / advanced genetics.
-      "xist",
-      "xist rna",
-      "robertsonian translocation",
-      "fmr1",
-      "fragile x",
-      "trinucleotide repeat",
-      "repeat expansion",
-      "anticipation",
-      "advanced cytogenetics",
-      "array cgh",
-      "comparative genomic hybridization",
-      "genomic imprinting",
-      "uniparental disomy",
-      "mosaicism",
-      "population genetics",
-      "hardy-weinberg",
-      "hardy weinberg",
-      "allele frequency",
-      "gene frequency",
-      "genotype frequency",
-      "genetic drift",
-      "founder effect",
-      "bottleneck effect",
-      "natural selection coefficient",
-      "selection coefficient",
-      "linkage disequilibrium",
-      "molecular mechanism of thalassemia",
-      "molecular mechanism of haemophilia",
-      "molecular mechanism of hemophilia",
-      "molecular mechanism of colour blindness",
+      "xist", "xist rna", "robertsonian translocation", "fmr1", "fragile x",
+      "trinucleotide repeat", "repeat expansion", "anticipation", "advanced cytogenetics",
+      "array cgh", "comparative genomic hybridization", "genomic imprinting", "uniparental disomy",
+      "mosaicism", "population genetics", "hardy-weinberg", "hardy weinberg", "allele frequency",
+      "gene frequency", "genotype frequency", "genetic drift", "founder effect", "bottleneck effect",
+      "natural selection coefficient", "selection coefficient", "linkage disequilibrium",
+      "molecular mechanism of thalassemia", "molecular mechanism of haemophilia",
+      "molecular mechanism of hemophilia", "molecular mechanism of colour blindness",
       "molecular mechanism of color blindness",
     ];
   }
 
   if (chapter === "molecular basis of inheritance") {
     return [
-      "crispr",
-      "crispr-cas",
-      "epigenomics",
-      "advanced epigenetics",
-      "advanced chromatin",
-      "transcriptomics",
-      "single-cell sequencing",
-      "rna-seq",
-      "whole exome sequencing",
-      "whole genome sequencing",
-      "advanced genomics",
-      "advanced molecular genetics",
-      "clinical molecular genetics",
-      "gene therapy",
-      "next-generation sequencing",
+      "crispr", "crispr-cas", "epigenomics", "advanced epigenetics", "advanced chromatin",
+      "transcriptomics", "single-cell sequencing", "rna-seq", "whole exome sequencing",
+      "whole genome sequencing", "advanced genomics", "advanced molecular genetics",
+      "clinical molecular genetics", "gene therapy", "next-generation sequencing",
     ];
   }
 
-  return [
-    "crispr",
-    "epigenomics",
-    "transcriptomics",
-    "advanced cytogenetics",
-  ];
+  return ["crispr", "epigenomics", "transcriptomics", "advanced cytogenetics"];
 }
 
 async function groqRequest(body: any) {
@@ -207,6 +173,7 @@ QUALITY RULES:
 - Explanations must justify the answer using only syllabus-level knowledge.
 - Return ONLY JSON matching the supplied schema.`;
 
+  const fingerprints = existingFingerprints.slice(-MAX_FINGERPRINTS_IN_PROMPT);
   const userPrompt = `Generate exactly ${batchCount} NEW MCQs.
 
 Exam: ${settings.exam_type}
@@ -229,7 +196,7 @@ REQUESTED DIFFICULTY: ${settings.difficulty || "mixed"}
 CLASS/LEVEL: ${settings.class_level || "NEET-UG"}
 
 Previously generated question fingerprints. Do not repeat or paraphrase them:
-${existingFingerprints.slice(-50).map((x, i) => `${i + 1}. ${x}`).join("\n") || "None"}`;
+${fingerprints.map((x, i) => `${i + 1}. ${x}`).join("\n") || "None"}`;
 
   const schema = {
     type: "object",
@@ -264,7 +231,7 @@ ${existingFingerprints.slice(-50).map((x, i) => `${i + 1}. ${x}`).join("\n") || 
   const payload = await groqRequest({
     model: GROQ_MODEL,
     temperature: 0.15,
-    max_completion_tokens: 12000,
+    max_completion_tokens: GENERATION_MAX_COMPLETION_TOKENS,
     reasoning_effort: "medium",
     response_format: {
       type: "json_schema",
@@ -311,17 +278,15 @@ async function validateSyllabusBatch(questions: any[], syllabus: any) {
 
   const prompt = `You are performing a STRICT final gate for NEET-UG MCQs.
 
-A question may be approved ONLY if all of the following are true:
-1. It is directly answerable from the supplied official syllabus scope.
-2. It does not require any hard exclusion or server-forbidden concept.
-3. It does not require external clinical statistics, research facts, university-level details, or unstated assumptions.
-4. The stem precisely asks for the same kind of quantity represented by the answer options. For example, do not label four genotype/progeny classes as a "phenotypic ratio" unless the phenotypes are actually defined and that is what is being compared.
-5. It has exactly one defensible answer and the explanation supports that answer.
-6. A harder calculation is acceptable only when every principle required for the calculation is explicitly in scope.
+Approve ONLY if ALL are true:
+1. Directly answerable from the official syllabus scope.
+2. No hard exclusion or server-forbidden concept.
+3. No external clinical statistics, research facts, university-level details, or unstated assumptions.
+4. The stem asks for exactly the same kind of quantity represented by the options.
+5. Exactly one defensible answer and the explanation supports it.
+6. Any calculation uses only principles explicitly in scope.
 
-IMPORTANT:
-Scientific correctness alone is NOT sufficient. A scientifically correct question must still be rejected if it is outside the exact NEET syllabus supplied below.
-When uncertain, reject.
+Scientific correctness alone is NOT sufficient. When uncertain, reject.
 
 SYLLABUS:
 ${syllabus.scope_text}
@@ -329,7 +294,7 @@ ${syllabus.scope_text}
 HARD EXCLUSIONS:
 ${syllabus.exclusions_text || "None"}
 
-SERVER-FORBIDDEN CONCEPTS FOR THIS CHAPTER:
+SERVER-FORBIDDEN CONCEPTS:
 ${chapterForbiddenConcepts(syllabus).join(", ")}
 
 QUESTIONS:
@@ -338,7 +303,7 @@ ${questions.map((q, i) => `QUESTION ${i + 1}: ${JSON.stringify(q)}`).join("\n\n"
   const payload = await groqRequest({
     model: GROQ_MODEL,
     temperature: 0,
-    max_completion_tokens: 6000,
+    max_completion_tokens: VALIDATION_MAX_COMPLETION_TOKENS,
     reasoning_effort: "medium",
     response_format: {
       type: "json_schema",
@@ -360,28 +325,18 @@ function deterministicBoundaryCheck(q: any, syllabus: any): boolean {
   const exclusions = normalizedBoundaryText(String(syllabus.exclusions_text || ""));
   const hardBlocked = chapterForbiddenConcepts(syllabus);
 
-  // Server-side chapter rules run BEFORE the second AI validation pass.
   if (overlapsAny(text, hardBlocked)) return false;
 
-  // Keep the original explicit global blocks as a second safety net.
   const globalBlocked = [
-    "xist",
-    "robertsonian translocation",
-    "fmr1",
-    "trinucleotide repeat",
-    "crispr",
-    "epigenomics",
-    "transcriptomics",
-    "advanced cytogenetics",
+    "xist", "robertsonian translocation", "fmr1", "trinucleotide repeat",
+    "crispr", "epigenomics", "transcriptomics", "advanced cytogenetics",
   ];
   if (overlapsAny(text, globalBlocked)) return false;
 
-  // If the configured syllabus explicitly lists a phrase as excluded, never allow it.
   for (const phrase of globalBlocked) {
     if (exclusions.includes(phrase) && text.includes(phrase)) return false;
   }
 
-  // Require at least some meaningful lexical connection to the supplied scope.
   const scopeTokens = new Set(tokens(syllabus.scope_text));
   const textTokens = tokens(text);
   const overlap = textTokens.filter((t) => scopeTokens.has(t)).length;
@@ -500,7 +455,6 @@ async function main(req: Request) {
 
     const syllabus = syllabusRows[0];
 
-    // Snapshot the exact syllabus boundary used for this test.
     await adminClient.from("mock_test_syllabus_scope").upsert({
       mock_test_id: testId,
       syllabus_id: syllabus.id,
@@ -592,8 +546,11 @@ async function main(req: Request) {
         rejected_by_boundary: rejectedByBoundary,
         rejected_by_validator: rejectedByValidator,
         generation_rounds: safetyRounds,
+        groq_batch_size: BATCH_SIZE,
+        groq_generation_token_budget: GENERATION_MAX_COMPLETION_TOKENS,
+        groq_validation_token_budget: VALIDATION_MAX_COMPLETION_TOKENS,
         status: "ai_generated",
-        message: "MCQs generated, strict syllabus-boundary checked, AI-validated, and stored. They are not published or officially approved yet.",
+        message: "MCQs generated in small Groq batches, strict syllabus-boundary checked, AI-validated, and stored. They are not published or officially approved yet.",
       });
     } catch (error) {
       await adminClient.from("mock_tests").update({ validation_status: "pending" }).eq("id", testId);
