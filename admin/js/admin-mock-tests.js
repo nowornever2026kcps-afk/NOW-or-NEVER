@@ -13,7 +13,7 @@ export function initMockTests(options) {
     escapeHTML
   } = options;
 
-  const FUNCTION_URL = "https://kvbbgvfrllptqpbkixnv.supabase.co/functions/v1/mock-test-generate";
+  const FUNCTION_URL = "https://kvbbgvfrllptqpbkixnv.supabase.co/functions/v1/mock-test-generate-ts";
 
   function renderMockTests() {
     sectionContent.innerHTML = `
