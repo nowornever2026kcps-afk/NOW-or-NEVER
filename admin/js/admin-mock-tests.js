@@ -5,14 +5,7 @@
 export function initMockTests(options) {
   "use strict";
 
-  const {
-    supabaseClient,
-    $,
-    sectionContent,
-    adminToast,
-    escapeHTML
-  } = options;
-
+  const { supabaseClient, $, sectionContent, adminToast, escapeHTML } = options;
   const FUNCTION_URL = "https://kvbbgvfrllptqpbkixnv.supabase.co/functions/v1/mock-test-generate-ts";
 
   function renderMockTests() {
@@ -20,20 +13,17 @@ export function initMockTests(options) {
       <div class="section-heading">
         <p class="eyebrow">MCQ MOCK TEST SYSTEM</p>
         <h3>🧠 Create AI Mock Test</h3>
-        <p class="muted">Create a draft and generate up to 90 MCQs with Groq. For NEET, the chapter list comes directly from the configured official syllabus.</p>
+        <p class="muted">Create a draft and generate up to 90 MCQs with Groq. NEET chapters are loaded from the complete official 2026 syllabus stored in Supabase.</p>
       </div>
 
       <form id="mockTestGeneratorForm" class="panel" style="margin-top:18px;">
         <div class="section-heading">
-          <div>
-            <p class="eyebrow">TEST DETAILS</p>
-            <h3>Build a new mock test</h3>
-          </div>
+          <div><p class="eyebrow">TEST DETAILS</p><h3>Build a new mock test</h3></div>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:18px;">
           <label>Title
-            <input id="mtTitle" required maxlength="160" placeholder="NEET 2027 Biology Full Test">
+            <input id="mtTitle" required maxlength="160" placeholder="NEET 2026 Biology Full Test">
           </label>
 
           <label>Exam type
@@ -47,23 +37,28 @@ export function initMockTests(options) {
 
           <label>Exam year
             <select id="mtExamYear" required>
-              <option value="2026">2026</option>
-              <option value="2027" selected>2027</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
             </select>
           </label>
 
           <label>Subject
-            <input id="mtSubject" required maxlength="100" placeholder="Biology">
+            <select id="mtSubject" required>
+              <option value="">Select subject</option>
+              <option value="Physics">Physics</option>
+              <option value="Chemistry">Chemistry</option>
+              <option value="Biology">Biology</option>
+            </select>
           </label>
 
-          <label>Chapter
-            <select id="mtChapter" required>
-              <option value="">Select exam type and subject first</option>
+          <label>Official syllabus unit / chapter
+            <select id="mtChapter" required disabled>
+              <option value="">Select subject first</option>
             </select>
           </label>
 
           <label>Topic
-            <input id="mtTopic" maxlength="160" placeholder="Optional topic within the chapter">
+            <input id="mtTopic" maxlength="160" placeholder="Optional topic within the selected scope">
           </label>
 
           <label>Difficulty
@@ -98,7 +93,7 @@ export function initMockTests(options) {
 
         <div id="mockTestSyllabusStatus" style="margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(127,127,127,.08);">
           <strong>Syllabus:</strong>
-          <span id="mockTestSyllabusStatusText" class="muted">Select NEET + Biology to load the official configured chapters.</span>
+          <span id="mockTestSyllabusStatusText" class="muted">Select NEET + a subject to load the official syllabus.</span>
         </div>
 
         <div id="mockTestProgress" class="hidden" style="margin-top:20px;padding:16px;border-radius:14px;background:rgba(127,127,127,.10);">
@@ -119,12 +114,11 @@ export function initMockTests(options) {
     $("resetMockTestBtn")?.addEventListener("click", resetForm);
     $("mtExamType")?.addEventListener("change", updateSyllabusControls);
     $("mtExamYear")?.addEventListener("change", updateSyllabusControls);
-    $("mtSubject")?.addEventListener("input", scheduleSyllabusLoad);
+    $("mtSubject")?.addEventListener("change", loadNeetChapters);
 
     updateSyllabusControls();
   }
 
-  let syllabusLoadTimer = null;
   let syllabusRequestId = 0;
 
   function setSyllabusStatus(text) {
@@ -132,21 +126,10 @@ export function initMockTests(options) {
     if (el) el.textContent = text;
   }
 
-  function normalizeSubject(value) {
-    return String(value || "").trim().replace(/\s+/g, " ");
-  }
-
-  function scheduleSyllabusLoad() {
-    clearTimeout(syllabusLoadTimer);
-    syllabusLoadTimer = setTimeout(loadNeetChapters, 250);
-  }
-
-  async function updateSyllabusControls() {
+  function updateSyllabusControls() {
     const examType = $("mtExamType")?.value || "";
     const chapter = $("mtChapter");
-    const subjectInput = $("mtSubject");
-
-    if (!chapter || !subjectInput) return;
+    if (!chapter) return;
 
     if (examType !== "NEET") {
       chapter.innerHTML = `<option value="">Enter a chapter manually</option>`;
@@ -158,17 +141,17 @@ export function initMockTests(options) {
 
     chapter.required = true;
     chapter.disabled = false;
-    chapter.innerHTML = `<option value="">Loading official syllabus…</option>`;
+    chapter.innerHTML = `<option value="">Select subject first</option>`;
+    setSyllabusStatus("Select Physics, Chemistry or Biology to load the complete official NEET syllabus.");
 
-    await loadNeetChapters();
+    if ($( "mtSubject" )?.value) loadNeetChapters();
   }
 
   async function loadNeetChapters() {
     const examType = $("mtExamType")?.value || "";
     const examYear = Number($("mtExamYear")?.value || 2026);
-    const subject = normalizeSubject($("mtSubject")?.value);
+    const subject = String($("mtSubject")?.value || "").trim();
     const chapter = $("mtChapter");
-
     if (!chapter) return;
 
     if (examType !== "NEET") {
@@ -179,18 +162,17 @@ export function initMockTests(options) {
     }
 
     chapter.required = true;
-
     if (!subject) {
-      chapter.innerHTML = `<option value="">Enter subject first</option>`;
+      chapter.innerHTML = `<option value="">Select subject first</option>`;
       chapter.disabled = true;
-      setSyllabusStatus("Enter a subject such as Biology to load the official chapter list.");
+      setSyllabusStatus("Select Physics, Chemistry or Biology to load the official syllabus.");
       return;
     }
 
     const requestId = ++syllabusRequestId;
     chapter.disabled = true;
     chapter.innerHTML = `<option value="">Loading official ${escapeHTML(subject)} syllabus…</option>`;
-    setSyllabusStatus(`Loading configured NEET ${examYear} ${subject} chapters…`);
+    setSyllabusStatus(`Loading configured NEET ${examYear} ${subject} syllabus…`);
 
     try {
       const { data, error } = await supabaseClient
@@ -207,21 +189,20 @@ export function initMockTests(options) {
       if (error) throw error;
 
       const rows = Array.isArray(data) ? data : [];
-
       if (!rows.length) {
         chapter.innerHTML = `<option value="">No configured syllabus found</option>`;
         chapter.disabled = true;
-        setSyllabusStatus(`No official NEET ${examYear} syllabus is currently configured for ${subject}. Generation will be blocked by the server.`);
+        setSyllabusStatus(`No official NEET ${examYear} syllabus is configured for ${subject}. Generation will be blocked by the server.`);
         return;
       }
 
       chapter.disabled = false;
-      chapter.innerHTML = `<option value="">Select an official chapter</option>` + rows.map((row) => {
+      chapter.innerHTML = `<option value="">Select an official syllabus scope</option>` + rows.map((row) => {
         const label = row.unit_code ? `${row.unit_code} — ${row.chapter}` : row.chapter;
         return `<option value="${escapeHTML(row.chapter)}">${escapeHTML(label)}</option>`;
       }).join("");
 
-      setSyllabusStatus(`Loaded ${rows.length} official NEET ${examYear} ${subject} chapter(s). The selected chapter will be sent using the exact syllabus name.`);
+      setSyllabusStatus(`Loaded ${rows.length} official ${examYear} ${subject} scope(s). The selected scope is sent to the secure generator by its exact database name.`);
     } catch (error) {
       console.error("Failed to load NEET syllabus:", error);
       if (requestId !== syllabusRequestId) return;
@@ -248,7 +229,8 @@ export function initMockTests(options) {
 
   function resetForm() {
     $("mockTestGeneratorForm")?.reset();
-    $("mtExamYear").value = "2027";
+    $("mtExamYear").value = "2026";
+    $("mtSubject").value = "";
     $("mtQuestionCount").value = "30";
     $("mtDuration").value = "30";
     $("mtMarks").value = "4";
@@ -271,16 +253,16 @@ export function initMockTests(options) {
 
     const examType = $("mtExamType")?.value || "";
     const examYear = Number($("mtExamYear")?.value || 2026);
-    const subject = normalizeSubject($("mtSubject")?.value);
+    const subject = String($("mtSubject")?.value || "").trim();
     const chapter = $("mtChapter")?.value.trim() || "";
 
     if (!subject) {
-      adminToast("Please enter a subject.");
+      adminToast("Please select a subject.");
       return;
     }
 
     if (examType === "NEET" && !chapter) {
-      adminToast("Please select an official NEET syllabus chapter.");
+      adminToast("Please select an official NEET syllabus scope.");
       return;
     }
 
@@ -293,7 +275,7 @@ export function initMockTests(options) {
       if (sessionError) throw sessionError;
       if (!session?.access_token) throw new Error("Your login session is missing or expired. Please log in again.");
 
-      setProgress("Generating questions…", `Sending ${questionCount} MCQs to the secure generator. This may take a little while.`);
+      setProgress("Generating questions…", `Sending ${questionCount} MCQs to the secure syllabus-aware generator.`);
 
       const payload = {
         title: $("mtTitle").value.trim(),
@@ -323,10 +305,7 @@ export function initMockTests(options) {
       const raw = await response.text();
       let result = {};
       try { result = raw ? JSON.parse(raw) : {}; } catch { result = { error: raw || "Invalid server response" }; }
-
-      if (!response.ok) {
-        throw new Error(result.error || result.message || `Generator failed (${response.status})`);
-      }
+      if (!response.ok) throw new Error(result.error || result.message || `Generator failed (${response.status})`);
 
       setProgress("Generation complete", `Generated ${result.generated_count ?? result.question_count ?? questionCount} question(s).`);
       $("mockTestResult").innerHTML = `
@@ -336,6 +315,8 @@ export function initMockTests(options) {
           <p class="muted">The test is saved as an AI-generated draft. It has not been published and no student points or marks have been affected.</p>
           ${result.mock_test_id ? `<p><strong>Test ID:</strong> ${escapeHTML(result.mock_test_id)}</p>` : ""}
           ${result.generated_count != null ? `<p><strong>Questions generated:</strong> ${escapeHTML(result.generated_count)}</p>` : ""}
+          ${result.rejected_by_boundary != null ? `<p><strong>Boundary rejects:</strong> ${escapeHTML(result.rejected_by_boundary)}</p>` : ""}
+          ${result.rejected_by_validator != null ? `<p><strong>Validator rejects:</strong> ${escapeHTML(result.rejected_by_validator)}</p>` : ""}
         </div>
       `;
       adminToast("Mock test generated successfully.", true);
