@@ -1,5 +1,5 @@
 /* =========================================================
-   NOW-or-NEVER — ADMIN MOCK TEST GENERATOR
+   NOW-or-NEVER — ADMIN MOCK TEST GENERATOR 
    ========================================================= */
 
 export function initMockTests({ supabaseClient, $, sectionContent, adminToast, escapeHTML }) {
