@@ -43,6 +43,7 @@ import { initUpdates } from "../admin/js/admin-updates.js";
     if(section==="shop")marketplace.renderMarketplace();
     else if(section==="menus")shopMenus.renderShopMenus();
     else if(section==="updates")updates.renderUpdates();
+    else if(section==="mock-tests")sectionContent.innerHTML='<div class="section-heading"><p class="eyebrow">MCQ MOCK TEST SYSTEM</p><h3>🧠 MCQ Mock Tests</h3><p class="muted">The mock-test generator, AI validation, post-exam answer review, result finalization and marks leaderboard will be connected here in the next step.</p><div class="panel" style="margin-top:18px"><strong>Step 1 complete</strong><p class="muted">The secure admin entry point is now in place. No test, marks or points logic has been changed yet.</p></div></div>';
     else if(section==="settings")sectionContent.innerHTML='<div class="section-heading"><p class="eyebrow">ADMIN MODULE</p><h3>⚙️ Settings</h3><p class="muted">Administrator settings will be connected after the core modules.</p></div>';
     else return;
     sectionPanel.scrollIntoView({behavior:"smooth",block:"nearest"});
