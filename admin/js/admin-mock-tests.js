@@ -2,8 +2,16 @@
    NOW-or-NEVER — ADMIN MOCK TEST GENERATOR 
    ========================================================= */
 
-export function initMockTests({ supabaseClient, $, sectionContent, adminToast, escapeHTML }) {
+export function initMockTests(options) {
   "use strict";
+
+  const {
+    supabaseClient,
+    $,
+    sectionContent,
+    adminToast,
+    escapeHTML
+  } = options;
 
   const FUNCTION_URL = "https://kvbbgvfrllptqpbkixnv.supabase.co/functions/v1/mock-test-generate";
 
