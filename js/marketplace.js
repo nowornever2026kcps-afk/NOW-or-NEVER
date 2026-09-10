@@ -209,7 +209,7 @@ function renderShopCatalogue(owned=[],equipped={}){
     grid.innerHTML=`<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">${escapeHtml(label)}</div><div class="shop-section-count">${items.length} items</div></div></div>`+items.map(i=>shopCardHtml(i,owned,equipped)).join("");
   }else{
     const renderedIds=new Set();
-    const sections=visibleMenus.map(menu=>{
+    let sections=visibleMenus.map(menu=>{
       const arr=menuItems(menu).filter(i=>!renderedIds.has(i.id));
       arr.forEach(i=>renderedIds.add(i.id));
       if(!arr.length)return "";
