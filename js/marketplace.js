@@ -208,10 +208,18 @@ function renderShopCatalogue(owned=[],equipped={}){
     const label=selectedMenu?`${selectedMenu.icon} ${selectedMenu.menu_name}`:"Shop";
     grid.innerHTML=`<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">${escapeHtml(label)}</div><div class="shop-section-count">${items.length} items</div></div></div>`+items.map(i=>shopCardHtml(i,owned,equipped)).join("");
   }else{
-    grid.innerHTML=visibleMenus.map(menu=>{
-      const arr=menuItems(menu);if(!arr.length)return "";
+    const renderedIds=new Set();
+    const sections=visibleMenus.map(menu=>{
+      const arr=menuItems(menu).filter(i=>!renderedIds.has(i.id));
+      arr.forEach(i=>renderedIds.add(i.id));
+      if(!arr.length)return "";
       return `<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">${escapeHtml(menu.icon)} ${escapeHtml(menu.menu_name)}</div><div class="shop-section-count">${arr.length} items</div></div></div>${arr.map(i=>shopCardHtml(i,owned,equipped)).join("")}`;
     }).join("");
+    const unmatched=SHOP_ITEMS.filter(i=>!renderedIds.has(i.id));
+    if(unmatched.length){
+      sections+=`<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">🎁 Other</div><div class="shop-section-count">${unmatched.length} items</div></div></div>${unmatched.map(i=>shopCardHtml(i,owned,equipped)).join("")}`;
+    }
+    grid.innerHTML=sections||`<div class="loading">No shop items are available right now.</div>`;
   }
   const names=Object.values(equipped).map(id=>SHOP_ITEMS.find(i=>i.id===id)?.name).filter(Boolean);
   const equippedEl=$("equippedShopItems");
