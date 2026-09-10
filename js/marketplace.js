@@ -143,7 +143,7 @@ function renderShopTabs(){
   const tabs=document.querySelector(".shop-tabs");
   if(!tabs||!SHOP_MENUS_LOADED)return;
   const previous=selectedShopCategory||"all";
-  const visibleMenus=SHOP_MENUS.filter(m=>menuItems(m).length>0);
+  const visibleMenus=SHOP_MENUS;
   tabs.innerHTML=`<button class="active" type="button" onclick="selectShopCategory('all')">✦ All</button>`+
     visibleMenus.map(m=>`<button type="button" data-shop-category="${escapeHtml(m.menu_key)}" onclick="selectShopCategory('${String(m.menu_key).replace(/'/g,"\\'")}')">${escapeHtml(m.icon)} ${escapeHtml(m.menu_name)}</button>`).join("");
   const selectedStillExists=previous!=="all"&&visibleMenus.some(m=>m.menu_key===previous);
@@ -201,13 +201,11 @@ function renderShopCatalogue(owned=[],equipped={}){
     grid.innerHTML=`<div class="loading">Loading shop menus...</div>`;
     return;
   }
-  const visibleMenus=SHOP_MENUS.filter(m=>menuItems(m).length>0);
+  const visibleMenus=SHOP_MENUS;
   const selectedMenu=getShopMenu(selected);
-  const sectionLabel={};
-  visibleMenus.forEach(m=>sectionLabel[m.menu_key]=`${m.icon} ${m.menu_name}`);
   if(selected!=="all"){
     const items=menuItems(selectedMenu);
-    const label=selectedMenu?sectionLabel[selected]:"Shop";
+    const label=selectedMenu?`${selectedMenu.icon} ${selectedMenu.menu_name}`:"Shop";
     grid.innerHTML=`<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">${escapeHtml(label)}</div><div class="shop-section-count">${items.length} items</div></div></div>`+items.map(i=>shopCardHtml(i,owned,equipped)).join("");
   }else{
     grid.innerHTML=visibleMenus.map(menu=>{
@@ -222,7 +220,7 @@ function renderShopCatalogue(owned=[],equipped={}){
 async function renderShop(){
   if(!currentUser)return;
   const balanceEl=$("shopBalance");if(balanceEl)balanceEl.textContent=`${getShopPointsNow().toFixed(0)} pts`;
-  renderShopCatalogue([],{});
+  renderShopCatalogue([] ,{});
   const {owned,equipped}=await getShopData();
   renderShopCatalogue(owned,equipped);
 }
