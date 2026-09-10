@@ -7,9 +7,52 @@
 
 export function initMarketplace({ supabaseClient, $, sectionContent, adminToast, escapeHTML, money, loadOverview }) {
   let marketplaceItems = [];
+  let shopMenus = [];
 
-  function marketplaceForm(item = null) {
+  async function loadShopMenus() {
+    const { data, error } = await supabaseClient.rpc("admin_shop_menus_list");
+    if (error) throw error;
+
+    shopMenus = (Array.isArray(data) ? data : [])
+      .filter(menu => menu && menu.enabled)
+      .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+
+    return shopMenus;
+  }
+
+  function categoryOptions(currentCategory = "") {
+    const categories = [...shopMenus];
+
+    if (currentCategory && !categories.some(menu => menu.menu_key === currentCategory)) {
+      categories.push({
+        menu_key: currentCategory,
+        menu_name: `${currentCategory} (current item)`,
+        icon: "📂"
+      });
+    }
+
+    if (!categories.length) {
+      return `<option value="${escapeHTML(currentCategory)}" selected>${escapeHTML(currentCategory || "No categories available")}</option>`;
+    }
+
+    return categories.map(menu => {
+      const key = String(menu.menu_key || "");
+      const name = String(menu.menu_name || key);
+      const icon = String(menu.icon || "📂");
+      return `<option value="${escapeHTML(key)}" ${currentCategory === key ? "selected" : ""}>${escapeHTML(icon)} ${escapeHTML(name)}</option>`;
+    }).join("");
+  }
+
+  async function marketplaceForm(item = null) {
     const editing = Boolean(item);
+
+    try {
+      await loadShopMenus();
+    } catch (error) {
+      console.error("Shop menus load failed:", error);
+      adminToast("Could not load Shop Menus. Make sure the shop menu system is installed in Supabase.");
+      return;
+    }
 
     sectionContent.innerHTML = `
       <div class="section-heading">
@@ -35,16 +78,7 @@ export function initMarketplace({ supabaseClient, $, sectionContent, adminToast,
           <label>
             Category
             <select id="mpCategory" required>
-              ${[
-                "cosmetics",
-                "outfit",
-                "badge",
-                "headwear",
-                "title",
-                "crown",
-                "emoji",
-                "textstyle"
-              ].map((value) => `<option value="${value}" ${item?.category === value ? "selected" : ""}>${value}</option>`).join("")}
+              ${categoryOptions(item?.category || "")}
             </select>
           </label>
 
@@ -103,6 +137,7 @@ export function initMarketplace({ supabaseClient, $, sectionContent, adminToast,
 
     if (!payload.p_item_id ||
         !payload.p_item_name ||
+        !payload.p_category ||
         !payload.p_description ||
         !Number.isFinite(payload.p_price) ||
         payload.p_price < 0) {
@@ -185,6 +220,7 @@ export function initMarketplace({ supabaseClient, $, sectionContent, adminToast,
     });
 
     try {
+      await loadShopMenus();
       const { data, error } = await supabaseClient.rpc("admin_marketplace_list");
       if (error) throw error;
       renderMarketplaceRows(data || []);
