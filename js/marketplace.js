@@ -66,7 +66,6 @@ let SHOP_ITEMS=[
 let SHOP_MENUS=[];
 let SHOP_MENUS_LOADED=false;
 
-/* ================= TEXT STYLE HELPERS ================= */
 function getTextStyleClass(i){
   const id=String(i?.id||"").toLowerCase();
   const name=String(i?.name||"").toLowerCase();
@@ -82,20 +81,27 @@ function getTextStyleClass(i){
 /* ================= DATABASE CATALOGUE ================= */
 async function loadDatabaseShopCatalogue(){
   try{
-    const {data,error}=await supabaseClient
-      .from("shop_catalog")
-      .select("item_id,category,item_name,description,price,kind,preview")
-      .order("created_at",{ascending:true});
-    if(error){console.warn("SHOP CATALOGUE:",error);return;}
-    const databaseItems=(data||[]).map(x=>({
-      id:x.item_id,category:x.category||"cosmetics",name:x.item_name||x.item_id,
-      desc:x.description||"",price:Number(x.price)||0,kind:x.kind||"accessory",preview:x.preview||"🎁"
+    const {data,error}=await supabaseClient.rpc("shop_catalog_list_public");
+    if(error){
+      console.warn("SHOP CATALOGUE RPC:",error);
+      return;
+    }
+    const databaseItems=(Array.isArray(data)?data:[]).map(x=>({
+      id:x.item_id,
+      category:x.category||"cosmetics",
+      name:x.item_name||x.item_id,
+      desc:x.description||"",
+      price:Number(x.price)||0,
+      kind:x.kind||"accessory",
+      preview:x.preview||"🎁"
     }));
-    if(!databaseItems.length)return;
     const byId=new Map(SHOP_ITEMS.map(i=>[i.id,i]));
     databaseItems.forEach(i=>byId.set(i.id,i));
     SHOP_ITEMS=Array.from(byId.values());
-  }catch(err){console.warn("SHOP CATALOGUE:",err);}
+    console.log("SHOP CATALOGUE LOADED:",databaseItems.length,"database items");
+  }catch(err){
+    console.warn("SHOP CATALOGUE RPC:",err);
+  }
 }
 
 /* ================= ADMIN-MANAGED SHOP MENUS ================= */
