@@ -16,3 +16,26 @@
 .shop-item:hover{transform:translateY(-3px);border-color:#4b4260;box-shadow:0 14px 28px rgba(0,0,0,.25),0 0 24px rgba(139,92,246,.08)}
 .shop-preview{height:92px;border-radius:11px;background:radial-gradient(circle at 50% 35%,rgba(139,92,246,.12),transparent 46%),#17171c;border:1px solid #272730;display:grid;place-items:center;overflow:hidden}.shop-title-preview{font-size:14px;letter-spacing:.08em;font-weight:950}.shop-badge-preview{font-size:31px;filter:drop-shadow(0 0 10px rgba(181,140,255,.15))}.shop-name{font-size:12px;font-weight:850;margin-top:9px}.shop-desc{font-size:9px;color:#777783;line-height:1.35;min-height:25px;margin-top:3px}.shop-price{font-size:10px;font-weight:800;color:#c8b7ff;margin-top:8px}.shop-item button{width:100%;height:34px;margin-top:8px;border-radius:9px;border:1px solid #37333f;background:linear-gradient(135deg,#f1eff7,#d4ccdf);color:#111;font-size:10px;font-weight:900;transition:transform .12s ease,filter .12s ease}.shop-item button:hover{filter:brightness(1.05)}.shop-item button:active{transform:scale(.96)}.shop-item button.owned{background:#17171c;color:#c5c5ce}.shop-item button.equipped{background:linear-gradient(135deg,#7c5ce6,#b78cff);color:#fff;border-color:#a48ae8}
 
+/* Real visual border previews */
+.shop-border-preview{width:78px;height:68px;border-radius:13px;display:grid;place-items:center;position:relative;box-sizing:border-box;background:#0e0e14;color:#fff;overflow:hidden;isolation:isolate}
+.shop-border-preview::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1}
+.shop-border-preview span{font-size:22px;font-weight:900;opacity:.9;text-shadow:0 0 12px currentColor;z-index:1}
+.shop-border-preview.border-starter{border:2px solid #73737f;box-shadow:inset 0 0 0 1px #25252d,0 0 10px rgba(255,255,255,.05)}
+.shop-border-preview.border-starter span{color:#c8c8d2}
+.shop-border-preview.border-violet-pulse{border:2px solid #a78bfa;box-shadow:inset 0 0 12px rgba(167,139,250,.2),0 0 16px rgba(139,92,246,.5);animation:borderPulse 2.2s ease-in-out infinite}
+.shop-border-preview.border-violet-pulse span{color:#c4b5fd}
+.shop-border-preview.border-neon-grid{border:2px solid #22d3ee;background-image:linear-gradient(rgba(34,211,238,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.08) 1px,transparent 1px);background-size:12px 12px;box-shadow:inset 0 0 14px rgba(34,211,238,.16),0 0 14px rgba(34,211,238,.4)}
+.shop-border-preview.border-neon-grid span{color:#67e8f9}
+.shop-border-preview.border-scholar-frame{border:3px double #d6b66f;box-shadow:inset 0 0 0 3px #3d3320,0 0 12px rgba(214,182,111,.22)}
+.shop-border-preview.border-scholar-frame span{color:#f4d58b}
+.shop-border-preview.border-flame{border:2px solid #fb923c;box-shadow:inset 0 0 16px rgba(249,115,22,.28),0 0 18px rgba(249,115,22,.45);animation:borderFlame 1.5s ease-in-out infinite}
+.shop-border-preview.border-flame span{color:#fdba74}
+.shop-border-preview.border-galaxy{border:2px solid #c4b5fd;background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.55) 0 1px,transparent 2px),radial-gradient(circle at 75% 70%,rgba(167,139,250,.7) 0 1px,transparent 2px),#0b1025;background-size:18px 18px,23px 23px,auto;box-shadow:inset 0 0 18px rgba(99,102,241,.28),0 0 20px rgba(129,140,248,.45)}
+.shop-border-preview.border-galaxy span{color:#e9d5ff}
+.shop-border-preview.border-storm{border:2px solid #60a5fa;box-shadow:inset 0 0 18px rgba(59,130,246,.28),0 0 20px rgba(56,189,248,.55);animation:borderStorm 1.15s ease-in-out infinite}
+.shop-border-preview.border-storm span{color:#93c5fd}
+@keyframes borderPulse{50%{box-shadow:inset 0 0 18px rgba(167,139,250,.34),0 0 28px rgba(139,92,246,.72)}}
+@keyframes borderFlame{50%{filter:brightness(1.18);box-shadow:inset 0 0 22px rgba(249,115,22,.4),0 0 28px rgba(239,68,68,.58)}}
+@keyframes borderStorm{50%{filter:brightness(1.22);box-shadow:inset 0 0 24px rgba(59,130,246,.42),0 0 30px rgba(34,211,238,.7)}}
+
+@media (prefers-reduced-motion:reduce){.shop-border-preview.border-violet-pulse,.shop-border-preview.border-flame,.shop-border-preview.border-storm{animation:none}}
