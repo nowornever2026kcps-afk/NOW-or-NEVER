@@ -18,13 +18,6 @@
   .leader-title-badge{margin-left:4px;padding:2px 6px;font-size:8px}
 }
 
-
-/* =========================================================
-   LEADERBOARD COSMETICS
-   Shows the currently equipped title, text style, accessory
-   and animated effect directly on each leaderboard row.
-   ========================================================= */
-
 .leader{
   position:relative;
   overflow:visible;
@@ -169,6 +162,57 @@
 @keyframes leaderCrownFloat{
   0%,100%{transform:translateY(0) rotate(-3deg)}
   50%{transform:translateY(-4px) rotate(3deg)}
+}
+
+/* Border belongs to the avatar, never the whole leaderboard row. */
+.leader.has-border{border:0!important;box-shadow:none!important;outline:0!important}
+.leader .leader-border-frame{display:none!important}
+.leader-avatar-border{
+  position:relative!important;
+  overflow:visible!important;
+  isolation:isolate;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+.leader-avatar-border::after{
+  content:"";
+  position:absolute;
+  inset:-4px;
+  border-radius:inherit;
+  pointer-events:none;
+  box-sizing:border-box;
+  z-index:4;
+}
+.leader-avatar-border.border-starter::after{
+  border:2px solid #73737f;
+  box-shadow:0 0 0 1px #25252d,0 0 8px rgba(255,255,255,.08);
+}
+.leader-avatar-border.border-violet-pulse::after{
+  border:2px solid #a78bfa;
+  box-shadow:0 0 12px rgba(139,92,246,.78),inset 0 0 9px rgba(167,139,250,.16);
+  animation:borderPulse 2.2s ease-in-out infinite;
+}
+.leader-avatar-border.border-neon-grid::after{
+  border:2px solid #22d3ee;
+  box-shadow:0 0 12px rgba(34,211,238,.62),inset 0 0 8px rgba(34,211,238,.15);
+}
+.leader-avatar-border.border-scholar-frame::after{
+  border:3px double #d6b66f;
+  box-shadow:0 0 11px rgba(214,182,111,.38);
+}
+.leader-avatar-border.border-flame::after{
+  border:2px solid #fb923c;
+  box-shadow:0 0 15px rgba(249,115,22,.78),inset 0 0 12px rgba(249,115,22,.22);
+  animation:borderFlame 1.5s ease-in-out infinite;
+}
+.leader-avatar-border.border-galaxy::after{
+  border:2px solid #c4b5fd;
+  box-shadow:0 0 18px rgba(129,140,248,.78),inset 0 0 14px rgba(99,102,241,.25);
+}
+.leader-avatar-border.border-storm::after{
+  border:2px solid #60a5fa;
+  box-shadow:0 0 20px rgba(56,189,248,.88),inset 0 0 15px rgba(59,130,246,.28);
+  animation:borderStorm 1.15s ease-in-out infinite;
 }
 
 @media(max-width:520px){
