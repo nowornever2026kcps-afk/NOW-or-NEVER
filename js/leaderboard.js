@@ -66,8 +66,8 @@ async function renderBoard(){
       const dragonHtml=dragon&&dragon.id==="cosmetic_dragon_storm"
         ? `<div class="leader-dragon-host" data-dragon-host="true"></div>`:"";
 
-      const borderHtml=border
-        ? `<div class="leader-border-frame ${borderClass(border)}" aria-hidden="true"></div>`:"";
+      const borderAvatarClass=border
+        ? `leader-avatar-border ${borderClass(border)}`:"";
 
       const visualAccessories=[];
       if(accessory&&!isCrown(accessory)){
@@ -84,7 +84,7 @@ async function renderBoard(){
         ? `<div class="leader-cosmetics">${visualAccessories.join("")}</div>`:"";
 
       const hasAny=Boolean(title||textStyle||accessory||effect||dragon||border);
-      return {titleHtml,crownHtml,effectHtml,accessoryHtml,dragonHtml,borderHtml,hasAny,textStyleClass:styleClass(textStyle)};
+      return {titleHtml,crownHtml,effectHtml,accessoryHtml,dragonHtml,borderAvatarClass,hasAny,textStyleClass:styleClass(textStyle)};
     }
 
     const max=Math.max(1,...data.map(x=>Number(x.points)||0));
@@ -99,12 +99,11 @@ async function renderBoard(){
 
       return `
         <div class="leader ${isMe?"me":""} ${cosmetics.hasAny?"has-cosmetics":""}">
-          ${cosmetics.borderHtml}
           ${cosmetics.crownHtml}
           ${cosmetics.effectHtml}
           ${cosmetics.dragonHtml}
           <div class="rank">${medal}</div>
-          <div class="avatar">
+          <div class="avatar ${cosmetics.borderAvatarClass}">
             ${escapeHtml(initials(student.display_name))}
             ${cosmetics.accessoryHtml?cosmetics.accessoryHtml:""}
           </div>
