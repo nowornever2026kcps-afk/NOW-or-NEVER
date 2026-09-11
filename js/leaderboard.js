@@ -1,6 +1,6 @@
 // Leaderboard module
 /* ============================================
-   LEADERBOARD
+   LEADERBOARD 
 ============================================ */
 
 async function renderBoard(){
