@@ -60,7 +60,14 @@ let SHOP_ITEMS=[
  {id:"emoji_brain",category:"emoji",name:"Brain Spark",desc:"Animated 🧠 study badge.",price:275,kind:"effect",preview:"🧠"},
  {id:"emoji_star",category:"emoji",name:"Star Burst",desc:"Animated ⭐ achievement badge.",price:500,kind:"effect",preview:"⭐"},
  {id:"emoji_lightning",category:"emoji",name:"Lightning",desc:"Animated ⚡ energy badge.",price:550,kind:"effect",preview:"⚡"},
- {id:"cosmetic_dragon_storm",category:"cosmetics",name:"Storm Wyrm",desc:"A living electric dragon surrounded by lightning.",price:1500,kind:"dragon",preview:"🐉",rarity:"legendary"}
+ {id:"cosmetic_dragon_storm",category:"cosmetics",name:"Storm Wyrm",desc:"A living electric dragon surrounded by lightning.",price:1500,kind:"dragon",preview:"🐉",rarity:"legendary"},
+ {id:"border_starter",category:"borders",name:"Starter Border",desc:"A clean frame for your student identity.",price:0,kind:"border",preview:"▣"},
+ {id:"border_violet_pulse",category:"borders",name:"Violet Pulse",desc:"A soft violet border with a living glow.",price:150,kind:"border",preview:"✦"},
+ {id:"border_neon_grid",category:"borders",name:"Neon Grid",desc:"A sharp cyber-study frame.",price:300,kind:"border",preview:"▦"},
+ {id:"border_scholar_frame",category:"borders",name:"Scholar Frame",desc:"A refined academic frame.",price:450,kind:"border",preview:"◇"},
+ {id:"border_flame",category:"borders",name:"Flame Border",desc:"A hot animated frame for serious grinders.",price:650,kind:"border",preview:"🔥"},
+ {id:"border_galaxy",category:"borders",name:"Galaxy Border",desc:"A deep-space frame with a premium glow.",price:900,kind:"border",preview:"✧"},
+ {id:"border_storm",category:"borders",name:"Legendary Storm Border",desc:"The ultimate electric frame for the Storm Wyrm.",price:1500,kind:"border",preview:"⚡",rarity:"legendary"}
 ];
 
 let SHOP_MENUS=[];
@@ -78,30 +85,31 @@ function getTextStyleClass(i){
   return "";
 }
 
+function getBorderClass(i){
+  const id=String(i?.id||"").toLowerCase();
+  if(id.includes("violet_pulse"))return "border-violet-pulse";
+  if(id.includes("neon_grid"))return "border-neon-grid";
+  if(id.includes("scholar_frame"))return "border-scholar-frame";
+  if(id.includes("flame"))return "border-flame";
+  if(id.includes("galaxy"))return "border-galaxy";
+  if(id.includes("storm"))return "border-storm";
+  return "border-starter";
+}
+
 /* ================= DATABASE CATALOGUE ================= */
 async function loadDatabaseShopCatalogue(){
   try{
     const {data,error}=await supabaseClient.rpc("shop_catalog_list_public");
-    if(error){
-      console.warn("SHOP CATALOGUE RPC:",error);
-      return;
-    }
+    if(error){console.warn("SHOP CATALOGUE RPC:",error);return;}
     const databaseItems=(Array.isArray(data)?data:[]).map(x=>({
-      id:x.item_id,
-      category:x.category||"cosmetics",
-      name:x.item_name||x.item_id,
-      desc:x.description||"",
-      price:Number(x.price)||0,
-      kind:x.kind||"accessory",
-      preview:x.preview||"🎁"
+      id:x.item_id,category:x.category||"cosmetics",name:x.item_name||x.item_id,
+      desc:x.description||"",price:Number(x.price)||0,kind:x.kind||"accessory",preview:x.preview||"🎁"
     }));
     const byId=new Map(SHOP_ITEMS.map(i=>[i.id,i]));
     databaseItems.forEach(i=>byId.set(i.id,i));
     SHOP_ITEMS=Array.from(byId.values());
     console.log("SHOP CATALOGUE LOADED:",databaseItems.length,"database items");
-  }catch(err){
-    console.warn("SHOP CATALOGUE RPC:",err);
-  }
+  }catch(err){console.warn("SHOP CATALOGUE RPC:",err);}
 }
 
 /* ================= ADMIN-MANAGED SHOP MENUS ================= */
@@ -109,58 +117,32 @@ async function loadShopMenus(){
   if(typeof supabaseClient==="undefined")return false;
   try{
     const {data,error}=await supabaseClient.rpc("shop_menus_list_public");
-    if(error){
-      console.warn("SHOP MENUS:",error);
-      SHOP_MENUS=[];
-      SHOP_MENUS_LOADED=false;
-      return false;
-    }
-    SHOP_MENUS=(Array.isArray(data)?data:[])
-      .map(m=>({
-        menu_key:String(m.menu_key||"").trim(),
-        menu_name:String(m.menu_name||m.menu_key||"Shop").trim(),
-        icon:String(m.icon||"📂"),
-        sort_order:Number(m.sort_order)||0
-      }))
-      .filter(m=>m.menu_key)
-      .sort((a,b)=>a.sort_order-b.sort_order);
-    SHOP_MENUS_LOADED=true;
-    renderShopTabs();
-    return true;
-  }catch(err){
-    console.warn("SHOP MENUS:",err);
-    return false;
-  }
+    if(error){console.warn("SHOP MENUS:",error);SHOP_MENUS=[];SHOP_MENUS_LOADED=false;return false;}
+    SHOP_MENUS=(Array.isArray(data)?data:[]).map(m=>({
+      menu_key:String(m.menu_key||"").trim(),menu_name:String(m.menu_name||m.menu_key||"Shop").trim(),
+      icon:String(m.icon||"📂"),sort_order:Number(m.sort_order)||0
+    })).filter(m=>m.menu_key).sort((a,b)=>a.sort_order-b.sort_order);
+    SHOP_MENUS_LOADED=true;renderShopTabs();return true;
+  }catch(err){console.warn("SHOP MENUS:",err);return false;}
 }
-
-function getShopMenu(menuKey){
-  return SHOP_MENUS.find(m=>m.menu_key===menuKey)||null;
-}
-
+function getShopMenu(menuKey){return SHOP_MENUS.find(m=>m.menu_key===menuKey)||null;}
 function menuItems(menu){
   if(!menu)return [];
   const exact=SHOP_ITEMS.filter(i=>i.category===menu.menu_key);
   if(menu.menu_key!=="cosmetics")return exact;
-  const legacyCategories=["cosmetics","outfit","badge","headwear"];
-  return SHOP_ITEMS.filter(i=>legacyCategories.includes(i.category));
+  return SHOP_ITEMS.filter(i=>["cosmetics","outfit","badge","headwear"].includes(i.category));
 }
-
 function renderShopTabs(){
-  const tabs=document.querySelector(".shop-tabs");
-  if(!tabs||!SHOP_MENUS_LOADED)return;
-  const previous=selectedShopCategory||"all";
-  const visibleMenus=SHOP_MENUS;
+  const tabs=document.querySelector(".shop-tabs");if(!tabs||!SHOP_MENUS_LOADED)return;
+  const previous=selectedShopCategory||"all",visibleMenus=SHOP_MENUS;
   tabs.innerHTML=`<button class="active" type="button" onclick="selectShopCategory('all')">✦ All</button>`+
     visibleMenus.map(m=>`<button type="button" data-shop-category="${escapeHtml(m.menu_key)}" onclick="selectShopCategory('${String(m.menu_key).replace(/'/g,"\\'")}')">${escapeHtml(m.icon)} ${escapeHtml(m.menu_name)}</button>`).join("");
   const selectedStillExists=previous!=="all"&&visibleMenus.some(m=>m.menu_key===previous);
   selectedShopCategory=selectedStillExists?previous:"all";
-  tabs.querySelectorAll("button").forEach(b=>{
-    const key=b.dataset.shopCategory||"all";
-    b.classList.toggle("active",key===selectedShopCategory);
-  });
+  tabs.querySelectorAll("button").forEach(b=>b.classList.toggle("active",(b.dataset.shopCategory||"all")===selectedShopCategory));
 }
-
 function shopPreview(i){
+  if(i.kind==="border")return `<div class="shop-border-preview ${getBorderClass(i)}"><span>${escapeHtml(i.preview||"▣")}</span></div>`;
   if(i.kind==="dragon")return `<div class="shop-badge-preview dragon-shop-preview"><span class="dragon-shop-icon">🐉</span><span class="dragon-shop-bolt">⚡</span></div>`;
   if(i.kind==="title")return `<div class="shop-title-preview">${i.preview}</div>`;
   if(i.kind==="textstyle")return `<div class="shop-title-preview ${getTextStyleClass(i)}">${i.preview}</div>`;
@@ -172,19 +154,17 @@ function shopSlot(i){
   if(i.kind==="textstyle")return "text_style";
   if(i.kind==="effect")return "effect";
   if(i.kind==="dragon")return "dragon";
+  if(i.kind==="border")return "border";
   return "accessory";
 }
 function selectShopCategory(c){
   selectedShopCategory=c||"all";
-  document.querySelectorAll(".shop-tabs button").forEach(b=>{
-    const key=b.dataset.shopCategory||"all";
-    b.classList.toggle("active",key===selectedShopCategory);
-  });
+  document.querySelectorAll(".shop-tabs button").forEach(b=>b.classList.toggle("active",(b.dataset.shopCategory||"all")===selectedShopCategory));
   renderShop();
 }
 async function getShopData(){
   if(!currentUser)return {owned:[],equipped:{}};
-  const owned=[];const equipped={};
+  const owned=[],equipped={};
   try{
     const {data,error}=await supabaseClient.from("shop_items").select("item_id").eq("user_id",currentUser.id);
     if(error)console.warn("SHOP OWNED ITEMS:",error);else(data||[]).forEach(x=>owned.push(x.item_id));
@@ -197,46 +177,33 @@ async function getShopData(){
 }
 function getShopPointsNow(){const n=Number(currentProfile?.points);return Number.isFinite(n)?Math.max(0,n):0;}
 function shopCardHtml(i,owned,equipped){
-  const own=owned.includes(i.id);const eq=equipped[shopSlot(i)]===i.id;
+  const own=owned.includes(i.id),eq=equipped[shopSlot(i)]===i.id;
   return `<div class="shop-item fade-pop"><div class="shop-preview">${shopPreview(i)}</div><div class="shop-name">${escapeHtml(i.name)}</div><div class="shop-desc">${escapeHtml(i.desc)}</div><div class="shop-price">${own?"Owned":"💠 "+i.price+" pts"}</div><button class="${own?"owned":""} ${eq?"equipped":""}" onclick="shopAction('${i.id}')" ${eq?"disabled":""}>${eq?"✓ Equipped":own?"Equip":"Buy · "+i.price}</button></div>`;
 }
 function renderShopCatalogue(owned=[],equipped={}){
   const grid=$("shopGrid");if(!grid)return;
   const selected=selectedShopCategory||"all";
-  if(!SHOP_MENUS_LOADED){
-    grid.innerHTML=`<div class="loading">Loading shop menus...</div>`;
-    return;
-  }
-  const visibleMenus=SHOP_MENUS;
-  const selectedMenu=getShopMenu(selected);
+  if(!SHOP_MENUS_LOADED){grid.innerHTML=`<div class="loading">Loading shop menus...</div>`;return;}
+  const visibleMenus=SHOP_MENUS,selectedMenu=getShopMenu(selected);
   if(selected!=="all"){
-    const items=menuItems(selectedMenu);
-    const label=selectedMenu?`${selectedMenu.icon} ${selectedMenu.menu_name}`:"Shop";
+    const items=menuItems(selectedMenu),label=selectedMenu?`${selectedMenu.icon} ${selectedMenu.menu_name}`:"Shop";
     grid.innerHTML=`<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">${escapeHtml(label)}</div><div class="shop-section-count">${items.length} items</div></div></div>`+items.map(i=>shopCardHtml(i,owned,equipped)).join("");
   }else{
-    const renderedIds=new Set();
-    let sections=visibleMenus.map(menu=>{
-      const arr=menuItems(menu).filter(i=>!renderedIds.has(i.id));
-      arr.forEach(i=>renderedIds.add(i.id));
-      if(!arr.length)return "";
+    const renderedIds=new Set();let sections=visibleMenus.map(menu=>{
+      const arr=menuItems(menu).filter(i=>!renderedIds.has(i.id));arr.forEach(i=>renderedIds.add(i.id));if(!arr.length)return "";
       return `<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">${escapeHtml(menu.icon)} ${escapeHtml(menu.menu_name)}</div><div class="shop-section-count">${arr.length} items</div></div></div>${arr.map(i=>shopCardHtml(i,owned,equipped)).join("")}`;
     }).join("");
     const unmatched=SHOP_ITEMS.filter(i=>!renderedIds.has(i.id));
-    if(unmatched.length){
-      sections+=`<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">🎁 Other</div><div class="shop-section-count">${unmatched.length} items</div></div></div>${unmatched.map(i=>shopCardHtml(i,owned,equipped)).join("")}`;
-    }
+    if(unmatched.length)sections+=`<div style="grid-column:1/-1"><div class="shop-section-head"><div class="shop-section-name">🎁 Other</div><div class="shop-section-count">${unmatched.length} items</div></div></div>${unmatched.map(i=>shopCardHtml(i,owned,equipped)).join("")}`;
     grid.innerHTML=sections||`<div class="loading">No shop items are available right now.</div>`;
   }
-  const names=Object.values(equipped).map(id=>SHOP_ITEMS.find(i=>i.id===id)?.name).filter(Boolean);
-  const equippedEl=$("equippedShopItems");
+  const names=Object.values(equipped).map(id=>SHOP_ITEMS.find(i=>i.id===id)?.name).filter(Boolean),equippedEl=$("equippedShopItems");
   if(equippedEl)equippedEl.innerHTML=names.length?names.map(n=>`<span class="equipped-chip">✦ ${escapeHtml(n)}</span>`).join(" "):"Nothing equipped yet.";
 }
 async function renderShop(){
   if(!currentUser)return;
   const balanceEl=$("shopBalance");if(balanceEl)balanceEl.textContent=`${getShopPointsNow().toFixed(0)} pts`;
-  renderShopCatalogue([] ,{});
-  const {owned,equipped}=await getShopData();
-  renderShopCatalogue(owned,equipped);
+  renderShopCatalogue([] ,{});const {owned,equipped}=await getShopData();renderShopCatalogue(owned,equipped);
 }
 async function shopAction(id){
   const i=SHOP_ITEMS.find(x=>x.id===id);if(!i)return;
@@ -246,15 +213,82 @@ async function shopAction(id){
   showToast(data?.bought?`${i.name} purchased · -${i.price} points ✓`:`${i.name} equipped ✓`);
 }
 
+/* ================= BORDER VISUAL SYSTEM ================= */
+function installBorderStyles(){
+  if(document.getElementById("now-border-styles"))return;
+  const s=document.createElement("style");s.id="now-border-styles";s.textContent=`
+.shop-border-preview{width:58px;height:58px;border-radius:15px;display:grid;place-items:center;background:#111;border:2px solid #383838;position:relative;overflow:hidden;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+.shop-border-preview span{position:relative;z-index:1}
+.border-starter{border-color:#555}
+.border-violet-pulse{border-color:#a78bfa;box-shadow:0 0 0 2px rgba(167,139,250,.12),0 0 18px rgba(167,139,250,.45)}
+.border-neon-grid{border-color:#67e8f9;box-shadow:0 0 0 1px rgba(167,139,250,.45),inset 0 0 14px rgba(34,211,238,.12),0 0 16px rgba(34,211,238,.28)}
+.border-scholar-frame{border:3px double #d6d3d1;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+.border-flame{border-color:#fb923c;box-shadow:0 0 0 2px rgba(251,146,60,.13),0 0 20px rgba(251,146,60,.48);animation:nowBorderFlame 1.25s ease-in-out infinite alternate}
+.border-galaxy{border-color:#c4b5fd;box-shadow:0 0 0 2px rgba(196,181,253,.14),0 0 26px rgba(139,92,246,.5)}
+.border-storm{border-color:#93c5fd;box-shadow:0 0 0 2px rgba(96,165,250,.2),0 0 28px rgba(59,130,246,.58);animation:nowBorderStorm 1.1s ease-in-out infinite alternate}
+@keyframes nowBorderFlame{from{box-shadow:0 0 0 2px rgba(251,146,60,.10),0 0 12px rgba(251,146,60,.3)}to{box-shadow:0 0 0 2px rgba(251,146,60,.22),0 0 25px rgba(251,146,60,.62)}}
+@keyframes nowBorderStorm{from{box-shadow:0 0 0 2px rgba(96,165,250,.12),0 0 14px rgba(59,130,246,.32)}to{box-shadow:0 0 0 2px rgba(125,211,252,.3),0 0 32px rgba(59,130,246,.7)}}
+.leader .leader-border-frame{position:absolute;inset:-3px;border-radius:13px;pointer-events:none;z-index:0}
+.leader.has-border{position:relative}
+.leader.has-border>*:not(.leader-border-frame){position:relative;z-index:1}
+.leader-border-frame.border-starter{border:1px solid #555}
+.leader-border-frame.border-violet-pulse{border:2px solid #a78bfa;box-shadow:0 0 13px rgba(167,139,250,.42)}
+.leader-border-frame.border-neon-grid{border:2px solid #67e8f9;box-shadow:0 0 12px rgba(34,211,238,.32),inset 0 0 15px rgba(167,139,250,.08)}
+.leader-border-frame.border-scholar-frame{border:3px double #d6d3d1}
+.leader-border-frame.border-flame{border:2px solid #fb923c;box-shadow:0 0 16px rgba(251,146,60,.5);animation:nowBorderFlame 1.25s ease-in-out infinite alternate}
+.leader-border-frame.border-galaxy{border:2px solid #c4b5fd;box-shadow:0 0 20px rgba(139,92,246,.5)}
+.leader-border-frame.border-storm{border:2px solid #93c5fd;box-shadow:0 0 23px rgba(59,130,246,.62);animation:nowBorderStorm 1.1s ease-in-out infinite alternate}
+.profile-photo.has-border{position:relative}
+.profile-photo.has-border.border-violet-pulse{box-shadow:0 0 0 2px rgba(167,139,250,.75),0 0 17px rgba(167,139,250,.4)}
+.profile-photo.has-border.border-neon-grid{box-shadow:0 0 0 2px #67e8f9,0 0 15px rgba(34,211,238,.35)}
+.profile-photo.has-border.border-scholar-frame{box-shadow:0 0 0 3px #d6d3d1}
+.profile-photo.has-border.border-flame{box-shadow:0 0 0 2px #fb923c,0 0 18px rgba(251,146,60,.5)}
+.profile-photo.has-border.border-galaxy{box-shadow:0 0 0 2px #c4b5fd,0 0 22px rgba(139,92,246,.5)}
+.profile-photo.has-border.border-storm{box-shadow:0 0 0 2px #93c5fd,0 0 24px rgba(59,130,246,.58)}
+`;
+  document.head.appendChild(s);
+}
+
+async function applyCurrentUserBorder(){
+  if(!currentUser||typeof supabaseClient==="undefined")return;
+  try{
+    const {data,error}=await supabaseClient.from("user_cosmetics").select("item_id").eq("user_id",currentUser.id).eq("slot","border").maybeSingle();
+    if(error)return;
+    const item=SHOP_ITEMS.find(x=>x.id===data?.item_id);if(!item)return;
+    const el=$("myProfileAvatar");if(el){el.classList.remove("has-border","border-starter","border-violet-pulse","border-neon-grid","border-scholar-frame","border-flame","border-galaxy","border-storm");el.classList.add("has-border",getBorderClass(item));}
+  }catch(e){console.warn("PROFILE BORDER:",e);}
+}
+
+function installLeaderboardBorderLayer(){
+  if(typeof renderBoard!=="function"||renderBoard.__borderWrapped)return;
+  const original=renderBoard;
+  const wrapped=async function(){
+    const result=await original.apply(this,arguments);
+    try{
+      const {data:profiles}=await supabaseClient.from("profiles").select("id").order("points",{ascending:false});
+      const {data:rows}=await supabaseClient.from("user_cosmetics").select("user_id,slot,item_id");
+      const byUser=new Map();(rows||[]).forEach(r=>{if(r.slot==="border")byUser.set(r.user_id,r.item_id);});
+      document.querySelectorAll("#boardList .leader").forEach((row,index)=>{
+        const item=SHOP_ITEMS.find(x=>x.id===byUser.get(profiles?.[index]?.id));if(!item)return;
+        const frame=document.createElement("div");frame.className=`leader-border-frame ${getBorderClass(item)}`;frame.setAttribute("aria-hidden","true");
+        row.classList.add("has-border");row.prepend(frame);
+      });
+    }catch(e){console.warn("LEADERBOARD BORDER:",e);}
+    return result;
+  };
+  wrapped.__borderWrapped=true;renderBoard=wrapped;
+}
+
+installBorderStyles();
+setTimeout(installLeaderboardBorderLayer,0);
+setTimeout(installLeaderboardBorderLayer,1000);
+setTimeout(installCurrentUserBorder,600);
+
 /* ============================================
    SUPABASE CONFIGURATION
 ============================================ */
 function scheduleDatabaseShopCatalogueLoad(){
-  if(typeof supabaseClient==="undefined"){
-    setTimeout(scheduleDatabaseShopCatalogueLoad,500);return;
-  }
-  Promise.all([loadDatabaseShopCatalogue(),loadShopMenus()]).then(()=>{
-    if(currentUser){renderShopTabs();renderShop();}
-  });
+  if(typeof supabaseClient==="undefined"){setTimeout(scheduleDatabaseShopCatalogueLoad,500);return;}
+  Promise.all([loadDatabaseShopCatalogue(),loadShopMenus()]).then(()=>{if(currentUser){renderShopTabs();renderShop();applyCurrentUserBorder();installLeaderboardBorderLayer();}});
 }
 scheduleDatabaseShopCatalogueLoad();
