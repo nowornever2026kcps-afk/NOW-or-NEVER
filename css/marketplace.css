@@ -1,4 +1,4 @@
-/* Marketplace / shop styles */
+/* Marketplace / shop styles */ 
 /* Shop */
 .shop-balance{background:radial-gradient(circle at 90% 25%,rgba(139,92,246,.18),transparent 30%),linear-gradient(135deg,#111118,#0d0d11);border:1px solid #302d3a;box-shadow:0 14px 36px rgba(0,0,0,.2);border-radius:17px;padding:17px;position:relative;overflow:hidden}
 .shop-balance::after{content:"✦";position:absolute;right:24px;top:22px;color:#bda7ff;font-size:28px;animation:spark 2.2s ease-in-out infinite}
