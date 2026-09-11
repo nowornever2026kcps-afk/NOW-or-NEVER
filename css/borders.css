@@ -8,7 +8,11 @@
 .leader.has-leader-border::after{content:"";position:absolute;inset:-18px;border-radius:inherit;background:var(--leader-border-aura,radial-gradient(ellipse at center,rgba(255,255,255,.28),transparent 68%));filter:blur(10px);opacity:var(--border-glow-strength);pointer-events:none;z-index:-2;animation:borderAuraPulse 2.2s ease-in-out infinite}
 .leader.has-leader-border::before{content:"";position:absolute;inset:-4px;border-radius:inherit;padding:2px;background:var(--leader-border-gradient,conic-gradient(#aaa,#fff,#555,#fff,#aaa));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;z-index:0;animation:var(--border-frame-animation,borderFrameSpin) var(--border-speed) linear infinite}
 .leader.has-leader-border .leader-border-layer::before{content:"";position:absolute;inset:-7px;border:1px solid var(--border-energy-color,rgba(255,255,255,.55));border-radius:inherit;box-shadow:0 0 8px var(--border-energy-color,rgba(255,255,255,.4)),0 0 22px var(--border-energy-color,rgba(255,255,255,.22));opacity:.72;animation:borderEnergyPulse 1.65s ease-in-out infinite}
-.leader.has-leader-border>*{position:relative;z-index:3}.leader.has-leader-border>.leader-border-layer{position:absolute!important;z-index:2!important}.leader.has-leader-border>.leader-row-effect,.leader.has-leader-border>.leader-crown{z-index:8}
+.leader.has-leader-border>*{position:relative;z-index:3}
+.leader.has-leader-border>.leader-border-layer{position:absolute!important;z-index:2!important}
+/* IMPORTANT: the border selector above must never turn the Dragon host into a normal-flow element. */
+.leader.has-leader-border>.leader-dragon-host{position:absolute!important;inset:-30px -42px -30px -42px!important;z-index:8!important;pointer-events:none!important}
+.leader.has-leader-border>.leader-row-effect,.leader.has-leader-border>.leader-crown{z-index:8}
 
 /* Border themes */
 .leader.has-leader-border.border-starter{--leader-border-gradient:conic-gradient(#777,#fff,#555,#aaa,#777);--leader-border-aura:radial-gradient(ellipse at center,rgba(210,215,225,.42),transparent 70%);--border-energy-color:rgba(235,240,250,.8)}
