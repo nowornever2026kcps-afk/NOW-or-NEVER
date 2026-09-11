@@ -66,8 +66,11 @@ async function renderBoard(){
       const dragonHtml=dragon&&dragon.id==="cosmetic_dragon_storm"
         ? `<div class="leader-dragon-host" data-dragon-host="true"></div>`:"";
 
+      const borderClassName=border?borderClass(border):"";
       const borderAvatarClass=border
-        ? `leader-avatar-border ${borderClass(border)}`:"";
+        ? `leader-avatar-border ${borderClassName}`:"";
+      const borderRowClass=border
+        ? `has-leader-border ${borderClassName}`:"";
 
       const visualAccessories=[];
       if(accessory&&!isCrown(accessory)){
@@ -84,7 +87,7 @@ async function renderBoard(){
         ? `<div class="leader-cosmetics">${visualAccessories.join("")}</div>`:"";
 
       const hasAny=Boolean(title||textStyle||accessory||effect||dragon||border);
-      return {titleHtml,crownHtml,effectHtml,accessoryHtml,dragonHtml,borderAvatarClass,hasAny,textStyleClass:styleClass(textStyle)};
+      return {titleHtml,crownHtml,effectHtml,accessoryHtml,dragonHtml,borderAvatarClass,borderRowClass,hasAny,textStyleClass:styleClass(textStyle)};
     }
 
     const max=Math.max(1,...data.map(x=>Number(x.points)||0));
@@ -98,7 +101,7 @@ async function renderBoard(){
       const width=Math.max(0,Math.min(100,(points/max)*100));
 
       return `
-        <div class="leader ${isMe?"me":""} ${cosmetics.hasAny?"has-cosmetics":""}">
+        <div class="leader ${isMe?"me":""} ${cosmetics.hasAny?"has-cosmetics":""} ${cosmetics.borderRowClass}">
           ${cosmetics.crownHtml}
           ${cosmetics.effectHtml}
           ${cosmetics.dragonHtml}
