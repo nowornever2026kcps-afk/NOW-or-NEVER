@@ -54,14 +54,28 @@ async function renderBoard(){
       if(!item)return "";
       return typeof getBorderClass==="function"?getBorderClass(item):"border-starter";
     }
+    function isBorderItem(item){
+      if(!item)return false;
+      return item.kind==="border" || item.category==="borders" || String(item.id||"").toLowerCase().startsWith("border_");
+    }
 
     function renderLeaderboardCosmetics(student){
       const title=cosmeticBySlot(student.id,"title");
       const textStyle=cosmeticBySlot(student.id,"text_style");
-      const accessory=cosmeticBySlot(student.id,"accessory");
+      const equippedAccessory=cosmeticBySlot(student.id,"accessory");
       const effect=cosmeticBySlot(student.id,"effect");
       const dragon=cosmeticBySlot(student.id,"dragon");
-      const border=cosmeticBySlot(student.id,"border");
+      const equippedBorder=cosmeticBySlot(student.id,"border");
+
+      /*
+         Border compatibility:
+         Older shop/user rows may have a border saved in the accessory slot.
+         Treat border_* items as borders regardless of their stored kind/slot.
+         This keeps existing purchases working without requiring a data reset.
+      */
+      const accessoryIsBorder=isBorderItem(equippedAccessory);
+      const border=equippedBorder|| (accessoryIsBorder?equippedAccessory:null);
+      const accessory=accessoryIsBorder?null:equippedAccessory;
 
       const dragonHtml=dragon&&dragon.id==="cosmetic_dragon_storm"
         ? `<div class="leader-dragon-host" data-dragon-host="true"></div>`:"";
