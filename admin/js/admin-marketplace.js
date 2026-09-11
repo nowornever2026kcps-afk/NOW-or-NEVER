@@ -31,8 +31,23 @@ export function initMarketplace({ supabaseClient, $, sectionContent, adminToast,
       });
     }
 
+    // Keep the admin marketplace usable even if the optional Shop Menus RPC/table
+    // is temporarily unavailable. The catalogue itself must not depend on it.
     if (!categories.length) {
-      return `<option value="${escapeHTML(currentCategory)}" selected>${escapeHTML(currentCategory || "No categories available")}</option>`;
+      const fallback = [
+        ["cosmetics", "Cosmetics", "🎒"],
+        ["outfit", "Outfit", "🥼"],
+        ["badge", "Badges", "🏅"],
+        ["headwear", "Headwear", "🧢"],
+        ["title", "Titles", "🏷️"],
+        ["crown", "Crowns", "👑"],
+        ["emoji", "Emoji FX", "✨"],
+        ["textstyle", "Text Styles", "Aa"]
+      ];
+
+      return fallback.map(([key, name, icon]) =>
+        `<option value="${escapeHTML(key)}" ${currentCategory === key ? "selected" : ""}>${escapeHTML(icon)} ${escapeHTML(name)}</option>`
+      ).join("");
     }
 
     return categories.map(menu => {
@@ -46,12 +61,13 @@ export function initMarketplace({ supabaseClient, $, sectionContent, adminToast,
   async function marketplaceForm(item = null) {
     const editing = Boolean(item);
 
+    // Menus are helpful for category labels, but they must never prevent the
+    // marketplace catalogue from opening/editing when the menu RPC is unavailable.
     try {
       await loadShopMenus();
     } catch (error) {
-      console.error("Shop menus load failed:", error);
-      adminToast("Could not load Shop Menus. Make sure the shop menu system is installed in Supabase.");
-      return;
+      console.warn("Shop menus unavailable while opening marketplace form:", error);
+      shopMenus = [];
     }
 
     sectionContent.innerHTML = `
@@ -219,8 +235,16 @@ export function initMarketplace({ supabaseClient, $, sectionContent, adminToast,
       filterMarketplace(event.target.value);
     });
 
+    // IMPORTANT: load the actual catalogue independently from Shop Menus.
+    // A failure in the optional menu system must not blank the admin catalogue.
     try {
-      await loadShopMenus();
+      try {
+        await loadShopMenus();
+      } catch (menuError) {
+        console.warn("Shop menus unavailable while loading marketplace:", menuError);
+        shopMenus = [];
+      }
+
       const { data, error } = await supabaseClient.rpc("admin_marketplace_list");
       if (error) throw error;
       renderMarketplaceRows(data || []);
