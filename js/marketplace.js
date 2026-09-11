@@ -1,4 +1,4 @@
-// Marketplace / shop module
+// Marketplace / shop module 
 /* ================= SHOP CATALOGUE ================= */
 let SHOP_ITEMS=[
  {id:"title_newbie",category:"title",name:"Rookie",desc:"A clean starter title.",price:0,kind:"title",preview:"ROOKIE"},
