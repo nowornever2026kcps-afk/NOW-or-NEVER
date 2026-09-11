@@ -22,15 +22,39 @@ create table if not exists public.shop_menus (
 create index if not exists shop_menus_order_idx
   on public.shop_menus (sort_order, id);
 
+/* =========================================================
+   SHOP MENU FOUNDATION
+   ---------------------------------------------------------
+   Existing menus are preserved. New reward-system menus are
+   added now so the Shop can grow without another schema change.
+   ========================================================= */
 insert into public.shop_menus (menu_key, menu_name, icon, sort_order, enabled)
 values
-  ('textstyle', 'Text Styles', 'Aa', 10, true),
-  ('title', 'Titles', '🏷️', 20, true),
-  ('crown', 'Crowns', '👑', 30, true),
-  ('emoji', 'Emoji FX', '✨', 40, true),
-  ('cosmetics', 'Cosmetics', '🎒', 50, true)
+  ('textstyle',  'Text Styles', 'Aa', 10, true),
+  ('title',      'Titles',      '🏷️', 20, true),
+  ('crown',      'Crowns',      '👑', 30, true),
+  ('specials',   'Specials',    '⭐', 40, true),
+  ('emoji',      'Effects',     '✨', 50, true),
+  ('borders',    'Borders',     '▣', 60, true),
+  ('badge',      'Badges',      '🏅', 70, true),
+  ('companions', 'Companions',  '🐾', 80, true),
+  ('studygear',  'Study Gear',  '🎒', 90, true),
+  ('cosmetics',  'Cosmetics',   '🎨', 100, true)
 on conflict (menu_key) do nothing;
 
+/* Upgrade the legacy Emoji FX label without changing its key.
+   Existing emoji-category catalogue items continue to work. */
+update public.shop_menus
+set menu_name = 'Effects',
+    icon = '✨',
+    sort_order = 50,
+    enabled = true,
+    updated_at = now()
+where menu_key = 'emoji';
+
+/* =========================================================
+   ADMIN LIST
+   ========================================================= */
 create or replace function public.admin_shop_menus_list()
 returns table (
   id bigint,
@@ -66,6 +90,9 @@ begin
 end;
 $$;
 
+/* =========================================================
+   ADMIN CREATE
+   ========================================================= */
 create or replace function public.admin_shop_menu_create(
   p_menu_key text,
   p_menu_name text,
@@ -110,6 +137,9 @@ exception
 end;
 $$;
 
+/* =========================================================
+   ADMIN UPDATE
+   ========================================================= */
 create or replace function public.admin_shop_menu_update(
   p_id bigint,
   p_menu_key text,
@@ -166,6 +196,9 @@ exception
 end;
 $$;
 
+/* =========================================================
+   ADMIN DELETE
+   ========================================================= */
 create or replace function public.admin_shop_menu_delete(p_id bigint)
 returns boolean
 language plpgsql
@@ -187,6 +220,9 @@ begin
 end;
 $$;
 
+/* =========================================================
+   ADMIN REORDER
+   ========================================================= */
 create or replace function public.admin_shop_menus_reorder(p_ids bigint[])
 returns boolean
 language plpgsql
@@ -217,10 +253,7 @@ $$;
 /* =========================================================
    STUDENT-SIDE READ RPC
    ---------------------------------------------------------
-   The student Shop needs menu names/order, but students must
-   not receive admin-only controls or write access.
-   RLS stays locked down; this function exposes only enabled
-   menu metadata.
+   Only enabled menu metadata is exposed to students.
    ========================================================= */
 create or replace function public.shop_menus_list_public()
 returns table (
@@ -272,3 +305,18 @@ drop trigger if exists shop_menus_updated_at on public.shop_menus;
 create trigger shop_menus_updated_at
 before update on public.shop_menus
 for each row execute function public.set_shop_menus_updated_at();
+
+/* =========================================================
+   STEP 2 MENU MAP
+   ---------------------------------------------------------
+   Titles     → title
+   Crowns     → crown
+   Specials   → specials
+   Effects    → emoji (legacy-compatible)
+   Borders    → borders
+   Badges     → badge
+   Companions → companions
+   Study Gear → studygear
+   Cosmetics  → cosmetics
+   Text Styles→ textstyle
+   ========================================================= */
